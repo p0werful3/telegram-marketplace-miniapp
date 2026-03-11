@@ -103,7 +103,7 @@ async function registerNewUser() {
         showApp();
     } catch (error) {
         console.error(error);
-        showAlert("API недоступне");
+        showAlert("API недоступне: " + error.message);
     }
 }
 
@@ -136,7 +136,7 @@ async function loginUser() {
         showApp();
     } catch (error) {
         console.error(error);
-        showAlert("API недоступне");
+        showAlert("API недоступне: " + error.message);
     }
 }
 
@@ -175,7 +175,7 @@ async function loginWithTelegram() {
         showApp();
     } catch (error) {
         console.error(error);
-        showAlert("API недоступне");
+        showAlert("API недоступне: " + error.message);
     }
 }
 
