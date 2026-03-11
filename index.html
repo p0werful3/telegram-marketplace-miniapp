@@ -21,6 +21,18 @@
                     <button class="secondary-btn" onclick="loadProducts()">Оновити</button>
                 </div>
 
+                <div class="search-bar">
+                    <input id="search-input" type="text" placeholder="Пошук товарів..." />
+                    <select id="category-filter" onchange="loadProducts()">
+                        <option>Усі</option>
+                        <option>Смартфони</option>
+                        <option>Ноутбуки</option>
+                        <option>Навушники</option>
+                        <option>Інше</option>
+                    </select>
+                    <button class="secondary-btn" onclick="loadProducts()">Шукати</button>
+                </div>
+
                 <div id="products-list" class="cards"></div>
             </section>
 
@@ -45,6 +57,9 @@
 
                     <button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
                 </div>
+
+                <h2 class="subsection-title">Мої оголошення</h2>
+                <div id="my-products-list" class="cards"></div>
             </section>
 
             <section id="tab-cart" class="tab-section">
