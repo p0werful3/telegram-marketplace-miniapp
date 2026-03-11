@@ -1,54 +1,275 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Marketplace</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Маркетплейс</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
 body{
-    font-family: Arial;
-    background:#0f172a;
-    color:white;
-    text-align:center;
-    padding:40px;
+font-family:Arial;
+background:#0f172a;
+color:white;
+padding:20px;
+}
+
+.container{
+max-width:500px;
+margin:auto;
 }
 
 h1{
-    font-size:28px;
+text-align:center;
+font-size:30px;
+margin-bottom:10px;
+}
+
+.subtitle{
+text-align:center;
+color:#cbd5e1;
+margin-bottom:25px;
+}
+
+.products{
+display:flex;
+flex-direction:column;
+gap:15px;
+}
+
+.product{
+background:#1e293b;
+padding:18px;
+border-radius:16px;
+}
+
+.product h3{
+font-size:22px;
+margin-bottom:8px;
+}
+
+.product p{
+color:#cbd5e1;
+margin-bottom:12px;
 }
 
 button{
-    padding:15px 25px;
-    font-size:18px;
-    border:none;
-    border-radius:10px;
-    background:#3b82f6;
-    color:white;
-    cursor:pointer;
-    margin-top:20px;
+width:100%;
+border:none;
+border-radius:12px;
+padding:14px;
+font-size:17px;
+cursor:pointer;
 }
+
+.buy-btn{
+background:#3b82f6;
+color:white;
+}
+
+.cart{
+margin-top:30px;
+background:#111827;
+padding:18px;
+border-radius:16px;
+}
+
+.cart-title{
+font-size:22px;
+margin-bottom:10px;
+}
+
+.cart-items{
+margin:15px 0;
+padding-left:20px;
+}
+
+.total{
+font-size:20px;
+font-weight:bold;
+margin:10px 0;
+}
+
+.action-buttons{
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-top:10px;
+}
+
+.clear-btn{
+background:#ef4444;
+color:white;
+}
+
+.order-btn{
+background:#10b981;
+color:white;
+}
+
+.empty{
+color:#94a3b8;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<h1>🛍 Marketplace</h1>
+<div class="container">
 
-<p>Добро пожаловать в магазин</p>
+<h1>🛍 Маркетплейс</h1>
 
-<button onclick="buy()">Купить товар</button>
+<p class="subtitle">Каталог товарів</p>
+
+<div class="products">
+
+<div class="product">
+<h3>iPhone 15</h3>
+<p>Ціна: 1000$</p>
+<button class="buy-btn" onclick="buy('iPhone 15',1000)">Купити</button>
+</div>
+
+<div class="product">
+<h3>AirPods Pro</h3>
+<p>Ціна: 250$</p>
+<button class="buy-btn" onclick="buy('AirPods Pro',250)">Купити</button>
+</div>
+
+<div class="product">
+<h3>MacBook Air</h3>
+<p>Ціна: 1500$</p>
+<button class="buy-btn" onclick="buy('MacBook Air',1500)">Купити</button>
+</div>
+
+</div>
+
+<div class="cart">
+
+<h2 class="cart-title">🛒 Кошик</h2>
+
+<p id="cart-count">Товарів у кошику: 0</p>
+
+<ul id="cart-items" class="cart-items">
+<li class="empty">Кошик порожній</li>
+</ul>
+
+<p id="total-price" class="total">Разом: 0$</p>
+
+<div class="action-buttons">
+
+<button class="clear-btn" onclick="clearCart()">Очистити кошик</button>
+
+<button class="order-btn" onclick="checkout()">Оформити замовлення</button>
+
+</div>
+
+</div>
+
+</div>
 
 <script>
 
-let tg = window.Telegram.WebApp;
-tg.expand();
+let tg = window.Telegram.WebApp
+tg.expand()
 
-function buy(){
-    alert("Товар добавлен в корзину");
+let cart = []
+
+function buy(name,price){
+
+cart.push({name,price})
+
+updateCart()
+
+tg.showAlert(name+" додано до кошика")
+
 }
+
+function updateCart(){
+
+const cartCount=document.getElementById("cart-count")
+const cartItems=document.getElementById("cart-items")
+const totalPrice=document.getElementById("total-price")
+
+cartCount.textContent="Товарів у кошику: "+cart.length
+
+if(cart.length===0){
+
+cartItems.innerHTML='<li class="empty">Кошик порожній</li>'
+totalPrice.textContent="Разом: 0$"
+return
+
+}
+
+cartItems.innerHTML=""
+
+let total=0
+
+cart.forEach(item=>{
+
+const li=document.createElement("li")
+
+li.textContent=item.name+" — "+item.price+"$"
+
+cartItems.appendChild(li)
+
+total+=item.price
+
+})
+
+totalPrice.textContent="Разом: "+total+"$"
+
+}
+
+function clearCart(){
+
+cart=[]
+
+updateCart()
+
+tg.showAlert("Кошик очищено")
+
+}
+
+function checkout(){
+
+if(cart.length===0){
+
+tg.showAlert("Кошик порожній")
+
+return
+
+}
+
+let total=0
+
+let order="Ваше замовлення:\n\n"
+
+cart.forEach((item,i)=>{
+
+order+=(i+1)+". "+item.name+" — "+item.price+"$\n"
+
+total+=item.price
+
+})
+
+order+="\nРазом: "+total+"$"
+
+tg.showAlert(order)
+
+}
+
+updateCart()
 
 </script>
 
