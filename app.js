@@ -1,4 +1,4 @@
-const API_BASE = " https://dana-unmechanised-carlita.ngrok-free.dev";
+const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const tg = window.Telegram?.WebApp || null;
 if (tg) {
@@ -41,6 +41,7 @@ function switchTab(tabName, btn) {
     if (tabName === "catalog") loadProducts();
     if (tabName === "cart") loadCart();
     if (tabName === "profile") fillProfile();
+    if (tabName === "create") loadMyProducts();
 }
 
 function fillProfile() {
@@ -85,10 +86,23 @@ async function registerUserSilently() {
 
 async function loadProducts() {
     const productsList = document.getElementById("products-list");
+    const searchValue = document.getElementById("search-input")?.value?.trim() || "";
+    const categoryValue = document.getElementById("category-filter")?.value || "Усі";
+
     productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
 
     try {
-        const response = await fetch(`${API_BASE}/products`);
+        let url = `${API_BASE}/products`;
+        const params = new URLSearchParams();
+
+        if (searchValue) params.append("q", searchValue);
+        if (categoryValue && categoryValue !== "Усі") params.append("category", categoryValue);
+
+        if ([...params.keys()].length > 0) {
+            url += `?${params.toString()}`;
+        }
+
+        const response = await fetch(url);
         const products = await response.json();
 
         if (!response.ok) {
@@ -115,6 +129,10 @@ async function loadProducts() {
                 ? `@${product.seller_username}`
                 : (product.seller_name || "Невідомий продавець");
 
+            const contactButton = product.seller_telegram_link
+                ? `<a href="${product.seller_telegram_link}" target="_blank"><button class="contact-btn">Написати продавцю</button></a>`
+                : "";
+
             card.innerHTML = `
                 ${image}
                 <div class="card-body">
@@ -125,6 +143,7 @@ async function loadProducts() {
                     <p class="card-seller">Продавець: ${sellerText}</p>
                     <div class="card-actions">
                         <button class="buy-btn" onclick="addToCart(${product.id})">Додати в кошик</button>
+                        ${contactButton}
                     </div>
                 </div>
             `;
@@ -179,6 +198,81 @@ async function createProduct() {
         document.getElementById("product-image").value = "";
 
         showAlert("Оголошення створено");
+        loadProducts();
+        loadMyProducts();
+    } catch (error) {
+        console.error(error);
+        showAlert("Помилка підключення до API");
+    }
+}
+
+async function loadMyProducts() {
+    const list = document.getElementById("my-products-list");
+    list.innerHTML = `<div class="empty-card">Завантаження ваших оголошень...</div>`;
+
+    try {
+        await registerUserSilently();
+
+        const response = await fetch(`${API_BASE}/users/${currentUser.telegram_id}/products`);
+        const products = await response.json();
+
+        if (!response.ok) {
+            list.innerHTML = `<div class="empty-card">Помилка завантаження</div>`;
+            return;
+        }
+
+        if (!products.length) {
+            list.innerHTML = `<div class="empty-card">У вас поки немає оголошень</div>`;
+            return;
+        }
+
+        list.innerHTML = "";
+
+        products.forEach(product => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const image = product.image_url
+                ? `<img class="card-image" src="${product.image_url}" alt="${product.title}">`
+                : `<div class="card-image"></div>`;
+
+            const status = product.is_active ? "Активне" : "Неактивне";
+
+            card.innerHTML = `
+                ${image}
+                <div class="card-body">
+                    <div class="card-category">${product.category}</div>
+                    <h3 class="card-title">${product.title}</h3>
+                    <p class="card-description">${product.description}</p>
+                    <p class="card-price">${product.price}$</p>
+                    <p class="card-seller">Статус: ${status}</p>
+                    ${product.is_active ? `<button class="delete-btn" onclick="deleteProduct(${product.id})">Видалити оголошення</button>` : ""}
+                </div>
+            `;
+
+            list.appendChild(card);
+        });
+    } catch (error) {
+        console.error(error);
+        list.innerHTML = `<div class="empty-card">API недоступне</div>`;
+    }
+}
+
+async function deleteProduct(productId) {
+    try {
+        const response = await fetch(`${API_BASE}/products/${productId}?telegram_id=${currentUser.telegram_id}`, {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            showAlert(data.detail || "Не вдалося видалити оголошення");
+            return;
+        }
+
+        showAlert("Оголошення видалено");
+        loadMyProducts();
         loadProducts();
     } catch (error) {
         console.error(error);
@@ -241,6 +335,10 @@ async function loadCart() {
         cartTotal.textContent = `Разом: ${data.total}$`;
 
         data.items.forEach(item => {
+            const linkButton = item.seller_link
+                ? `<a href="${item.seller_link}" target="_blank"><button class="contact-btn">Написати продавцю</button></a>`
+                : "";
+
             const card = document.createElement("div");
             card.className = "card";
 
@@ -249,7 +347,8 @@ async function loadCart() {
                     <h3 class="card-title">${item.title}</h3>
                     <p class="card-price">${item.price}$</p>
                     <div class="card-actions">
-                        <button class="contact-btn" onclick="buyProduct(${item.product_id})">Купити та отримати контакти продавця</button>
+                        <button class="buy-btn" onclick="buyProduct(${item.product_id})">Купити та отримати контакти продавця</button>
+                        ${linkButton}
                     </div>
                 </div>
             `;
