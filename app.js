@@ -1,77 +1,306 @@
-const API_URL = "https://dana-unmechanised-carlita.ngrok-free.dev";
+const API_BASE = " https://dana-unmechanised-carlita.ngrok-free.dev";
 
-const tg = window.Telegram.WebApp;
-tg.expand();
+const tg = window.Telegram?.WebApp || null;
+if (tg) {
+    tg.expand();
+}
 
-let user = tg.initDataUnsafe.user;
+let telegramUser = tg?.initDataUnsafe?.user || {
+    id: 999999999,
+    username: "local_test_user",
+    first_name: "Local",
+    last_name: "User"
+};
+
+const currentUser = {
+    telegram_id: String(telegramUser.id),
+    username: telegramUser.username || null,
+    full_name: `${telegramUser.first_name || ""} ${telegramUser.last_name || ""}`.trim() || "Telegram User"
+};
+
+function showAlert(message) {
+    if (tg) {
+        tg.showAlert(message);
+    } else {
+        alert(message);
+    }
+}
+
+function switchTab(tabName, btn) {
+    document.querySelectorAll(".tab-section").forEach(section => {
+        section.classList.remove("active");
+    });
+
+    document.querySelectorAll(".nav-btn").forEach(button => {
+        button.classList.remove("active");
+    });
+
+    document.getElementById(`tab-${tabName}`).classList.add("active");
+    btn.classList.add("active");
+
+    if (tabName === "catalog") loadProducts();
+    if (tabName === "cart") loadCart();
+    if (tabName === "profile") fillProfile();
+}
+
+function fillProfile() {
+    document.getElementById("profile-telegram-id").textContent = currentUser.telegram_id;
+    document.getElementById("profile-username").textContent = currentUser.username ? `@${currentUser.username}` : "Немає username";
+    document.getElementById("profile-fullname").textContent = currentUser.full_name;
+}
+
+async function registerUser() {
+    try {
+        const response = await fetch(`${API_BASE}/users/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(currentUser)
+        });
+
+        if (!response.ok) {
+            showAlert("Помилка реєстрації");
+            return;
+        }
+
+        document.getElementById("profile-status").textContent = "Зареєстровано";
+        fillProfile();
+        showAlert("Користувача зареєстровано");
+    } catch (error) {
+        console.error(error);
+        showAlert("Не вдалося підключитися до API");
+    }
+}
+
+async function registerUserSilently() {
+    try {
+        await fetch(`${API_BASE}/users/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(currentUser)
+        });
+    } catch (error) {
+        console.error(error);
+    }
+}
 
 async function loadProducts() {
-    const res = await fetch(`${API_URL}/products`);
-    const products = await res.json();
+    const productsList = document.getElementById("products-list");
+    productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
 
-    const container = document.getElementById("products");
-    container.innerHTML = "";
+    try {
+        const response = await fetch(`${API_BASE}/products`);
+        const products = await response.json();
 
-    products.forEach(p => {
-        const card = document.createElement("div");
-        card.className = "card";
+        if (!response.ok) {
+            productsList.innerHTML = `<div class="empty-card">Помилка завантаження товарів</div>`;
+            return;
+        }
 
-        card.innerHTML = `
-            <img class="card-image" src="${p.image_url}">
-            <div class="card-body">
-                <span class="card-category">${p.category}</span>
-                <h3 class="card-title">${p.title}</h3>
-                <p class="card-description">${p.description}</p>
-                <div class="card-price">${p.price}$</div>
-                <button class="buy-btn" onclick="addToCart(${p.id})">
-                    Додати в кошик
-                </button>
-            </div>
-        `;
+        if (!products.length) {
+            productsList.innerHTML = `<div class="empty-card">Поки що немає товарів</div>`;
+            return;
+        }
 
-        container.appendChild(card);
-    });
+        productsList.innerHTML = "";
+
+        products.forEach(product => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            const image = product.image_url
+                ? `<img class="card-image" src="${product.image_url}" alt="${product.title}">`
+                : `<div class="card-image"></div>`;
+
+            const sellerText = product.seller_username
+                ? `@${product.seller_username}`
+                : (product.seller_name || "Невідомий продавець");
+
+            card.innerHTML = `
+                ${image}
+                <div class="card-body">
+                    <div class="card-category">${product.category}</div>
+                    <h3 class="card-title">${product.title}</h3>
+                    <p class="card-description">${product.description}</p>
+                    <p class="card-price">${product.price}$</p>
+                    <p class="card-seller">Продавець: ${sellerText}</p>
+                    <div class="card-actions">
+                        <button class="buy-btn" onclick="addToCart(${product.id})">Додати в кошик</button>
+                    </div>
+                </div>
+            `;
+
+            productsList.appendChild(card);
+        });
+    } catch (error) {
+        console.error(error);
+        productsList.innerHTML = `<div class="empty-card">API недоступне</div>`;
+    }
 }
 
 async function createProduct() {
-    const title = document.getElementById("title").value;
-    const description = document.getElementById("description").value;
-    const price = document.getElementById("price").value;
-    const category = document.getElementById("category").value;
-    const image = document.getElementById("image").value;
+    const title = document.getElementById("product-title").value.trim();
+    const description = document.getElementById("product-description").value.trim();
+    const price = document.getElementById("product-price").value.trim();
+    const category = document.getElementById("product-category").value.trim();
+    const image_url = document.getElementById("product-image").value.trim();
 
-    await fetch(`${API_URL}/products`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            title,
-            description,
-            price,
-            category,
-            image_url: image,
-            telegram_id: user.id,
-            username: user.username
-        })
-    });
+    if (!title || !description || !price || !category) {
+        showAlert("Заповни всі обов'язкові поля");
+        return;
+    }
 
-    alert("Оголошення створено!");
-    loadProducts();
+    try {
+        await registerUserSilently();
+
+        const response = await fetch(`${API_BASE}/products`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                seller_telegram_id: currentUser.telegram_id,
+                title,
+                description,
+                price: Number(price),
+                category,
+                image_url: image_url || null
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            showAlert(data.detail || "Не вдалося створити оголошення");
+            return;
+        }
+
+        document.getElementById("product-title").value = "";
+        document.getElementById("product-description").value = "";
+        document.getElementById("product-price").value = "";
+        document.getElementById("product-category").value = "";
+        document.getElementById("product-image").value = "";
+
+        showAlert("Оголошення створено");
+        loadProducts();
+    } catch (error) {
+        console.error(error);
+        showAlert("Помилка підключення до API");
+    }
 }
 
-let cart = [];
+async function addToCart(productId) {
+    try {
+        await registerUserSilently();
 
-function addToCart(id) {
-    cart.push(id);
-    alert("Товар додано в кошик");
+        const response = await fetch(`${API_BASE}/cart/add`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user_telegram_id: currentUser.telegram_id,
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            showAlert(data.detail || "Не вдалося додати товар");
+            return;
+        }
+
+        showAlert("Товар додано до кошика");
+    } catch (error) {
+        console.error(error);
+        showAlert("Помилка підключення до API");
+    }
 }
 
-function showProfile() {
-    document.getElementById("tg_id").innerText = user.id;
-    document.getElementById("username").innerText = user.username;
-    document.getElementById("name").innerText = user.first_name;
+async function loadCart() {
+    const cartList = document.getElementById("cart-list");
+    const cartTotal = document.getElementById("cart-total");
+
+    cartList.innerHTML = `<div class="empty-card">Завантаження кошика...</div>`;
+    cartTotal.textContent = "Разом: 0$";
+
+    try {
+        await registerUserSilently();
+
+        const response = await fetch(`${API_BASE}/cart/${currentUser.telegram_id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            cartList.innerHTML = `<div class="empty-card">Помилка завантаження кошика</div>`;
+            return;
+        }
+
+        if (!data.items.length) {
+            cartList.innerHTML = `<div class="empty-card">Кошик порожній</div>`;
+            cartTotal.textContent = "Разом: 0$";
+            return;
+        }
+
+        cartList.innerHTML = "";
+        cartTotal.textContent = `Разом: ${data.total}$`;
+
+        data.items.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "card";
+
+            card.innerHTML = `
+                <div class="card-body">
+                    <h3 class="card-title">${item.title}</h3>
+                    <p class="card-price">${item.price}$</p>
+                    <div class="card-actions">
+                        <button class="contact-btn" onclick="buyProduct(${item.product_id})">Купити та отримати контакти продавця</button>
+                    </div>
+                </div>
+            `;
+
+            cartList.appendChild(card);
+        });
+    } catch (error) {
+        console.error(error);
+        cartList.innerHTML = `<div class="empty-card">API недоступне</div>`;
+    }
 }
 
+async function buyProduct(productId) {
+    try {
+        await registerUserSilently();
+
+        const response = await fetch(`${API_BASE}/orders/buy`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                buyer_telegram_id: currentUser.telegram_id,
+                product_id: productId
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            showAlert(data.detail || "Помилка покупки");
+            return;
+        }
+
+        let message = "Покупку оформлено.\n\n";
+
+        if (data.seller_username) {
+            message += `Telegram продавця: @${data.seller_username}\n`;
+        } else {
+            message += "У продавця немає username\n";
+        }
+
+        if (data.seller_link) {
+            message += `Посилання: ${data.seller_link}`;
+        }
+
+        showAlert(message);
+        loadCart();
+    } catch (error) {
+        console.error(error);
+        showAlert("Не вдалося виконати покупку");
+    }
+}
+
+fillProfile();
 loadProducts();
-showProfile();
