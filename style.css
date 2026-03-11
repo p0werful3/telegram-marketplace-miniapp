@@ -58,6 +58,19 @@ body {
     margin-bottom: 14px;
 }
 
+.subsection-title {
+    margin-top: 22px;
+    margin-bottom: 14px;
+    font-size: 20px;
+}
+
+.search-bar {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr auto;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
 .cards {
     display: flex;
     flex-direction: column;
@@ -134,7 +147,8 @@ body {
 }
 
 input,
-textarea {
+textarea,
+select {
     width: 100%;
     padding: 12px;
     border: 1px solid #334155;
@@ -153,7 +167,8 @@ textarea {
 .primary-btn,
 .secondary-btn,
 .buy-btn,
-.contact-btn {
+.contact-btn,
+.delete-btn {
     width: 100%;
     border: none;
     border-radius: 12px;
@@ -177,6 +192,12 @@ textarea {
 
 .contact-btn {
     background: #10b981;
+    color: white;
+    margin-top: 10px;
+}
+
+.delete-btn {
+    background: #ef4444;
     color: white;
     margin-top: 10px;
 }
@@ -250,9 +271,9 @@ textarea {
         font-size: 24px;
     }
 
-    .section-header {
-        flex-direction: column;
-        align-items: stretch;
+    .section-header,
+    .search-bar {
+        grid-template-columns: 1fr;
     }
 
     .secondary-btn {
