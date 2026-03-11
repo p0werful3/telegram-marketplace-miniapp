@@ -8,7 +8,41 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app">
+    <div id="auth-screen" class="auth-screen">
+        <div class="auth-card">
+            <h1>🛍 Telegram Marketplace</h1>
+            <p class="subtitle">Увійдіть або зареєструйтеся</p>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login', this)">Вхід</button>
+                <button class="auth-tab" onclick="switchAuthTab('register', this)">Реєстрація</button>
+            </div>
+
+            <div id="auth-login" class="auth-panel active">
+                <input id="login-username" type="text" placeholder="Username">
+                <input id="login-password" type="password" placeholder="Password">
+                <button class="primary-btn" onclick="loginUser()">Увійти</button>
+            </div>
+
+            <div id="auth-register" class="auth-panel">
+                <input id="register-username" type="text" placeholder="Username">
+                <input id="register-fullname" type="text" placeholder="Ім'я">
+                <input id="register-password" type="password" placeholder="Password">
+                <button class="primary-btn" onclick="registerNewUser()">Зареєструватися</button>
+            </div>
+
+            <div class="divider">або</div>
+
+            <button class="secondary-btn full-btn" onclick="loginWithTelegram()">Увійти через Telegram</button>
+
+            <label class="remember-me">
+                <input id="remember-me" type="checkbox">
+                Запам’ятати акаунт
+            </label>
+        </div>
+    </div>
+
+    <div id="app-screen" class="app hidden">
         <header class="topbar">
             <h1>🛍 Telegram Marketplace</h1>
             <p class="subtitle">Інтегрований торговельний майданчик</p>
@@ -79,12 +113,11 @@
                 <h2>Профіль</h2>
 
                 <div class="profile-card">
+                    <p><strong>ID:</strong> <span id="profile-id">—</span></p>
                     <p><strong>Telegram ID:</strong> <span id="profile-telegram-id">—</span></p>
                     <p><strong>Username:</strong> <span id="profile-username">—</span></p>
                     <p><strong>Ім'я:</strong> <span id="profile-fullname">—</span></p>
-                    <p><strong>Статус:</strong> <span id="profile-status">Не зареєстровано</span></p>
-
-                    <button class="primary-btn" onclick="registerUser()">Зареєструвати / Оновити профіль</button>
+                    <button class="primary-btn" onclick="logout()">Змінити акаунт / Вийти</button>
                 </div>
             </section>
         </main>
