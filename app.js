@@ -227,21 +227,18 @@ async function autoLoginTelegram() {
 }
 
 function setupAuthScreen() {
+    initTelegramWebApp();
+
     const tgButton = document.getElementById("tg-login-btn");
     const remember = document.getElementById("remember-me");
 
     if (telegramUser) {
-        if (tgButton) {
-            tgButton.textContent = "Увійти через Telegram";
-        }
-        if (remember) {
-            remember.checked = true;
-        }
+        if (tgButton) tgButton.textContent = "Увійти через Telegram";
+        if (remember) remember.checked = true;
     } else {
-        if (tgButton) {
-            tgButton.textContent = "Telegram login доступний тільки в Telegram";
-        }
+        if (tgButton) tgButton.textContent = "Telegram login доступний тільки в Telegram";
     }
+}
 }
 
 async function loadProducts() {
@@ -577,5 +574,6 @@ async function initApp() {
 }
 
 initApp();
+
 
 
