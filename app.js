@@ -23,6 +23,18 @@ function showAlert(message) {
     else alert(message);
 }
 
+async function parseApiResponse(response) {
+    const rawText = await response.text();
+
+    try {
+        return rawText ? JSON.parse(rawText) : {};
+    } catch {
+        return {
+            detail: rawText || `HTTP ${response.status}`
+        };
+    }
+}
+
 function saveSession(user) {
     const remember = document.getElementById("remember-me")?.checked;
     if (remember) {
@@ -120,7 +132,7 @@ async function registerNewUser() {
             })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
             showAlert(data.detail || "Помилка реєстрації");
@@ -157,7 +169,7 @@ async function loginUser() {
             body: JSON.stringify({ username, password })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
             showAlert(data.detail || "Помилка входу");
@@ -202,7 +214,7 @@ async function loginWithTelegram(showSuccess = true) {
             })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
             showAlert(data.detail || "Помилка входу через Telegram");
@@ -261,10 +273,10 @@ async function loadProducts() {
             mode: "cors",
             credentials: "omit"
         });
-        const products = await response.json();
+        const products = await parseApiResponse(response);
 
         if (!response.ok) {
-            productsList.innerHTML = `<div class="empty-card">Помилка завантаження товарів</div>`;
+            productsList.innerHTML = `<div class="empty-card">${products.detail || "Помилка завантаження товарів"}</div>`;
             return;
         }
 
@@ -313,39 +325,51 @@ async function loadProducts() {
 }
 
 async function createProduct() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        showAlert("Спочатку увійди в акаунт");
+        return;
+    }
 
     const title = document.getElementById("product-title").value.trim();
     const description = document.getElementById("product-description").value.trim();
-    const price = document.getElementById("product-price").value.trim();
+    const priceRaw = document.getElementById("product-price").value.trim();
     const category = document.getElementById("product-category").value.trim();
     const image_url = document.getElementById("product-image").value.trim();
+    const price = Number(priceRaw);
 
-    if (!title || !description || !price || !category) {
+    if (!title || !description || !priceRaw || !category) {
         showAlert("Заповни всі обов'язкові поля");
         return;
     }
 
+    if (Number.isNaN(price) || price <= 0) {
+        showAlert("Вкажи коректну ціну більше 0");
+        return;
+    }
+
     try {
+        await wakeApi();
+
         const response = await fetch(`${API_BASE}/products`, {
             method: "POST",
             mode: "cors",
             credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                seller_id: currentUser.id,
+                seller_id: Number(currentUser.id),
                 title,
                 description,
-                price: Number(price),
+                price,
                 category,
                 image_url: image_url || null
             })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
+        console.log("createProduct response:", response.status, data);
 
         if (!response.ok) {
-            showAlert(data.detail || "Не вдалося створити оголошення");
+            showAlert(data.detail || data.message || `Не вдалося створити оголошення (HTTP ${response.status})`);
             return;
         }
 
@@ -360,7 +384,7 @@ async function createProduct() {
         loadMyProducts();
     } catch (error) {
         console.error(error);
-        showAlert("Помилка підключення до API");
+        showAlert("Помилка підключення до API: " + error.message);
     }
 }
 
@@ -376,10 +400,10 @@ async function loadMyProducts() {
             mode: "cors",
             credentials: "omit"
         });
-        const products = await response.json();
+        const products = await parseApiResponse(response);
 
         if (!response.ok) {
-            list.innerHTML = `<div class="empty-card">Помилка завантаження</div>`;
+            list.innerHTML = `<div class="empty-card">${products.detail || "Помилка завантаження"}</div>`;
             return;
         }
 
@@ -428,7 +452,7 @@ async function deleteProduct(productId) {
             credentials: "omit"
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
             showAlert(data.detail || "Не вдалося видалити оголошення");
@@ -459,7 +483,7 @@ async function addToCart(productId) {
             })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
             showAlert(data.detail || "Не вдалося додати товар");
@@ -488,10 +512,10 @@ async function loadCart() {
             mode: "cors",
             credentials: "omit"
         });
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
-            cartList.innerHTML = `<div class="empty-card">Помилка завантаження кошика</div>`;
+            cartList.innerHTML = `<div class="empty-card">${data.detail || "Помилка завантаження кошика"}</div>`;
             return;
         }
 
@@ -544,7 +568,7 @@ async function buyProduct(productId) {
             })
         });
 
-        const data = await response.json();
+        const data = await parseApiResponse(response);
 
         if (!response.ok) {
             showAlert(data.detail || "Помилка покупки");
