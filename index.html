@@ -96,7 +96,6 @@
                     <input id="product-price" type="number" placeholder="1000">
 
                <label>Категорія</label>
-
 <select id="product-category">
 <option value="">Оберіть категорію</option>
 <option value="Смартфони">Смартфони</option>
@@ -109,7 +108,14 @@
 </select>
 
 <label>Фото товару</label>
-<input id="product-file" type="file" accept="image/*">
+
+<input id="product-file" type="file" accept="image/*" onchange="handleImagePreview(event)">
+
+<div id="image-preview-wrap" class="hidden">
+<img id="image-preview" style="width:100%; border-radius:12px; margin-top:10px;">
+</div>
+
+<p id="image-status">Фото не вибрано</p>
 
 <button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
                 </div>
@@ -167,6 +173,7 @@
     <script src="app.js?v=108"></script>
 </body>
 </html>
+
 
 
 
