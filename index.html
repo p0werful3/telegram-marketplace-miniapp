@@ -107,16 +107,22 @@
                         <option value="Інше">Інше</option>
                     </select>
 
-                    <label>Фото товару</label>
-                    <input id="product-file" type="file" accept="image/*" onchange="handleImagePreview(event)">
+                    <label>Категорія</label>
+<select id="product-category">
+    <option value="">Оберіть категорію</option>
+    <option value="Смартфони">Смартфони</option>
+    <option value="Ноутбуки">Ноутбуки</option>
+    <option value="Навушники">Навушники</option>
+    <option value="Ігрові приставки">Ігрові приставки</option>
+    <option value="Планшети">Планшети</option>
+    <option value="Аксесуари">Аксесуари</option>
+    <option value="Інше">Інше</option>
+</select>
 
-                    <div id="image-preview-wrap" class="image-preview-wrap hidden">
-                        <img id="image-preview" class="image-preview" alt="preview">
-                    </div>
+<label>Фото товару</label>
+<input id="product-file" type="file" accept="image/*">
 
-                    <p id="image-status" class="image-status">Фото не вибрано</p>
-
-                    <button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
+<button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
                 </div>
             </section>
 
@@ -172,4 +178,5 @@
     <script src="app.js?v=107"></script>
 </body>
 </html>
+
 
