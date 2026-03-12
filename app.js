@@ -110,11 +110,21 @@ function logout() {
     $("auth-screen")?.classList.remove("hidden");
 }
 
+function setActiveNavButton(tabName) {
+    document.querySelectorAll(".nav-btn").forEach(button => {
+        if (button.dataset.tab === tabName) {
+            button.classList.add("active");
+        } else {
+            button.classList.remove("active");
+        }
+    });
+}
+
 function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
     fillProfile();
-    switchTab("catalog", document.querySelector(".nav-btn.active") || document.querySelector(".nav-btn"));
+    switchTab("catalog");
     loadProducts();
 }
 
@@ -126,17 +136,21 @@ function switchAuthTab(tabName, btn) {
     $(`auth-${tabName}`)?.classList.add("active");
 }
 
-function switchTab(tabName, btn) {
+function switchTab(tabName, btn = null) {
     document.querySelectorAll(".tab-section").forEach(section => section.classList.remove("active"));
-    document.querySelectorAll(".nav-btn").forEach(button => button.classList.remove("active"));
-
     $(`tab-${tabName}`)?.classList.add("active");
-    if (btn) btn.classList.add("active");
+
+    if (btn) {
+        document.querySelectorAll(".nav-btn").forEach(button => button.classList.remove("active"));
+        btn.classList.add("active");
+    } else {
+        setActiveNavButton(tabName);
+    }
 
     if (tabName === "catalog") loadProducts();
+    if (tabName === "my-products") loadMyProducts();
     if (tabName === "cart") loadCart();
     if (tabName === "profile") fillProfile();
-    if (tabName === "create") loadMyProducts();
 }
 
 function fillProfile() {
@@ -415,11 +429,12 @@ async function createProduct() {
 
     const title = $("product-title")?.value.trim();
     const description = $("product-description")?.value.trim();
-    const price = Number($("product-price")?.value.trim());
+    const rawPrice = String($("product-price")?.value || "").trim();
+    const price = Number(rawPrice);
     const category = $("product-category")?.value.trim();
     const image_url = $("product-image")?.value.trim();
 
-    if (!title || !description || !category || !String($("product-price")?.value || "").trim()) {
+    if (!title || !description || !category || !rawPrice) {
         showAlert("Заповни всі обов'язкові поля");
         return;
     }
@@ -457,6 +472,7 @@ async function createProduct() {
         $("product-image").value = "";
 
         showAlert("Оголошення створено");
+        switchTab("my-products");
         loadProducts();
         loadMyProducts();
     } catch (error) {
@@ -495,7 +511,7 @@ async function loadMyProducts() {
                         <h3 class="card-title">${escapeHtml(product.title)}</h3>
                         <p class="card-description">${escapeHtml(product.description || "")}</p>
                         <p class="card-price">${escapeHtml(product.price)}$</p>
-                        <p class="card-category">${escapeHtml(product.category || "")}</p>
+                        <div class="card-category">${escapeHtml(product.category || "")}</div>
                         <button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>
                     </div>
                 </div>
