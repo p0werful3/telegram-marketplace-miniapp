@@ -11,6 +11,7 @@ let myProductsView = "active";
 let catalogView = "all";
 let currentModalImageIndex = 0;
 let currentModalImages = [];
+let filtersOpen = false;
 
 function $(id) {
     return document.getElementById(id);
@@ -125,10 +126,24 @@ function setActiveNavButton(tabName) {
     });
 }
 
+function toggleFilters(forceState = null) {
+    const filtersWrap = $("catalog-filters-wrap");
+    const toggleBtn = $("filters-toggle-btn");
+
+    if (!filtersWrap || !toggleBtn) return;
+
+    filtersOpen = forceState === null ? !filtersOpen : Boolean(forceState);
+
+    filtersWrap.classList.toggle("hidden", !filtersOpen);
+    toggleBtn.textContent = filtersOpen ? "Сховати фільтри" : "Фільтри";
+    toggleBtn.classList.toggle("active", filtersOpen);
+}
+
 function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
     fillProfile();
+    toggleFilters(false);
     switchTab("catalog");
     loadProducts();
     loadStats();
@@ -166,7 +181,11 @@ function switchCatalogView(view) {
     catalogView = view;
     $("catalog-all-btn")?.classList.toggle("active", view === "all");
     $("catalog-favorites-btn")?.classList.toggle("active", view === "favorites");
-    $("catalog-filters-wrap")?.classList.toggle("hidden", view === "favorites");
+
+    if (view === "favorites") {
+        toggleFilters(false);
+    }
+
     loadProducts();
 }
 
@@ -539,7 +558,7 @@ function renderMyProductCard(product, view) {
     let actionButton = "";
 
     if (view === "active") {
-        actionButton = `<button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">В архів</button>`;
+        actionButton = `<button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>`;
     } else if (view === "sold") {
         actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
@@ -547,7 +566,7 @@ function renderMyProductCard(product, view) {
     }
 
     return `
-        <div class="card" onclick="openProductModal(${Number(product.id)})">
+        <div class="card card-clickable" onclick="openProductModal(${Number(product.id)})">
             ${renderImageBlock(product)}
             <div class="card-body">
                 ${renderCardTags(product)}
@@ -834,6 +853,7 @@ async function deleteProduct(productId) {
 
     try {
         setLoading(true);
+
         await safeFetch(`${API_BASE}/products/${productId}?user_id=${currentUser.id}`, {
             method: "DELETE"
         });
