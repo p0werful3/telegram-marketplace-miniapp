@@ -300,6 +300,27 @@ textarea {
     color: #94a3b8;
 }
 
+.image-preview-wrap {
+    margin-top: 12px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0f172a;
+    border: 1px solid #334155;
+}
+
+.image-preview {
+    width: 100%;
+    max-height: 240px;
+    object-fit: cover;
+    display: block;
+}
+
+.image-status {
+    margin-top: 10px;
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
 .bottom-nav {
     position: fixed;
     left: 0;
