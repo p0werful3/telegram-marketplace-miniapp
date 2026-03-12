@@ -88,9 +88,9 @@ body {
 }
 
 .app {
-    max-width: 720px;
+    max-width: 860px;
     margin: 0 auto;
-    padding-bottom: 105px;
+    padding-bottom: 110px;
 }
 
 .topbar {
@@ -129,11 +129,35 @@ body {
     margin-bottom: 14px;
 }
 
-.search-bar {
-    display: grid;
-    grid-template-columns: 1.6fr 1fr auto;
+.catalog-subtabs,
+.subtabs {
+    display: flex;
     gap: 10px;
     margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.subtab-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: #334155;
+    color: white;
+    cursor: pointer;
+}
+
+.subtab-btn.active {
+    background: #2563eb;
+}
+
+.search-bar {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.search-bar-advanced {
+    grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr auto;
 }
 
 .cards {
@@ -165,11 +189,16 @@ body {
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
+.card-image-wrap {
+    position: relative;
+}
+
 .card-image {
     width: 100%;
-    height: 180px;
+    height: 190px;
     object-fit: cover;
     background: #334155;
+    display: block;
 }
 
 .card-image-placeholder {
@@ -210,6 +239,10 @@ body {
     color: #cbd5e1;
     line-height: 1.4;
     margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .card-price {
@@ -231,7 +264,8 @@ body {
 .form-card,
 .profile-card,
 .cart-total-card,
-.empty-card {
+.empty-card,
+.stat-card {
     background: #1e293b;
     border-radius: 18px;
     padding: 16px;
@@ -274,7 +308,9 @@ textarea {
 .delete-btn,
 .full-btn,
 .own-product-btn,
-.archive-btn {
+.archive-btn,
+.remove-btn,
+.sold-btn {
     width: 100%;
     border: none;
     border-radius: 12px;
@@ -309,7 +345,11 @@ textarea {
 .delete-btn {
     background: #ef4444;
     color: white;
-    margin-top: 10px;
+}
+
+.remove-btn {
+    background: #475569;
+    color: white;
 }
 
 .own-product-btn {
@@ -320,6 +360,12 @@ textarea {
 .archive-btn {
     background: #334155;
     color: #cbd5e1;
+    cursor: default;
+}
+
+.sold-btn {
+    background: #f59e0b;
+    color: white;
     cursor: default;
 }
 
@@ -378,23 +424,47 @@ textarea {
     gap: 10px;
 }
 
-.subtabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-}
-
-.subtab-btn {
+.favorite-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
     border: none;
-    border-radius: 12px;
-    padding: 10px 14px;
-    background: #334155;
+    background: rgba(15, 23, 42, 0.85);
     color: white;
+    font-size: 22px;
     cursor: pointer;
+    backdrop-filter: blur(8px);
 }
 
-.subtab-btn.active {
-    background: #2563eb;
+.favorite-btn.active {
+    color: #fb7185;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.stat-card {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    display: block;
+    color: #cbd5e1;
+    font-size: 14px;
 }
 
 .bottom-nav {
@@ -402,7 +472,7 @@ textarea {
     left: 0;
     right: 0;
     bottom: 0;
-    max-width: 720px;
+    max-width: 860px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -498,7 +568,7 @@ textarea {
 
 .modal-product-image {
     width: 100%;
-    height: 260px;
+    height: 280px;
     object-fit: cover;
     background: #334155;
     border-top-left-radius: 20px;
@@ -515,7 +585,7 @@ textarea {
 }
 
 .modal-product-price {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     margin-bottom: 14px;
 }
@@ -532,8 +602,14 @@ textarea {
     text-decoration: none;
 }
 
+@media (max-width: 700px) {
+    .search-bar-advanced {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 @media (max-width: 480px) {
-    .search-bar,
+    .search-bar-advanced,
     .section-header {
         grid-template-columns: 1fr;
     }
