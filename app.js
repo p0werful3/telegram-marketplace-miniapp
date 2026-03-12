@@ -356,7 +356,18 @@ async function loadProducts() {
     productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
 
     try {
-        const products = await safeFetch(`${API_BASE}/products`, {
+        const searchValue = $("search-input")?.value.trim() || "";
+        const categoryValue = $("category-filter")?.value || "Усі";
+
+        const params = new URLSearchParams();
+        if (searchValue) params.append("q", searchValue);
+        if (categoryValue && categoryValue !== "Усі") params.append("category", categoryValue);
+
+        const url = params.toString()
+            ? `${API_BASE}/products?${params.toString()}`
+            : `${API_BASE}/products`;
+
+        const products = await safeFetch(url, {
             method: "GET"
         });
 
@@ -365,17 +376,29 @@ async function loadProducts() {
             return;
         }
 
-        productsList.innerHTML = products.map(product => `
-            <div class="card">
-                <div class="card-body">
-                    <div class="card-category">${escapeHtml(product.category)}</div>
-                    <h3 class="card-title">${escapeHtml(product.title)}</h3>
-                    <p class="card-description">${escapeHtml(product.description)}</p>
-                    <p class="card-price">${escapeHtml(product.price)}$</p>
-                    <button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>
+        productsList.innerHTML = products.map(product => {
+            const imageBlock = isValidUrl(product.image_url)
+                ? `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
+                : "";
+
+            const sellerBlock = product.seller_username
+                ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>`
+                : "";
+
+            return `
+                <div class="card">
+                    ${imageBlock}
+                    <div class="card-body">
+                        <div class="card-category">${escapeHtml(product.category)}</div>
+                        <h3 class="card-title">${escapeHtml(product.title)}</h3>
+                        <p class="card-description">${escapeHtml(product.description)}</p>
+                        <p class="card-price">${escapeHtml(product.price)}$</p>
+                        ${sellerBlock}
+                        <button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>
+                    </div>
                 </div>
-            </div>
-        `).join("");
+            `;
+        }).join("");
     } catch (error) {
         console.error("Load products error:", error);
         productsList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "API недоступне")}</div>`;
@@ -396,7 +419,7 @@ async function createProduct() {
     const category = $("product-category")?.value.trim();
     const image_url = $("product-image")?.value.trim();
 
-    if (!title || !description || !price || !category) {
+    if (!title || !description || !category || !String($("product-price")?.value || "").trim()) {
         showAlert("Заповни всі обов'язкові поля");
         return;
     }
@@ -406,8 +429,14 @@ async function createProduct() {
         return;
     }
 
+    if (image_url && !isValidUrl(image_url)) {
+        showAlert("Посилання на зображення некоректне");
+        return;
+    }
+
     try {
         setLoading(true);
+        await wakeApi();
 
         await safeFetch(`${API_BASE}/products`, {
             method: "POST",
@@ -454,15 +483,24 @@ async function loadMyProducts() {
             return;
         }
 
-        list.innerHTML = products.map(product => `
-            <div class="card">
-                <div class="card-body">
-                    <h3 class="card-title">${escapeHtml(product.title)}</h3>
-                    <p class="card-price">${escapeHtml(product.price)}$</p>
-                    <button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>
+        list.innerHTML = products.map(product => {
+            const imageBlock = isValidUrl(product.image_url)
+                ? `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
+                : "";
+
+            return `
+                <div class="card">
+                    ${imageBlock}
+                    <div class="card-body">
+                        <h3 class="card-title">${escapeHtml(product.title)}</h3>
+                        <p class="card-description">${escapeHtml(product.description || "")}</p>
+                        <p class="card-price">${escapeHtml(product.price)}$</p>
+                        <p class="card-category">${escapeHtml(product.category || "")}</p>
+                        <button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>
+                    </div>
                 </div>
-            </div>
-        `).join("");
+            `;
+        }).join("");
     } catch (error) {
         console.error("Load my products error:", error);
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
@@ -475,6 +513,7 @@ async function deleteProduct(productId) {
 
     try {
         setLoading(true);
+        await wakeApi();
 
         await safeFetch(`${API_BASE}/products/${productId}?user_id=${currentUser.id}`, {
             method: "DELETE"
@@ -501,6 +540,7 @@ async function addToCart(productId) {
 
     try {
         setLoading(true);
+        await wakeApi();
 
         await safeFetch(`${API_BASE}/cart/add`, {
             method: "POST",
@@ -559,6 +599,7 @@ async function buyProduct(productId) {
 
     try {
         setLoading(true);
+        await wakeApi();
 
         const data = await safeFetch(`${API_BASE}/orders/buy`, {
             method: "POST",
