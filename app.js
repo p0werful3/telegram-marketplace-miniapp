@@ -11,6 +11,7 @@ let isLoading = false;
 function $(id) {
     return document.getElementById(id);
 }
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -200,11 +201,11 @@ function handleImagePreview(event) {
 }
 
 async function uploadImageToCloudinary(file) {
-    if (!CLOUDINARY_CLOUD_NAME || CLOUDINARY_CLOUD_NAME === "PASTE_CLOUD_NAME_HERE") {
+    if (!CLOUDINARY_CLOUD_NAME) {
         throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
     }
 
-    if (!CLOUDINARY_UPLOAD_PRESET || CLOUDINARY_UPLOAD_PRESET === "PASTE_UPLOAD_PRESET_HERE") {
+    if (!CLOUDINARY_UPLOAD_PRESET) {
         throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
     }
 
@@ -553,7 +554,7 @@ async function createProduct() {
         $("product-description").value = "";
         $("product-price").value = "";
         $("product-category").value = "";
-        $("product-file").value = "";
+        if ($("product-file")) $("product-file").value = "";
 
         const previewWrap = $("image-preview-wrap");
         const preview = $("image-preview");
@@ -740,5 +741,3 @@ async function initApp() {
 }
 
 initApp();
-
-
