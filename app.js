@@ -1,5 +1,11 @@
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
+/*
+    ВСТАВЬ СВОИ ДАННЫЕ CLOUDINARY
+*/
+const CLOUDINARY_CLOUD_NAME = "PASTE_CLOUD_NAME_HERE";
+const CLOUDINARY_UPLOAD_PRESET = "PASTE_UPLOAD_PRESET_HERE";
+
 let tg = null;
 let telegramUser = null;
 let currentUser = null;
@@ -162,13 +168,91 @@ function fillProfile() {
     $("profile-fullname").textContent = currentUser.full_name || "—";
 }
 
+function handleImagePreview(event) {
+    const file = event?.target?.files?.[0];
+    const previewWrap = $("image-preview-wrap");
+    const preview = $("image-preview");
+    const status = $("image-status");
+
+    if (!file) {
+        previewWrap?.classList.add("hidden");
+        if (preview) preview.src = "";
+        if (status) status.textContent = "Фото не вибрано";
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+        showAlert("Оберіть саме зображення");
+        event.target.value = "";
+        previewWrap?.classList.add("hidden");
+        if (preview) preview.src = "";
+        if (status) status.textContent = "Фото не вибрано";
+        return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+
+    if (preview) {
+        preview.src = objectUrl;
+    }
+
+    previewWrap?.classList.remove("hidden");
+
+    if (status) {
+        status.textContent = `Вибрано: ${file.name}`;
+    }
+}
+
+async function uploadImageToCloudinary(file) {
+    if (!CLOUDINARY_CLOUD_NAME || CLOUDINARY_CLOUD_NAME === "PASTE_CLOUD_NAME_HERE") {
+        throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
+    }
+
+    if (!CLOUDINARY_UPLOAD_PRESET || CLOUDINARY_UPLOAD_PRESET === "PASTE_UPLOAD_PRESET_HERE") {
+        throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    formData.append("folder", "telegram-marketplace");
+
+    let response;
+
+    try {
+        response = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+    } catch (error) {
+        console.error("Cloudinary network error:", error);
+        throw new Error("Не вдалося завантажити фото");
+    }
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        console.error("Cloudinary error:", data);
+        throw new Error(data?.error?.message || "Помилка завантаження фото");
+    }
+
+    if (!data?.secure_url) {
+        throw new Error("Cloudinary не повернув URL зображення");
+    }
+
+    return data.secure_url;
+}
+
 async function safeFetch(url, options = {}) {
     let response;
 
     const method = (options.method || "GET").toUpperCase();
     const headers = { ...(options.headers || {}) };
 
-    if (method !== "GET" && method !== "HEAD" && !headers["Content-Type"]) {
+    if (method !== "GET" && method !== "HEAD" && !(options.body instanceof FormData) && !headers["Content-Type"]) {
         headers["Content-Type"] = "application/json";
     }
 
@@ -432,7 +516,8 @@ async function createProduct() {
     const rawPrice = String($("product-price")?.value || "").trim();
     const price = Number(rawPrice);
     const category = $("product-category")?.value.trim();
-    const image_url = $("product-image")?.value.trim();
+    const file = $("product-file")?.files?.[0] || null;
+    const imageStatus = $("image-status");
 
     if (!title || !description || !category || !rawPrice) {
         showAlert("Заповни всі обов'язкові поля");
@@ -444,14 +529,17 @@ async function createProduct() {
         return;
     }
 
-    if (image_url && !isValidUrl(image_url)) {
-        showAlert("Посилання на зображення некоректне");
-        return;
-    }
-
     try {
         setLoading(true);
         await wakeApi();
+
+        let imageUrl = null;
+
+        if (file) {
+            if (imageStatus) imageStatus.textContent = "Завантаження фото...";
+            imageUrl = await uploadImageToCloudinary(file);
+            if (imageStatus) imageStatus.textContent = "Фото успішно завантажено";
+        }
 
         await safeFetch(`${API_BASE}/products`, {
             method: "POST",
@@ -461,7 +549,7 @@ async function createProduct() {
                 description,
                 price,
                 category,
-                image_url: image_url || null
+                image_url: imageUrl
             })
         });
 
@@ -469,7 +557,14 @@ async function createProduct() {
         $("product-description").value = "";
         $("product-price").value = "";
         $("product-category").value = "";
-        $("product-image").value = "";
+        $("product-file").value = "";
+
+        const previewWrap = $("image-preview-wrap");
+        const preview = $("image-preview");
+
+        if (previewWrap) previewWrap.classList.add("hidden");
+        if (preview) preview.src = "";
+        if (imageStatus) imageStatus.textContent = "Фото не вибрано";
 
         showAlert("Оголошення створено");
         switchTab("my-products");
@@ -477,6 +572,7 @@ async function createProduct() {
         loadMyProducts();
     } catch (error) {
         console.error("Create product error:", error);
+        if (imageStatus) imageStatus.textContent = "Помилка завантаження фото";
         showAlert(error.message || "Не вдалося створити оголошення");
     } finally {
         setLoading(false);
