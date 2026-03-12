@@ -51,8 +51,11 @@ function initTelegramWebApp() {
 function showAlert(message) {
     const text = String(message || "Сталася помилка");
     try {
-        if (tg?.showAlert) tg.showAlert(text);
-        else alert(text);
+        if (tg?.showAlert) {
+            tg.showAlert(text);
+        } else {
+            alert(text);
+        }
     } catch {
         alert(text);
     }
@@ -203,6 +206,43 @@ async function wakeApi() {
     }
 }
 
+async function debugApiConnection() {
+    try {
+        const r1 = await fetch(`${API_BASE}/`, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit",
+            cache: "no-store"
+        });
+
+        const t1 = await r1.text();
+        showAlert(`GET / -> ${r1.status}\n${t1}`);
+    } catch (e) {
+        showAlert(`GET / FAILED:\n${e.message}`);
+        return;
+    }
+
+    try {
+        const r2 = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            mode: "cors",
+            credentials: "omit",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: "test_user_123",
+                password: "test_pass_123"
+            })
+        });
+
+        const t2 = await r2.text();
+        showAlert(`POST /auth/login -> ${r2.status}\n${t2}`);
+    } catch (e) {
+        showAlert(`POST /auth/login FAILED:\n${e.message}`);
+    }
+}
+
 function setupAuthScreen() {
     initTelegramWebApp();
 
@@ -334,7 +374,9 @@ async function loadProducts() {
     productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
 
     try {
-        const products = await safeFetch(`${API_BASE}/products`, { method: "GET", headers: {} });
+        const products = await safeFetch(`${API_BASE}/products`, {
+            method: "GET"
+        });
 
         if (!Array.isArray(products) || products.length === 0) {
             productsList.innerHTML = `<div class="empty-card">Поки що немає товарів</div>`;
@@ -409,8 +451,7 @@ async function loadMyProducts() {
 
     try {
         const products = await safeFetch(`${API_BASE}/users/${currentUser.id}/products`, {
-            method: "GET",
-            headers: {}
+            method: "GET"
         });
 
         if (!Array.isArray(products) || products.length === 0) {
@@ -437,8 +478,7 @@ async function deleteProduct(productId) {
         setLoading(true);
 
         await safeFetch(`${API_BASE}/products/${productId}?user_id=${currentUser.id}`, {
-            method: "DELETE",
-            headers: {}
+            method: "DELETE"
         });
 
         showAlert("Оголошення видалено");
@@ -485,8 +525,7 @@ async function loadCart() {
 
     try {
         const data = await safeFetch(`${API_BASE}/cart/${currentUser.id}`, {
-            method: "GET",
-            headers: {}
+            method: "GET"
         });
 
         if (!data?.items?.length) {
@@ -534,7 +573,9 @@ async function buyProduct(productId) {
     }
 }
 
-function initApp() {
+async function initApp() {
+    await debugApiConnection();
+
     setupAuthScreen();
 
     if (loadSession()) return;
@@ -544,6 +585,3 @@ function initApp() {
 }
 
 initApp();
-
-
-
