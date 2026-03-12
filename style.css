@@ -90,7 +90,7 @@ body {
 .app {
     max-width: 720px;
     margin: 0 auto;
-    padding-bottom: 90px;
+    padding-bottom: 105px;
 }
 
 .topbar {
@@ -127,12 +127,6 @@ body {
 .tab-section h2 {
     font-size: 22px;
     margin-bottom: 14px;
-}
-
-.subsection-title {
-    margin-top: 22px;
-    margin-bottom: 14px;
-    font-size: 20px;
 }
 
 .search-bar {
@@ -262,6 +256,10 @@ textarea {
     padding: 10px 14px;
 }
 
+.section-btn {
+    white-space: nowrap;
+}
+
 .contact-btn {
     background: #10b981;
     color: white;
@@ -310,11 +308,12 @@ textarea {
     max-width: 720px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
-    padding: 12px;
-    background: rgba(15, 23, 42, 0.95);
+    padding: 10px 12px 14px;
+    background: rgba(15, 23, 42, 0.96);
     backdrop-filter: blur(10px);
+    align-items: end;
 }
 
 .nav-btn {
@@ -325,10 +324,42 @@ textarea {
     color: white;
     cursor: pointer;
     font-size: 14px;
+    min-height: 48px;
 }
 
 .nav-btn.active {
     background: #2563eb;
+}
+
+.nav-label {
+    display: block;
+    font-size: 13px;
+    line-height: 1.1;
+}
+
+.nav-create {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #2563eb;
+    padding: 0;
+    min-height: 68px;
+    justify-self: center;
+    align-self: start;
+    margin-top: -26px;
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.45);
+}
+
+.nav-create.active {
+    background: #1d4ed8;
+}
+
+.nav-plus {
+    font-size: 36px;
+    font-weight: bold;
+    line-height: 1;
+    display: inline-block;
+    transform: translateY(-1px);
 }
 
 .card-actions {
@@ -345,5 +376,25 @@ textarea {
 
     .secondary-btn {
         width: 100%;
+    }
+
+    .bottom-nav {
+        gap: 6px;
+        padding: 10px 8px 12px;
+    }
+
+    .nav-label {
+        font-size: 12px;
+    }
+
+    .nav-create {
+        width: 62px;
+        height: 62px;
+        min-height: 62px;
+        margin-top: -20px;
+    }
+
+    .nav-plus {
+        font-size: 32px;
     }
 }
