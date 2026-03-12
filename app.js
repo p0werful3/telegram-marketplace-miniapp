@@ -33,11 +33,8 @@ function isValidUrl(value) {
 }
 
 function formatPrice(price) {
-    return `${Number(price)}$`;
-}
-
-function renderTag(text) {
-    return `<span class="tag">${escapeHtml(text)}</span>`;
+    const num = Number(price);
+    return Number.isFinite(num) ? `${num}$` : `${price}$`;
 }
 
 function initTelegramWebApp() {
@@ -462,29 +459,45 @@ async function loginWithTelegram() {
     }
 }
 
-function renderCatalogCard(product) {
-    const imageBlock = isValidUrl(product.image_url)
-        ? `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
-        : `<div class="card-image card-image-placeholder">Фото відсутнє</div>`;
+function renderCardTags(product) {
+    return `
+        <div class="card-tags">
+            <span class="tag">${escapeHtml(product.category || "Без категорії")}</span>
+            <span class="tag">${escapeHtml(product.condition || "Новий")}</span>
+        </div>
+    `;
+}
 
-    const sellerBlock = product.seller_username
-        ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>`
-        : "";
+function renderImageBlock(product) {
+    if (isValidUrl(product.image_url)) {
+        return `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`;
+    }
+
+    return `<div class="card-image card-image-placeholder">Фото відсутнє</div>`;
+}
+
+function renderCatalogCard(product) {
+    const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
 
     return `
         <div class="card card-clickable" onclick="openProductModal(${Number(product.id)})">
-            ${imageBlock}
+            ${renderImageBlock(product)}
             <div class="card-body">
-                <div class="card-tags">
-                    ${renderTag(product.category)}
-                    ${renderTag(product.condition || "Новий")}
-                </div>
+                ${renderCardTags(product)}
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
-                <p class="card-description">${escapeHtml(product.description)}</p>
-                <p class="card-price">${formatPrice(product.price)}</p>
-                ${sellerBlock}
+                <p class="card-price card-price-large">${formatPrice(product.price)}</p>
+                <p class="card-description">${escapeHtml(product.description || "")}</p>
+                ${
+                    product.seller_username
+                        ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>`
+                        : ""
+                }
                 <div class="card-actions">
-                    <button class="buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">Додати в кошик</button>
+                    ${
+                        isOwnProduct
+                            ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
+                            : `<button class="buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">Додати в кошик</button>`
+                    }
                 </div>
             </div>
         </div>
@@ -492,23 +505,21 @@ function renderCatalogCard(product) {
 }
 
 function renderMyProductCard(product, isHistory = false) {
-    const imageBlock = isValidUrl(product.image_url)
-        ? `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
-        : `<div class="card-image card-image-placeholder">Фото відсутнє</div>`;
-
     return `
         <div class="card">
-            ${imageBlock}
+            ${renderImageBlock(product)}
             <div class="card-body">
-                <div class="card-tags">
-                    ${renderTag(product.category || "Без категорії")}
-                    ${renderTag(product.condition || "Новий")}
-                    ${isHistory ? renderTag("Архів") : ""}
-                </div>
+                ${renderCardTags(product)}
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
+                <p class="card-price card-price-large">${formatPrice(product.price)}</p>
                 <p class="card-description">${escapeHtml(product.description || "")}</p>
-                <p class="card-price">${formatPrice(product.price)}</p>
-                ${!isHistory ? `<button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>` : ""}
+                <div class="card-actions">
+                    ${
+                        isHistory
+                            ? `<button class="archive-btn" disabled>В архіві</button>`
+                            : `<button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>`
+                    }
+                </div>
             </div>
         </div>
     `;
@@ -557,30 +568,36 @@ async function openProductModal(productId) {
 
     try {
         const product = await safeFetch(`${API_BASE}/products/${productId}`, { method: "GET" });
+        const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
 
         const imageBlock = isValidUrl(product.image_url)
             ? `<img class="modal-product-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
             : `<div class="modal-product-image card-image-placeholder">Фото відсутнє</div>`;
 
-        const sellerButton = product.seller_telegram_link
+        const contactButton = product.seller_telegram_link
             ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
             : "";
+
+        const primaryAction = isOwnProduct
+            ? `<button class="own-product-btn" onclick="showAlert('Це ваше оголошення')">Ваш товар</button>`
+            : `<button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>`;
 
         body.innerHTML = `
             <div class="modal-product">
                 ${imageBlock}
                 <div class="modal-product-body">
-                    <div class="card-tags">
-                        ${renderTag(product.category || "Без категорії")}
-                        ${renderTag(product.condition || "Новий")}
-                    </div>
+                    ${renderCardTags(product)}
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
                     <p class="modal-product-price">${formatPrice(product.price)}</p>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
+                    ${
+                        product.seller_username
+                            ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>`
+                            : ""
+                    }
                     <div class="card-actions">
-                        <button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>
-                        ${sellerButton}
+                        ${primaryAction}
+                        ${!isOwnProduct ? contactButton : ""}
                     </div>
                 </div>
             </div>
@@ -701,7 +718,9 @@ async function loadMyProducts() {
             return;
         }
 
-        list.innerHTML = products.map(product => renderMyProductCard(product, myProductsView === "history")).join("");
+        list.innerHTML = products
+            .map(product => renderMyProductCard(product, myProductsView === "history"))
+            .join("");
     } catch (error) {
         console.error("Load my products error:", error);
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
@@ -721,12 +740,9 @@ async function deleteProduct(productId) {
         });
 
         showAlert("Оголошення перенесено в історію");
-        if (myProductsView === "history") {
-            loadMyProducts();
-        } else {
-            loadMyProducts();
-        }
+        loadMyProducts();
         loadProducts();
+        loadCart();
     } catch (error) {
         console.error("Delete product error:", error);
         showAlert(error.message || "Не вдалося видалити оголошення");
@@ -756,6 +772,7 @@ async function addToCart(productId) {
         });
 
         showAlert("Товар додано до кошика");
+        loadCart();
     } catch (error) {
         console.error("Add to cart error:", error);
         showAlert(error.message || "Не вдалося додати товар");
@@ -783,12 +800,20 @@ async function loadCart() {
         }
 
         cartTotal.textContent = `Разом: ${data.total}$`;
+
         cartList.innerHTML = data.items.map(item => `
             <div class="card">
                 <div class="card-body">
                     <h3 class="card-title">${escapeHtml(item.title)}</h3>
-                    <p class="card-price">${escapeHtml(item.price)}$</p>
-                    <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
+                    <p class="card-price card-price-large">${escapeHtml(item.price)}$</p>
+                    ${
+                        item.seller_username
+                            ? `<p class="card-seller">Продавець: @${escapeHtml(item.seller_username)}</p>`
+                            : ""
+                    }
+                    <div class="card-actions">
+                        <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
+                    </div>
                 </div>
             </div>
         `).join("");
@@ -814,11 +839,15 @@ async function buyProduct(productId) {
             })
         });
 
+        closeProductModal();
+
         showAlert(
             `Покупку оформлено\n${data?.seller_username ? `@${data.seller_username}` : ""}\n${data?.seller_link || ""}`
         );
 
         loadCart();
+        loadProducts();
+        loadMyProducts();
     } catch (error) {
         console.error("Buy product error:", error);
         showAlert(error.message || "Помилка покупки");
