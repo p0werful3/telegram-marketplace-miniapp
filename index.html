@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=109">
+    <link rel="stylesheet" href="style.css?v=110">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -70,13 +70,18 @@
                     <button class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
                 </div>
 
-                <div id="products-list" class="cards"></div>
+                <div id="products-list" class="cards cards-grid"></div>
             </section>
 
             <section id="tab-my-products" class="tab-section">
                 <div class="section-header">
                     <h2>Мої оголошення</h2>
                     <button class="secondary-btn section-btn" onclick="loadMyProducts()">Оновити</button>
+                </div>
+
+                <div class="subtabs">
+                    <button id="my-products-active-btn" class="subtab-btn active" onclick="switchMyProductsView('active')">Активні</button>
+                    <button id="my-products-history-btn" class="subtab-btn" onclick="switchMyProductsView('history')">Історія</button>
                 </div>
 
                 <div id="my-products-list" class="cards"></div>
@@ -95,29 +100,35 @@
                     <label>Ціна</label>
                     <input id="product-price" type="number" placeholder="1000">
 
-               <label>Категорія</label>
-<select id="product-category">
-<option value="">Оберіть категорію</option>
-<option value="Смартфони">Смартфони</option>
-<option value="Ноутбуки">Ноутбуки</option>
-<option value="Навушники">Навушники</option>
-<option value="Ігрові приставки">Ігрові приставки</option>
-<option value="Планшети">Планшети</option>
-<option value="Аксесуари">Аксесуари</option>
-<option value="Інше">Інше</option>
-</select>
+                    <label>Категорія</label>
+                    <select id="product-category">
+                        <option value="">Оберіть категорію</option>
+                        <option value="Смартфони">Смартфони</option>
+                        <option value="Ноутбуки">Ноутбуки</option>
+                        <option value="Навушники">Навушники</option>
+                        <option value="Ігрові приставки">Ігрові приставки</option>
+                        <option value="Планшети">Планшети</option>
+                        <option value="Аксесуари">Аксесуари</option>
+                        <option value="Інше">Інше</option>
+                    </select>
 
-<label>Фото товару</label>
+                    <label>Стан товару</label>
+                    <select id="product-condition">
+                        <option value="">Оберіть стан</option>
+                        <option value="Новий">Новий</option>
+                        <option value="Б/У">Б/У</option>
+                    </select>
 
-<input id="product-file" type="file" accept="image/*" onchange="handleImagePreview(event)">
+                    <label>Фото товару</label>
+                    <input id="product-file" type="file" accept="image/*" onchange="handleImagePreview(event)">
 
-<div id="image-preview-wrap" class="hidden">
-<img id="image-preview" style="width:100%; border-radius:12px; margin-top:10px;">
-</div>
+                    <div id="image-preview-wrap" class="hidden image-preview-wrap">
+                        <img id="image-preview" class="image-preview">
+                    </div>
 
-<p id="image-status">Фото не вибрано</p>
+                    <p id="image-status" class="image-status">Фото не вибрано</p>
 
-<button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
+                    <button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
                 </div>
             </section>
 
@@ -170,12 +181,13 @@
         </nav>
     </div>
 
-    <script src="app.js?v=109"></script>
+    <div id="product-modal" class="modal hidden" onclick="closeProductModalOnBackdrop(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeProductModal()">×</button>
+            <div id="product-modal-body"></div>
+        </div>
+    </div>
+
+    <script src="app.js?v=110"></script>
 </body>
 </html>
-
-
-
-
-
-
