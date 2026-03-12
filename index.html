@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=130">
+    <link rel="stylesheet" href="style.css?v=131">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -62,10 +62,16 @@
                     <button id="catalog-favorites-btn" class="subtab-btn" onclick="switchCatalogView('favorites')">Обране</button>
                 </div>
 
-                <div id="catalog-filters-wrap">
-                    <div class="search-bar search-bar-advanced">
-                        <input id="search-input" type="text" placeholder="Пошук товарів...">
+                <div class="catalog-toolbar">
+                    <input id="search-input" type="text" placeholder="Пошук товарів...">
+                    <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">
+                        Фільтри
+                    </button>
+                    <button class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
+                </div>
 
+                <div id="catalog-filters-wrap" class="filters-panel hidden">
+                    <div class="search-bar search-bar-advanced">
                         <select id="category-filter" onchange="loadProducts()">
                             <option value="Усі">Усі категорії</option>
                             <option value="Смартфони">Смартфони</option>
@@ -117,8 +123,6 @@
 
                         <input id="price-min-filter" type="number" placeholder="Ціна від">
                         <input id="price-max-filter" type="number" placeholder="Ціна до">
-
-                        <button class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
                     </div>
                 </div>
 
@@ -275,6 +279,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=130"></script>
+    <script src="app.js?v=131"></script>
 </body>
 </html>
