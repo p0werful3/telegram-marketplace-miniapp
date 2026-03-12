@@ -142,6 +142,12 @@ body {
     gap: 14px;
 }
 
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
 .card {
     background: #1e293b;
     border-radius: 18px;
@@ -149,11 +155,29 @@ body {
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
+.card-clickable {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
 .card-image {
     width: 100%;
     height: 180px;
     object-fit: cover;
     background: #334155;
+}
+
+.card-image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 14px;
 }
 
 .card-body {
@@ -165,11 +189,21 @@ body {
     margin-bottom: 8px;
 }
 
-.card-category {
-    display: inline-block;
+.card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 10px;
-    color: #93c5fd;
-    font-size: 13px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #334155;
+    color: #cbd5e1;
+    font-size: 12px;
 }
 
 .card-description {
@@ -182,6 +216,10 @@ body {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 14px;
+}
+
+.card-price-large {
+    font-size: 24px;
 }
 
 .card-seller {
@@ -234,7 +272,9 @@ textarea {
 .buy-btn,
 .contact-btn,
 .delete-btn,
-.full-btn {
+.full-btn,
+.own-product-btn,
+.archive-btn {
     width: 100%;
     border: none;
     border-radius: 12px;
@@ -270,6 +310,17 @@ textarea {
     background: #ef4444;
     color: white;
     margin-top: 10px;
+}
+
+.own-product-btn {
+    background: #475569;
+    color: white;
+}
+
+.archive-btn {
+    background: #334155;
+    color: #cbd5e1;
+    cursor: default;
 }
 
 .full-btn {
@@ -319,6 +370,31 @@ textarea {
     margin-top: 10px;
     color: #cbd5e1;
     font-size: 14px;
+}
+
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.subtabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.subtab-btn {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background: #334155;
+    color: white;
+    cursor: pointer;
+}
+
+.subtab-btn.active {
+    background: #2563eb;
 }
 
 .bottom-nav {
@@ -383,10 +459,77 @@ textarea {
     transform: translateY(-1px);
 }
 
-.card-actions {
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.78);
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 9999;
+}
+
+.modal-content {
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #1e293b;
+    border-radius: 20px;
+    position: relative;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: #334155;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.modal-product-image {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    background: #334155;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+}
+
+.modal-product-body {
+    padding: 18px;
+}
+
+.modal-product-title {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.modal-product-price {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.modal-product-description {
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.contact-link {
+    display: block;
+    text-align: center;
+    text-decoration: none;
 }
 
 @media (max-width: 480px) {
@@ -397,6 +540,10 @@ textarea {
 
     .secondary-btn {
         width: 100%;
+    }
+
+    .cards-grid {
+        grid-template-columns: 1fr;
     }
 
     .bottom-nav {
@@ -417,5 +564,20 @@ textarea {
 
     .nav-plus {
         font-size: 32px;
+    }
+
+    .modal {
+        padding: 10px;
+        align-items: flex-end;
+    }
+
+    .modal-content {
+        max-height: 92vh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    .modal-product-image {
+        height: 220px;
     }
 }
