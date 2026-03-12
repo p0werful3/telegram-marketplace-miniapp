@@ -564,16 +564,19 @@ async function buyProduct(productId) {
 }
 
 async function initApp() {
-    setupAuthScreen();
+    setTimeout(async () => {
+        setupAuthScreen();
 
-    if (loadSession()) return;
+        if (loadSession()) return;
 
-    if (telegramUser) {
-        await autoLoginTelegram();
-    }
+        if (telegramUser) {
+            await autoLoginTelegram();
+        }
+    }, 400);
 }
 
 initApp();
+
 
 
 
