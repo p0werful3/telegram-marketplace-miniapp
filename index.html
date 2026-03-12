@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=120">
+    <link rel="stylesheet" href="style.css?v=130">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -79,15 +79,27 @@
 
                         <select id="city-filter" onchange="loadProducts()">
                             <option value="Усі">Усі міста</option>
-                            <option value="Прага">Прага</option>
-                            <option value="Брно">Брно</option>
-                            <option value="Острава">Острава</option>
-                            <option value="Пльзень">Пльзень</option>
-                            <option value="Ліберець">Ліберець</option>
-                            <option value="Оломоуц">Оломоуц</option>
-                            <option value="Усті-над-Лабем">Усті-над-Лабем</option>
-                            <option value="Тепліце">Тепліце</option>
-                            <option value="Крупка">Крупка</option>
+                            <option value="Київ">Київ</option>
+                            <option value="Харків">Харків</option>
+                            <option value="Одеса">Одеса</option>
+                            <option value="Дніпро">Дніпро</option>
+                            <option value="Львів">Львів</option>
+                            <option value="Запоріжжя">Запоріжжя</option>
+                            <option value="Вінниця">Вінниця</option>
+                            <option value="Полтава">Полтава</option>
+                            <option value="Чернігів">Чернігів</option>
+                            <option value="Черкаси">Черкаси</option>
+                            <option value="Житомир">Житомир</option>
+                            <option value="Хмельницький">Хмельницький</option>
+                            <option value="Тернопіль">Тернопіль</option>
+                            <option value="Івано-Франківськ">Івано-Франківськ</option>
+                            <option value="Луцьк">Луцьк</option>
+                            <option value="Рівне">Рівне</option>
+                            <option value="Ужгород">Ужгород</option>
+                            <option value="Чернівці">Чернівці</option>
+                            <option value="Миколаїв">Миколаїв</option>
+                            <option value="Суми">Суми</option>
+                            <option value="Кропивницький">Кропивницький</option>
                             <option value="Інше">Інше</option>
                         </select>
 
@@ -102,6 +114,9 @@
                             <option value="price_asc">Дешевші</option>
                             <option value="price_desc">Дорожчі</option>
                         </select>
+
+                        <input id="price-min-filter" type="number" placeholder="Ціна від">
+                        <input id="price-max-filter" type="number" placeholder="Ціна до">
 
                         <button class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
                     </div>
@@ -160,23 +175,35 @@
                     <label>Місто</label>
                     <select id="product-city">
                         <option value="">Оберіть місто</option>
-                        <option value="Прага">Прага</option>
-                        <option value="Брно">Брно</option>
-                        <option value="Острава">Острава</option>
-                        <option value="Пльзень">Пльзень</option>
-                        <option value="Ліберець">Ліберець</option>
-                        <option value="Оломоуц">Оломоуц</option>
-                        <option value="Усті-над-Лабем">Усті-над-Лабем</option>
-                        <option value="Тепліце">Тепліце</option>
-                        <option value="Крупка">Крупка</option>
+                        <option value="Київ">Київ</option>
+                        <option value="Харків">Харків</option>
+                        <option value="Одеса">Одеса</option>
+                        <option value="Дніпро">Дніпро</option>
+                        <option value="Львів">Львів</option>
+                        <option value="Запоріжжя">Запоріжжя</option>
+                        <option value="Вінниця">Вінниця</option>
+                        <option value="Полтава">Полтава</option>
+                        <option value="Чернігів">Чернігів</option>
+                        <option value="Черкаси">Черкаси</option>
+                        <option value="Житомир">Житомир</option>
+                        <option value="Хмельницький">Хмельницький</option>
+                        <option value="Тернопіль">Тернопіль</option>
+                        <option value="Івано-Франківськ">Івано-Франківськ</option>
+                        <option value="Луцьк">Луцьк</option>
+                        <option value="Рівне">Рівне</option>
+                        <option value="Ужгород">Ужгород</option>
+                        <option value="Чернівці">Чернівці</option>
+                        <option value="Миколаїв">Миколаїв</option>
+                        <option value="Суми">Суми</option>
+                        <option value="Кропивницький">Кропивницький</option>
                         <option value="Інше">Інше</option>
                     </select>
 
-                    <label>Фото товару</label>
-                    <input id="product-file" type="file" accept="image/*" onchange="handleImagePreview(event)">
+                    <label>Фото товару (можна кілька)</label>
+                    <input id="product-files" type="file" accept="image/*" multiple onchange="handleImagePreview(event)">
 
                     <div id="image-preview-wrap" class="hidden image-preview-wrap">
-                        <img id="image-preview" class="image-preview" alt="Попередній перегляд">
+                        <div id="image-preview-grid" class="image-preview-grid"></div>
                     </div>
 
                     <p id="image-status" class="image-status">Фото не вибрано</p>
@@ -209,26 +236,11 @@
                 </div>
 
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-active">0</span>
-                        <span class="stat-label">Активні</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-sold">0</span>
-                        <span class="stat-label">Продані</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-archived">0</span>
-                        <span class="stat-label">Архів</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-favorites">0</span>
-                        <span class="stat-label">Обране</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-cart">0</span>
-                        <span class="stat-label">У кошику</span>
-                    </div>
+                    <div class="stat-card"><span class="stat-value" id="stat-active">0</span><span class="stat-label">Активні</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-sold">0</span><span class="stat-label">Продані</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-archived">0</span><span class="stat-label">Архів</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-favorites">0</span><span class="stat-label">Обране</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-cart">0</span><span class="stat-label">У кошику</span></div>
                 </div>
 
                 <div class="profile-card">
@@ -241,19 +253,15 @@
             <button class="nav-btn active" data-tab="catalog" onclick="switchTab('catalog', this)">
                 <span class="nav-label">Каталог</span>
             </button>
-
             <button class="nav-btn" data-tab="my-products" onclick="switchTab('my-products', this)">
                 <span class="nav-label">Мої</span>
             </button>
-
             <button class="nav-btn nav-create" data-tab="create" onclick="switchTab('create', this)">
                 <span class="nav-plus">+</span>
             </button>
-
             <button class="nav-btn" data-tab="cart" onclick="switchTab('cart', this)">
                 <span class="nav-label">Кошик</span>
             </button>
-
             <button class="nav-btn" data-tab="profile" onclick="switchTab('profile', this)">
                 <span class="nav-label">Профіль</span>
             </button>
@@ -267,6 +275,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=120"></script>
+    <script src="app.js?v=130"></script>
 </body>
 </html>
