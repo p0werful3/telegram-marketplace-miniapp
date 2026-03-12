@@ -33,7 +33,9 @@
 
             <div class="divider">або</div>
 
-            <button id="tg-login-btn" class="secondary-btn full-btn" onclick="loginWithTelegram()">Увійти через Telegram</button>
+            <button id="tg-login-btn" class="secondary-btn full-btn" onclick="loginWithTelegram()">
+                Увійти через Telegram
+            </button>
 
             <label class="remember-me">
                 <input id="remember-me" type="checkbox">
@@ -80,8 +82,21 @@
                 </div>
 
                 <div class="subtabs">
-                    <button id="my-products-active-btn" class="subtab-btn active" onclick="switchMyProductsView('active')">Активні</button>
-                    <button id="my-products-history-btn" class="subtab-btn" onclick="switchMyProductsView('history')">Історія</button>
+                    <button
+                        id="my-products-active-btn"
+                        class="subtab-btn active"
+                        onclick="switchMyProductsView('active')"
+                    >
+                        Активні
+                    </button>
+
+                    <button
+                        id="my-products-history-btn"
+                        class="subtab-btn"
+                        onclick="switchMyProductsView('history')"
+                    >
+                        Історія
+                    </button>
                 </div>
 
                 <div id="my-products-list" class="cards"></div>
@@ -123,7 +138,7 @@
                     <input id="product-file" type="file" accept="image/*" onchange="handleImagePreview(event)">
 
                     <div id="image-preview-wrap" class="hidden image-preview-wrap">
-                        <img id="image-preview" class="image-preview">
+                        <img id="image-preview" class="image-preview" alt="Попередній перегляд">
                     </div>
 
                     <p id="image-status" class="image-status">Фото не вибрано</p>
