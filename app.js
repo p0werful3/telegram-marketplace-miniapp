@@ -1,3 +1,5 @@
+console.log("APP JS VERSION 100");
+alert("APP JS VERSION 100");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 let tg = null;
@@ -540,3 +542,4 @@ function initApp() {
 }
 
 initApp();
+
