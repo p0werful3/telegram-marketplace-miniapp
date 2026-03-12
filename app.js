@@ -3,6 +3,12 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
 
+const CURRENCY_SYMBOLS = {
+    USD: "$",
+    UAH: "₴",
+    EUR: "€"
+};
+
 let tg = null;
 let telegramUser = null;
 let currentUser = null;
@@ -12,6 +18,7 @@ let catalogView = "all";
 let currentModalImageIndex = 0;
 let currentModalImages = [];
 let filtersOpen = false;
+let galleryTouchStartX = null;
 
 function $(id) {
     return document.getElementById(id);
@@ -36,9 +43,22 @@ function isValidUrl(value) {
     }
 }
 
-function formatPrice(price) {
+function getCurrencySymbol(currency) {
+    return CURRENCY_SYMBOLS[currency] || "$";
+}
+
+function formatPrice(price, currency = "USD") {
     const num = Number(price);
-    return Number.isFinite(num) ? `${num}$` : `${price}$`;
+    const symbol = getCurrencySymbol(currency);
+    return Number.isFinite(num) ? `${num}${symbol}` : `${price}${symbol}`;
+}
+
+function formatCartTotals(totalByCurrency = {}) {
+    const parts = Object.entries(totalByCurrency)
+        .filter(([, value]) => Number(value) > 0)
+        .map(([currency, value]) => formatPrice(value, currency));
+
+    return parts.length ? parts.join(" • ") : `0${getCurrencySymbol("USD")}`;
 }
 
 function initTelegramWebApp() {
@@ -255,7 +275,11 @@ function handleImagePreview(event) {
     if (grid) {
         grid.innerHTML = files.map(file => {
             const objectUrl = URL.createObjectURL(file);
-            return `<img class="preview-thumb" src="${objectUrl}" alt="preview">`;
+            return `
+                <div class="preview-thumb-wrap">
+                    <img class="preview-thumb" src="${objectUrl}" alt="preview">
+                </div>
+            `;
         }).join("");
     }
 
@@ -267,17 +291,9 @@ function handleImagePreview(event) {
 }
 
 async function uploadImageToCloudinary(file) {
-    if (!file) {
-        throw new Error("Файл не вибрано");
-    }
-
-    if (!CLOUDINARY_CLOUD_NAME) {
-        throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
-    }
-
-    if (!CLOUDINARY_UPLOAD_PRESET) {
-        throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
-    }
+    if (!file) throw new Error("Файл не вибрано");
+    if (!CLOUDINARY_CLOUD_NAME) throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
+    if (!CLOUDINARY_UPLOAD_PRESET) throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
 
     const formData = new FormData();
     formData.append("file", file);
@@ -287,13 +303,10 @@ async function uploadImageToCloudinary(file) {
     let response;
 
     try {
-        response = await fetch(
-            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-            {
-                method: "POST",
-                body: formData
-            }
-        );
+        response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+            method: "POST",
+            body: formData
+        });
     } catch (error) {
         console.error("Cloudinary network error:", error);
         throw new Error("Не вдалося підключитися до Cloudinary");
@@ -516,6 +529,7 @@ function renderCardTags(product) {
         product.city || "Без міста"
     ];
 
+    if (product.currency) tags.push(getCurrencySymbol(product.currency));
     if (product.status === "sold") tags.push("Продано");
     if (product.status === "archived") tags.push("Архів");
 
@@ -567,7 +581,7 @@ function renderCatalogCard(product) {
             <div class="card-body">
                 ${renderCardTags(product)}
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
-                <p class="card-price card-price-large">${formatPrice(product.price)}</p>
+                <p class="card-price card-price-large">${formatPrice(product.price, product.currency)}</p>
                 <p class="card-description">${escapeHtml(product.description || "")}</p>
                 ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
                 <div class="card-actions">
@@ -595,11 +609,11 @@ function renderMyProductCard(product, view) {
 
     return `
         <div class="card card-clickable" onclick="openProductModal(${Number(product.id)})">
-            ${renderImageBlock(product)}
+            <div class="card-image-wrap">${renderImageBlock(product)}</div>
             <div class="card-body">
                 ${renderCardTags(product)}
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
-                <p class="card-price card-price-large">${formatPrice(product.price)}</p>
+                <p class="card-price card-price-large">${formatPrice(product.price, product.currency)}</p>
                 <p class="card-description">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions">
                     ${actionButton}
@@ -671,10 +685,15 @@ function buildGallery(images, title) {
 
     return `
         <div class="gallery">
-            <img id="modal-main-image" class="modal-product-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}">
-            ${
-                safeImages.length > 1
-                    ? `
+            <div class="gallery-stage" ontouchstart="handleGalleryTouchStart(event)" ontouchend="handleGalleryTouchEnd(event)">
+                <img id="modal-main-image" class="modal-product-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}">
+                ${safeImages.length > 1 ? `
+                    <button class="gallery-nav gallery-nav-prev" onclick="event.stopPropagation(); prevModalImage()">‹</button>
+                    <button class="gallery-nav gallery-nav-next" onclick="event.stopPropagation(); nextModalImage()">›</button>
+                    <div class="gallery-counter">1 / ${safeImages.length}</div>
+                ` : ""}
+            </div>
+            ${safeImages.length > 1 ? `
                 <div class="gallery-thumbs">
                     ${safeImages.map((img, index) => `
                         <img
@@ -685,25 +704,60 @@ function buildGallery(images, title) {
                         >
                     `).join("")}
                 </div>
-            `
-                    : ""
-            }
+            ` : ""}
         </div>
     `;
 }
 
-function setModalImage(index) {
-    if (!currentModalImages[index]) return;
-
-    currentModalImageIndex = index;
+function updateGalleryUi() {
     const main = $("modal-main-image");
-    if (main) {
-        main.src = currentModalImages[index];
+    if (main && currentModalImages[currentModalImageIndex]) {
+        main.src = currentModalImages[currentModalImageIndex];
+    }
+
+    const counter = document.querySelector(".gallery-counter");
+    if (counter) {
+        counter.textContent = `${currentModalImageIndex + 1} / ${currentModalImages.length}`;
     }
 
     document.querySelectorAll(".gallery-thumb").forEach((thumb, idx) => {
-        thumb.classList.toggle("active", idx === index);
+        thumb.classList.toggle("active", idx === currentModalImageIndex);
     });
+}
+
+function setModalImage(index) {
+    if (!currentModalImages[index]) return;
+    currentModalImageIndex = index;
+    updateGalleryUi();
+}
+
+function prevModalImage() {
+    if (currentModalImages.length < 2) return;
+    currentModalImageIndex = (currentModalImageIndex - 1 + currentModalImages.length) % currentModalImages.length;
+    updateGalleryUi();
+}
+
+function nextModalImage() {
+    if (currentModalImages.length < 2) return;
+    currentModalImageIndex = (currentModalImageIndex + 1) % currentModalImages.length;
+    updateGalleryUi();
+}
+
+function handleGalleryTouchStart(event) {
+    const touch = event.changedTouches?.[0];
+    galleryTouchStartX = touch ? touch.clientX : null;
+}
+
+function handleGalleryTouchEnd(event) {
+    const touch = event.changedTouches?.[0];
+    if (galleryTouchStartX === null || !touch) return;
+
+    const deltaX = touch.clientX - galleryTouchStartX;
+    galleryTouchStartX = null;
+
+    if (Math.abs(deltaX) < 35) return;
+    if (deltaX > 0) prevModalImage();
+    else nextModalImage();
 }
 
 async function openProductModal(productId) {
@@ -736,7 +790,7 @@ async function openProductModal(productId) {
                 <div class="modal-product-body">
                     ${renderCardTags(product)}
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
-                    <p class="modal-product-price">${formatPrice(product.price)}</p>
+                    <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
                     ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
                     <div class="card-actions">
@@ -768,13 +822,14 @@ async function createProduct() {
     const description = $("product-description")?.value.trim();
     const rawPrice = String($("product-price")?.value || "").trim();
     const price = Number(rawPrice);
+    const currency = $("product-currency")?.value.trim();
     const category = $("product-category")?.value.trim();
     const condition = $("product-condition")?.value.trim();
     const city = $("product-city")?.value.trim();
     const files = Array.from($("product-files")?.files || []);
     const imageStatus = $("image-status");
 
-    if (!title || !description || !category || !condition || !city || !rawPrice) {
+    if (!title || !description || !category || !condition || !city || !rawPrice || !currency) {
         showAlert("Заповни всі обов'язкові поля");
         return;
     }
@@ -823,6 +878,7 @@ async function createProduct() {
                 title,
                 description,
                 price,
+                currency,
                 category,
                 condition,
                 city,
@@ -834,6 +890,7 @@ async function createProduct() {
         $("product-title").value = "";
         $("product-description").value = "";
         $("product-price").value = "";
+        $("product-currency").value = "";
         $("product-category").value = "";
         $("product-condition").value = "";
         $("product-city").value = "";
@@ -877,8 +934,8 @@ async function loadMyProducts() {
                 myProductsView === "active"
                     ? `<div class="empty-card">У вас поки немає активних оголошень</div>`
                     : myProductsView === "sold"
-                      ? `<div class="empty-card">У вас поки немає проданих товарів</div>`
-                      : `<div class="empty-card">Архів порожній</div>`;
+                        ? `<div class="empty-card">У вас поки немає проданих товарів</div>`
+                        : `<div class="empty-card">Архів порожній</div>`;
             return;
         }
 
@@ -971,14 +1028,14 @@ async function loadCart() {
             return;
         }
 
-        cartTotal.textContent = `Разом: ${data.total}$`;
+        cartTotal.textContent = `Разом: ${formatCartTotals(data.total_by_currency || {})}`;
 
         cartList.innerHTML = data.items.map(item => `
             <div class="card">
                 ${isValidUrl(item.image_url) ? `<img class="card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : ""}
                 <div class="card-body">
                     <h3 class="card-title">${escapeHtml(item.title)}</h3>
-                    <p class="card-price card-price-large">${escapeHtml(item.price)}$</p>
+                    <p class="card-price card-price-large">${formatPrice(item.price, item.currency)}</p>
                     ${item.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(item.seller_username)}</p>` : ""}
                     <div class="card-actions">
                         <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
@@ -1066,6 +1123,8 @@ async function initApp() {
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeProductModal();
+    if (event.key === "ArrowLeft") prevModalImage();
+    if (event.key === "ArrowRight") nextModalImage();
 });
 
 initApp();
