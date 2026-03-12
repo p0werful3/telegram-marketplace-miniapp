@@ -8,6 +8,7 @@ let telegramUser = null;
 let currentUser = null;
 let isLoading = false;
 let myProductsView = "active";
+let catalogView = "all";
 
 function $(id) {
     return document.getElementById(id);
@@ -121,11 +122,7 @@ function logout() {
 
 function setActiveNavButton(tabName) {
     document.querySelectorAll(".nav-btn").forEach(button => {
-        if (button.dataset.tab === tabName) {
-            button.classList.add("active");
-        } else {
-            button.classList.remove("active");
-        }
+        button.classList.toggle("active", button.dataset.tab === tabName);
     });
 }
 
@@ -135,6 +132,7 @@ function showApp() {
     fillProfile();
     switchTab("catalog");
     loadProducts();
+    loadStats();
 }
 
 function switchAuthTab(tabName, btn) {
@@ -159,14 +157,31 @@ function switchTab(tabName, btn = null) {
     if (tabName === "catalog") loadProducts();
     if (tabName === "my-products") loadMyProducts();
     if (tabName === "cart") loadCart();
-    if (tabName === "profile") fillProfile();
+    if (tabName === "profile") {
+        fillProfile();
+        loadStats();
+    }
+}
+
+function switchCatalogView(view) {
+    catalogView = view;
+    $("catalog-all-btn")?.classList.toggle("active", view === "all");
+    $("catalog-favorites-btn")?.classList.toggle("active", view === "favorites");
+
+    const filtersWrap = $("catalog-filters-wrap");
+    if (filtersWrap) {
+        filtersWrap.classList.toggle("hidden", view === "favorites");
+    }
+
+    loadProducts();
 }
 
 function switchMyProductsView(view) {
     myProductsView = view;
 
     $("my-products-active-btn")?.classList.toggle("active", view === "active");
-    $("my-products-history-btn")?.classList.toggle("active", view === "history");
+    $("my-products-sold-btn")?.classList.toggle("active", view === "sold");
+    $("my-products-archived-btn")?.classList.toggle("active", view === "archived");
 
     loadMyProducts();
 }
@@ -178,6 +193,22 @@ function fillProfile() {
     $("profile-telegram-id").textContent = currentUser.telegram_id || "—";
     $("profile-username").textContent = currentUser.username || "—";
     $("profile-fullname").textContent = currentUser.full_name || "—";
+}
+
+async function loadStats() {
+    if (!currentUser) return;
+
+    try {
+        const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/stats`, { method: "GET" });
+
+        $("stat-active").textContent = data.active_products ?? 0;
+        $("stat-sold").textContent = data.sold_products ?? 0;
+        $("stat-archived").textContent = data.archived_products ?? 0;
+        $("stat-favorites").textContent = data.favorites ?? 0;
+        $("stat-cart").textContent = data.cart_items ?? 0;
+    } catch (error) {
+        console.error("Load stats error:", error);
+    }
 }
 
 function handleImagePreview(event) {
@@ -460,10 +491,18 @@ async function loginWithTelegram() {
 }
 
 function renderCardTags(product) {
+    const tags = [
+        product.category || "Без категорії",
+        product.condition || "Новий",
+        product.city || "Без міста"
+    ];
+
+    if (product.status === "sold") tags.push("Продано");
+    if (product.status === "archived") tags.push("Архів");
+
     return `
         <div class="card-tags">
-            <span class="tag">${escapeHtml(product.category || "Без категорії")}</span>
-            <span class="tag">${escapeHtml(product.condition || "Новий")}</span>
+            ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
         </div>
     `;
 }
@@ -476,12 +515,32 @@ function renderImageBlock(product) {
     return `<div class="card-image card-image-placeholder">Фото відсутнє</div>`;
 }
 
+function renderFavoriteButton(product) {
+    if (!currentUser) return "";
+
+    const isOwnProduct = Number(product.seller_id) === Number(currentUser.id);
+    if (isOwnProduct) return "";
+
+    return `
+        <button
+            class="favorite-btn ${product.is_favorite ? "active" : ""}"
+            onclick="event.stopPropagation(); toggleFavorite(${Number(product.id)}, ${product.is_favorite ? "true" : "false"})"
+            title="Обране"
+        >
+            ${product.is_favorite ? "♥" : "♡"}
+        </button>
+    `;
+}
+
 function renderCatalogCard(product) {
     const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
 
     return `
         <div class="card card-clickable" onclick="openProductModal(${Number(product.id)})">
-            ${renderImageBlock(product)}
+            <div class="card-image-wrap">
+                ${renderImageBlock(product)}
+                ${renderFavoriteButton(product)}
+            </div>
             <div class="card-body">
                 ${renderCardTags(product)}
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
@@ -504,7 +563,17 @@ function renderCatalogCard(product) {
     `;
 }
 
-function renderMyProductCard(product, isHistory = false) {
+function renderMyProductCard(product, view) {
+    let actionButton = "";
+
+    if (view === "active") {
+        actionButton = `<button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">В архів</button>`;
+    } else if (view === "sold") {
+        actionButton = `<button class="sold-btn" disabled>Продано</button>`;
+    } else {
+        actionButton = `<button class="archive-btn" disabled>В архіві</button>`;
+    }
+
     return `
         <div class="card">
             ${renderImageBlock(product)}
@@ -514,11 +583,7 @@ function renderMyProductCard(product, isHistory = false) {
                 <p class="card-price card-price-large">${formatPrice(product.price)}</p>
                 <p class="card-description">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions">
-                    ${
-                        isHistory
-                            ? `<button class="archive-btn" disabled>В архіві</button>`
-                            : `<button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>`
-                    }
+                    ${actionButton}
                 </div>
             </div>
         </div>
@@ -527,26 +592,42 @@ function renderMyProductCard(product, isHistory = false) {
 
 async function loadProducts() {
     const productsList = $("products-list");
-    if (!productsList) return;
+    if (!productsList || !currentUser) return;
 
     productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
 
     try {
+        if (catalogView === "favorites") {
+            const products = await safeFetch(`${API_BASE}/favorites/${currentUser.id}`, { method: "GET" });
+
+            if (!Array.isArray(products) || products.length === 0) {
+                productsList.innerHTML = `<div class="empty-card">В обраному поки нічого немає</div>`;
+                return;
+            }
+
+            productsList.innerHTML = products.map(renderCatalogCard).join("");
+            return;
+        }
+
         const searchValue = $("search-input")?.value.trim() || "";
         const categoryValue = $("category-filter")?.value || "Усі";
+        const cityValue = $("city-filter")?.value || "Усі";
+        const conditionValue = $("condition-filter")?.value || "Усі";
+        const sortValue = $("sort-filter")?.value || "newest";
 
         const params = new URLSearchParams();
         if (searchValue) params.append("q", searchValue);
         if (categoryValue && categoryValue !== "Усі") params.append("category", categoryValue);
+        if (cityValue && cityValue !== "Усі") params.append("city", cityValue);
+        if (conditionValue && conditionValue !== "Усі") params.append("condition", conditionValue);
+        if (sortValue) params.append("sort", sortValue);
+        params.append("current_user_id", String(currentUser.id));
 
-        const url = params.toString()
-            ? `${API_BASE}/products?${params.toString()}`
-            : `${API_BASE}/products`;
-
+        const url = `${API_BASE}/products?${params.toString()}`;
         const products = await safeFetch(url, { method: "GET" });
 
         if (!Array.isArray(products) || products.length === 0) {
-            productsList.innerHTML = `<div class="empty-card">Поки що немає товарів</div>`;
+            productsList.innerHTML = `<div class="empty-card">Нічого не знайдено за цими фільтрами</div>`;
             return;
         }
 
@@ -567,7 +648,11 @@ async function openProductModal(productId) {
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
-        const product = await safeFetch(`${API_BASE}/products/${productId}`, { method: "GET" });
+        const product = await safeFetch(
+            `${API_BASE}/products/${productId}?current_user_id=${currentUser ? currentUser.id : ""}`,
+            { method: "GET" }
+        );
+
         const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
 
         const imageBlock = isValidUrl(product.image_url)
@@ -584,7 +669,10 @@ async function openProductModal(productId) {
 
         body.innerHTML = `
             <div class="modal-product">
-                ${imageBlock}
+                <div class="card-image-wrap">
+                    ${imageBlock}
+                    ${renderFavoriteButton(product)}
+                </div>
                 <div class="modal-product-body">
                     ${renderCardTags(product)}
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
@@ -632,10 +720,11 @@ async function createProduct() {
     const price = Number(rawPrice);
     const category = $("product-category")?.value.trim();
     const condition = $("product-condition")?.value.trim();
+    const city = $("product-city")?.value.trim();
     const file = $("product-file")?.files?.[0] || null;
     const imageStatus = $("image-status");
 
-    if (!title || !description || !category || !condition || !rawPrice) {
+    if (!title || !description || !category || !condition || !city || !rawPrice) {
         showAlert("Заповни всі обов'язкові поля");
         return;
     }
@@ -666,6 +755,7 @@ async function createProduct() {
                 price,
                 category,
                 condition,
+                city,
                 image_url: imageUrl
             })
         });
@@ -675,6 +765,7 @@ async function createProduct() {
         $("product-price").value = "";
         $("product-category").value = "";
         $("product-condition").value = "";
+        $("product-city").value = "";
         if ($("product-file")) $("product-file").value = "";
 
         const previewWrap = $("image-preview-wrap");
@@ -689,6 +780,7 @@ async function createProduct() {
         switchTab("my-products");
         loadProducts();
         loadMyProducts();
+        loadStats();
     } catch (error) {
         console.error("Create product error:", error);
         if (imageStatus) imageStatus.textContent = "Помилка завантаження фото";
@@ -705,22 +797,28 @@ async function loadMyProducts() {
     list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
-        const url = myProductsView === "history"
-            ? `${API_BASE}/users/${currentUser.id}/products/history`
-            : `${API_BASE}/users/${currentUser.id}/products`;
+        let url = `${API_BASE}/users/${currentUser.id}/products`;
+
+        if (myProductsView === "sold") {
+            url = `${API_BASE}/users/${currentUser.id}/products/sold`;
+        } else if (myProductsView === "archived") {
+            url = `${API_BASE}/users/${currentUser.id}/products/archived`;
+        }
 
         const products = await safeFetch(url, { method: "GET" });
 
         if (!Array.isArray(products) || products.length === 0) {
-            list.innerHTML = myProductsView === "history"
-                ? `<div class="empty-card">Історія оголошень порожня</div>`
-                : `<div class="empty-card">У вас поки немає активних оголошень</div>`;
+            if (myProductsView === "active") {
+                list.innerHTML = `<div class="empty-card">У вас поки немає активних оголошень</div>`;
+            } else if (myProductsView === "sold") {
+                list.innerHTML = `<div class="empty-card">У вас поки немає проданих товарів</div>`;
+            } else {
+                list.innerHTML = `<div class="empty-card">Архів порожній</div>`;
+            }
             return;
         }
 
-        list.innerHTML = products
-            .map(product => renderMyProductCard(product, myProductsView === "history"))
-            .join("");
+        list.innerHTML = products.map(product => renderMyProductCard(product, myProductsView)).join("");
     } catch (error) {
         console.error("Load my products error:", error);
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
@@ -728,8 +826,10 @@ async function loadMyProducts() {
 }
 
 async function deleteProduct(productId) {
-    if (!currentUser) return;
-    if (isLoading) return;
+    if (!currentUser || isLoading) return;
+
+    const ok = confirm("Перенести оголошення в архів?");
+    if (!ok) return;
 
     try {
         setLoading(true);
@@ -739,10 +839,11 @@ async function deleteProduct(productId) {
             method: "DELETE"
         });
 
-        showAlert("Оголошення перенесено в історію");
+        showAlert("Оголошення перенесено в архів");
         loadMyProducts();
         loadProducts();
         loadCart();
+        loadStats();
     } catch (error) {
         console.error("Delete product error:", error);
         showAlert(error.message || "Не вдалося видалити оголошення");
@@ -773,9 +874,30 @@ async function addToCart(productId) {
 
         showAlert("Товар додано до кошика");
         loadCart();
+        loadStats();
     } catch (error) {
         console.error("Add to cart error:", error);
         showAlert(error.message || "Не вдалося додати товар");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function removeFromCart(cartItemId) {
+    if (!currentUser || isLoading) return;
+
+    try {
+        setLoading(true);
+
+        await safeFetch(`${API_BASE}/cart/items/${cartItemId}?user_id=${currentUser.id}`, {
+            method: "DELETE"
+        });
+
+        loadCart();
+        loadStats();
+    } catch (error) {
+        console.error("Remove from cart error:", error);
+        showAlert(error.message || "Не вдалося видалити товар з кошика");
     } finally {
         setLoading(false);
     }
@@ -803,6 +925,7 @@ async function loadCart() {
 
         cartList.innerHTML = data.items.map(item => `
             <div class="card">
+                ${isValidUrl(item.image_url) ? `<img class="card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : ""}
                 <div class="card-body">
                     <h3 class="card-title">${escapeHtml(item.title)}</h3>
                     <p class="card-price card-price-large">${escapeHtml(item.price)}$</p>
@@ -813,6 +936,7 @@ async function loadCart() {
                     }
                     <div class="card-actions">
                         <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
+                        <button class="remove-btn" onclick="removeFromCart(${Number(item.cart_item_id)})">Видалити з кошика</button>
                     </div>
                 </div>
             </div>
@@ -824,8 +948,7 @@ async function loadCart() {
 }
 
 async function buyProduct(productId) {
-    if (!currentUser) return;
-    if (isLoading) return;
+    if (!currentUser || isLoading) return;
 
     try {
         setLoading(true);
@@ -848,9 +971,45 @@ async function buyProduct(productId) {
         loadCart();
         loadProducts();
         loadMyProducts();
+        loadStats();
     } catch (error) {
         console.error("Buy product error:", error);
         showAlert(error.message || "Помилка покупки");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function toggleFavorite(productId, isFavoriteNow) {
+    if (!currentUser || isLoading) return;
+
+    try {
+        setLoading(true);
+
+        if (isFavoriteNow) {
+            await safeFetch(`${API_BASE}/favorites?user_id=${currentUser.id}&product_id=${productId}`, {
+                method: "DELETE"
+            });
+        } else {
+            await safeFetch(`${API_BASE}/favorites`, {
+                method: "POST",
+                body: JSON.stringify({
+                    user_id: currentUser.id,
+                    product_id: productId
+                })
+            });
+        }
+
+        await loadProducts();
+        await loadStats();
+
+        const modal = $("product-modal");
+        if (modal && !modal.classList.contains("hidden")) {
+            await openProductModal(productId);
+        }
+    } catch (error) {
+        console.error("Toggle favorite error:", error);
+        showAlert(error.message || "Помилка роботи з обраним");
     } finally {
         setLoading(false);
     }
