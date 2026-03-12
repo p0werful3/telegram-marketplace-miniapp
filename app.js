@@ -114,6 +114,7 @@ function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
     fillProfile();
+    switchTab("catalog", document.querySelector(".nav-btn.active") || document.querySelector(".nav-btn"));
     loadProducts();
 }
 
@@ -206,43 +207,6 @@ async function wakeApi() {
     }
 }
 
-async function debugApiConnection() {
-    try {
-        const r1 = await fetch(`${API_BASE}/`, {
-            method: "GET",
-            mode: "cors",
-            credentials: "omit",
-            cache: "no-store"
-        });
-
-        const t1 = await r1.text();
-        showAlert(`GET / -> ${r1.status}\n${t1}`);
-    } catch (e) {
-        showAlert(`GET / FAILED:\n${e.message}`);
-        return;
-    }
-
-    try {
-        const r2 = await fetch(`${API_BASE}/auth/login`, {
-            method: "POST",
-            mode: "cors",
-            credentials: "omit",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                username: "test_user_123",
-                password: "test_pass_123"
-            })
-        });
-
-        const t2 = await r2.text();
-        showAlert(`POST /auth/login -> ${r2.status}\n${t2}`);
-    } catch (e) {
-        showAlert(`POST /auth/login FAILED:\n${e.message}`);
-    }
-}
-
 function setupAuthScreen() {
     initTelegramWebApp();
 
@@ -269,6 +233,16 @@ async function registerNewUser() {
         return;
     }
 
+    if (username.length < 3) {
+        showAlert("Username має бути мінімум 3 символи");
+        return;
+    }
+
+    if (password.length < 4) {
+        showAlert("Password має бути мінімум 4 символи");
+        return;
+    }
+
     try {
         setLoading(true);
         await wakeApi();
@@ -285,6 +259,11 @@ async function registerNewUser() {
 
         currentUser = data;
         saveSession(data);
+
+        $("register-username").value = "";
+        $("register-fullname").value = "";
+        $("register-password").value = "";
+
         showAlert("Реєстрація успішна");
         showApp();
     } catch (error) {
@@ -317,6 +296,8 @@ async function loginUser() {
 
         currentUser = data;
         saveSession(data);
+        $("login-password").value = "";
+
         showAlert("Вхід успішний");
         showApp();
     } catch (error) {
@@ -357,6 +338,7 @@ async function loginWithTelegram() {
 
         currentUser = data;
         saveSession(data);
+
         showAlert("Вхід через Telegram успішний");
         showApp();
     } catch (error) {
@@ -406,6 +388,8 @@ async function createProduct() {
         return;
     }
 
+    if (isLoading) return;
+
     const title = $("product-title")?.value.trim();
     const description = $("product-description")?.value.trim();
     const price = Number($("product-price")?.value.trim());
@@ -414,6 +398,11 @@ async function createProduct() {
 
     if (!title || !description || !price || !category) {
         showAlert("Заповни всі обов'язкові поля");
+        return;
+    }
+
+    if (!Number.isFinite(price) || price <= 0) {
+        showAlert("Вкажи коректну ціну");
         return;
     }
 
@@ -431,6 +420,12 @@ async function createProduct() {
                 image_url: image_url || null
             })
         });
+
+        $("product-title").value = "";
+        $("product-description").value = "";
+        $("product-price").value = "";
+        $("product-category").value = "";
+        $("product-image").value = "";
 
         showAlert("Оголошення створено");
         loadProducts();
@@ -469,11 +464,15 @@ async function loadMyProducts() {
             </div>
         `).join("");
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message)}</div>`;
+        console.error("Load my products error:", error);
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
     }
 }
 
 async function deleteProduct(productId) {
+    if (!currentUser) return;
+    if (isLoading) return;
+
     try {
         setLoading(true);
 
@@ -485,6 +484,7 @@ async function deleteProduct(productId) {
         loadMyProducts();
         loadProducts();
     } catch (error) {
+        console.error("Delete product error:", error);
         showAlert(error.message || "Не вдалося видалити оголошення");
     } finally {
         setLoading(false);
@@ -496,6 +496,8 @@ async function addToCart(productId) {
         showAlert("Спочатку увійди в акаунт");
         return;
     }
+
+    if (isLoading) return;
 
     try {
         setLoading(true);
@@ -510,6 +512,7 @@ async function addToCart(productId) {
 
         showAlert("Товар додано до кошика");
     } catch (error) {
+        console.error("Add to cart error:", error);
         showAlert(error.message || "Не вдалося додати товар");
     } finally {
         setLoading(false);
@@ -545,11 +548,15 @@ async function loadCart() {
             </div>
         `).join("");
     } catch (error) {
-        cartList.innerHTML = `<div class="empty-card">${escapeHtml(error.message)}</div>`;
+        console.error("Load cart error:", error);
+        cartList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
     }
 }
 
 async function buyProduct(productId) {
+    if (!currentUser) return;
+    if (isLoading) return;
+
     try {
         setLoading(true);
 
@@ -567,6 +574,7 @@ async function buyProduct(productId) {
 
         loadCart();
     } catch (error) {
+        console.error("Buy product error:", error);
         showAlert(error.message || "Помилка покупки");
     } finally {
         setLoading(false);
@@ -574,8 +582,6 @@ async function buyProduct(productId) {
 }
 
 async function initApp() {
-    await debugApiConnection();
-
     setupAuthScreen();
 
     if (loadSession()) return;
