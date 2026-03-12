@@ -1,8 +1,7 @@
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
-
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
-const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";;
+const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
 
 let tg = null;
 let telegramUser = null;
@@ -12,7 +11,6 @@ let isLoading = false;
 function $(id) {
     return document.getElementById(id);
 }
-
 function escapeHtml(value) {
     return String(value ?? "")
         .replace(/&/g, "&amp;")
@@ -742,4 +740,5 @@ async function initApp() {
 }
 
 initApp();
+
 
