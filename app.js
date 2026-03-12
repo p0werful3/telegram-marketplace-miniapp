@@ -3,12 +3,6 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
 
-const CURRENCY_SYMBOLS = {
-    USD: "$",
-    UAH: "₴",
-    EUR: "€"
-};
-
 let tg = null;
 let telegramUser = null;
 let currentUser = null;
@@ -18,7 +12,8 @@ let catalogView = "all";
 let currentModalImageIndex = 0;
 let currentModalImages = [];
 let filtersOpen = false;
-let galleryTouchStartX = null;
+let editingProductId = null;
+let editingExistingImages = [];
 
 function $(id) {
     return document.getElementById(id);
@@ -43,22 +38,21 @@ function isValidUrl(value) {
     }
 }
 
-function getCurrencySymbol(currency) {
-    return CURRENCY_SYMBOLS[currency] || "$";
+function currencySymbol(currency) {
+    return currency === "EUR" ? "€" : currency === "UAH" ? "₴" : "$";
 }
 
 function formatPrice(price, currency = "USD") {
     const num = Number(price);
-    const symbol = getCurrencySymbol(currency);
-    return Number.isFinite(num) ? `${num}${symbol}` : `${price}${symbol}`;
+    const value = Number.isFinite(num) ? num : price;
+    return `${value}${currencySymbol(currency)}`;
 }
 
-function formatCartTotals(totalByCurrency = {}) {
-    const parts = Object.entries(totalByCurrency)
+function renderCartTotals(totalsByCurrency = {}) {
+    const parts = Object.entries(totalsByCurrency)
         .filter(([, value]) => Number(value) > 0)
         .map(([currency, value]) => formatPrice(value, currency));
-
-    return parts.length ? parts.join(" • ") : `0${getCurrencySymbol("USD")}`;
+    return parts.length ? `Разом: ${parts.join(" / ")}` : "Разом: 0$";
 }
 
 function initTelegramWebApp() {
@@ -163,6 +157,7 @@ function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
     fillProfile();
+    resetCreateForm();
     toggleFilters(false);
     switchTab("catalog");
     loadProducts();
@@ -178,6 +173,9 @@ function switchAuthTab(tabName, btn) {
 }
 
 function switchTab(tabName, btn = null) {
+    if (tabName !== "create" && editingProductId && btn?.dataset?.tab !== "create") {
+        // keep edit state until user saves/cancels explicitly
+    }
     document.querySelectorAll(".tab-section").forEach(section => section.classList.remove("active"));
     $(`tab-${tabName}`)?.classList.add("active");
 
@@ -194,6 +192,7 @@ function switchTab(tabName, btn = null) {
     if (tabName === "profile") {
         fillProfile();
         loadStats();
+        loadPurchaseHistory();
     }
 }
 
@@ -223,6 +222,9 @@ function fillProfile() {
     $("profile-telegram-id").textContent = currentUser.telegram_id || "—";
     $("profile-username").textContent = currentUser.username || "—";
     $("profile-fullname").textContent = currentUser.full_name || "—";
+    if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
+    if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
+    if ($("profile-edit-password")) $("profile-edit-password").value = "";
 }
 
 async function loadStats() {
@@ -235,9 +237,150 @@ async function loadStats() {
         $("stat-archived").textContent = data.archived_products ?? 0;
         $("stat-favorites").textContent = data.favorites ?? 0;
         $("stat-cart").textContent = data.cart_items ?? 0;
+        const pendingEl = $("stat-pending");
+        if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
+        const purchasesEl = $("stat-purchases");
+        if (purchasesEl) purchasesEl.textContent = data.purchase_history ?? 0;
+        const purchasePendingEl = $("stat-purchase-pending");
+        if (purchasePendingEl) purchasePendingEl.textContent = data.purchase_pending ?? 0;
     } catch (error) {
         console.error("Load stats error:", error);
     }
+}
+
+function orderStatusLabel(status) {
+    if (status === "approved") return "Підтверджено";
+    if (status === "rejected") return "Відхилено";
+    return "Очікує підтвердження";
+}
+
+async function saveProfile() {
+    if (!currentUser || isLoading) return;
+    const username = $("profile-edit-username")?.value.trim();
+    const full_name = $("profile-edit-fullname")?.value.trim();
+    const password = $("profile-edit-password")?.value.trim();
+    if (!username) {
+        showAlert("Введи тег / username");
+        return;
+    }
+    try {
+        setLoading(true);
+        const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/profile`, {
+            method: "PUT",
+            body: JSON.stringify({ username, full_name, password: password || null })
+        });
+        currentUser = data;
+        saveSession(data);
+        fillProfile();
+        showAlert("Профіль оновлено");
+    } catch (error) {
+        showAlert(error.message || "Не вдалося оновити профіль");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function loadPurchaseHistory() {
+    const list = $("purchase-history-list");
+    if (!list || !currentUser) return;
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const items = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`);
+        if (!Array.isArray(items) || !items.length) {
+            list.innerHTML = `<div class="empty-card">Історія покупок поки порожня</div>`;
+            return;
+        }
+        list.innerHTML = items.map(item => `
+            <div class="card history-card">
+                ${isValidUrl(item.product_image_url) ? `<img class="history-image" src="${escapeHtml(item.product_image_url)}" alt="${escapeHtml(item.product_title)}">` : ``}
+                <div class="card-body">
+                    <div class="status-pill ${escapeHtml(item.status || "pending")}">${orderStatusLabel(item.status)}</div>
+                    <h3 class="card-title">${escapeHtml(item.product_title || "Товар")}</h3>
+                    <p class="card-price">${formatPrice(item.offered_price, item.currency)}</p>
+                    <div class="history-meta">
+                        ${item.seller_username ? `<div>Продавець: @${escapeHtml(item.seller_username)}</div>` : ``}
+                        ${item.seller_full_name ? `<div>Ім'я продавця: ${escapeHtml(item.seller_full_name)}</div>` : ``}
+                        <div>Статус: ${orderStatusLabel(item.status)}</div>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+    }
+}
+
+function resetCreateForm() {
+    editingProductId = null;
+    editingExistingImages = [];
+    $("create-form-title").textContent = "Створити оголошення";
+    $("submit-product-btn").textContent = "Створити оголошення";
+    $("cancel-edit-btn")?.classList.add("hidden");
+    $("edit-photos-hint")?.classList.add("hidden");
+    $("product-title").value = "";
+    $("product-description").value = "";
+    $("product-price").value = "";
+    $("product-currency").value = "USD";
+    $("product-category").value = "";
+    $("product-condition").value = "";
+    $("product-city").value = "";
+    $("product-files").value = "";
+    $("image-preview-grid").innerHTML = "";
+    $("image-preview-wrap").classList.add("hidden");
+    $("image-status").textContent = "Фото не вибрано";
+}
+
+function renderPreviewUrls(urls = []) {
+    const wrap = $("image-preview-wrap");
+    const grid = $("image-preview-grid");
+    if (!wrap || !grid) return;
+    if (!urls.length) {
+        wrap.classList.add("hidden");
+        grid.innerHTML = "";
+        return;
+    }
+    wrap.classList.remove("hidden");
+    grid.innerHTML = urls.map((url, index) => `
+        <div class="preview-item">
+            <img src="${escapeHtml(url)}" alt="preview-${index}">
+        </div>
+    `).join("");
+}
+
+async function startEditProduct(productId) {
+    if (!currentUser) return;
+    try {
+        const product = await safeFetch(`${API_BASE}/products/${productId}?current_user_id=${currentUser.id}`);
+        if (Number(product.seller_id) !== Number(currentUser.id)) {
+            showAlert("Це не ваше оголошення");
+            return;
+        }
+        editingProductId = product.id;
+        editingExistingImages = Array.isArray(product.image_urls) ? product.image_urls.slice() : [];
+        $("create-form-title").textContent = "Редагувати оголошення";
+        $("submit-product-btn").textContent = "Зберегти зміни";
+        $("cancel-edit-btn")?.classList.remove("hidden");
+        $("edit-photos-hint")?.classList.remove("hidden");
+        $("product-title").value = product.title || "";
+        $("product-description").value = product.description || "";
+        $("product-price").value = product.price || "";
+        $("product-currency").value = product.currency || "USD";
+        $("product-category").value = product.category || "";
+        $("product-condition").value = product.condition || "";
+        $("product-city").value = product.city || "";
+        $("product-files").value = "";
+        renderPreviewUrls(editingExistingImages);
+        $("image-status").textContent = editingExistingImages.length ? `Зараз фото: ${editingExistingImages.length}` : "Фото не вибрано";
+        switchTab("create");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+        showAlert(error.message || "Не вдалося завантажити оголошення");
+    }
+}
+
+function cancelEditProduct() {
+    resetCreateForm();
+    switchTab("my-products");
 }
 
 function handleImagePreview(event) {
@@ -275,11 +418,7 @@ function handleImagePreview(event) {
     if (grid) {
         grid.innerHTML = files.map(file => {
             const objectUrl = URL.createObjectURL(file);
-            return `
-                <div class="preview-thumb-wrap">
-                    <img class="preview-thumb" src="${objectUrl}" alt="preview">
-                </div>
-            `;
+            return `<img class="preview-thumb" src="${objectUrl}" alt="preview">`;
         }).join("");
     }
 
@@ -291,9 +430,17 @@ function handleImagePreview(event) {
 }
 
 async function uploadImageToCloudinary(file) {
-    if (!file) throw new Error("Файл не вибрано");
-    if (!CLOUDINARY_CLOUD_NAME) throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
-    if (!CLOUDINARY_UPLOAD_PRESET) throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
+    if (!file) {
+        throw new Error("Файл не вибрано");
+    }
+
+    if (!CLOUDINARY_CLOUD_NAME) {
+        throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
+    }
+
+    if (!CLOUDINARY_UPLOAD_PRESET) {
+        throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -303,10 +450,13 @@ async function uploadImageToCloudinary(file) {
     let response;
 
     try {
-        response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-            method: "POST",
-            body: formData
-        });
+        response = await fetch(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
     } catch (error) {
         console.error("Cloudinary network error:", error);
         throw new Error("Не вдалося підключитися до Cloudinary");
@@ -529,7 +679,6 @@ function renderCardTags(product) {
         product.city || "Без міста"
     ];
 
-    if (product.currency) tags.push(getCurrencySymbol(product.currency));
     if (product.status === "sold") tags.push("Продано");
     if (product.status === "archived") tags.push("Архів");
 
@@ -600,7 +749,12 @@ function renderMyProductCard(product, view) {
     let actionButton = "";
 
     if (view === "active") {
-        actionButton = `<button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>`;
+        actionButton = `
+            <div class="card-actions inline-actions">
+                <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
+            </div>
+        `;
     } else if (view === "sold") {
         actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
@@ -609,7 +763,7 @@ function renderMyProductCard(product, view) {
 
     return `
         <div class="card card-clickable" onclick="openProductModal(${Number(product.id)})">
-            <div class="card-image-wrap">${renderImageBlock(product)}</div>
+            ${renderImageBlock(product)}
             <div class="card-body">
                 ${renderCardTags(product)}
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
@@ -685,15 +839,10 @@ function buildGallery(images, title) {
 
     return `
         <div class="gallery">
-            <div class="gallery-stage" ontouchstart="handleGalleryTouchStart(event)" ontouchend="handleGalleryTouchEnd(event)">
-                <img id="modal-main-image" class="modal-product-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}">
-                ${safeImages.length > 1 ? `
-                    <button class="gallery-nav gallery-nav-prev" onclick="event.stopPropagation(); prevModalImage()">‹</button>
-                    <button class="gallery-nav gallery-nav-next" onclick="event.stopPropagation(); nextModalImage()">›</button>
-                    <div class="gallery-counter">1 / ${safeImages.length}</div>
-                ` : ""}
-            </div>
-            ${safeImages.length > 1 ? `
+            <img id="modal-main-image" class="modal-product-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}">
+            ${
+                safeImages.length > 1
+                    ? `
                 <div class="gallery-thumbs">
                     ${safeImages.map((img, index) => `
                         <img
@@ -704,60 +853,25 @@ function buildGallery(images, title) {
                         >
                     `).join("")}
                 </div>
-            ` : ""}
+            `
+                    : ""
+            }
         </div>
     `;
 }
 
-function updateGalleryUi() {
-    const main = $("modal-main-image");
-    if (main && currentModalImages[currentModalImageIndex]) {
-        main.src = currentModalImages[currentModalImageIndex];
-    }
+function setModalImage(index) {
+    if (!currentModalImages[index]) return;
 
-    const counter = document.querySelector(".gallery-counter");
-    if (counter) {
-        counter.textContent = `${currentModalImageIndex + 1} / ${currentModalImages.length}`;
+    currentModalImageIndex = index;
+    const main = $("modal-main-image");
+    if (main) {
+        main.src = currentModalImages[index];
     }
 
     document.querySelectorAll(".gallery-thumb").forEach((thumb, idx) => {
-        thumb.classList.toggle("active", idx === currentModalImageIndex);
+        thumb.classList.toggle("active", idx === index);
     });
-}
-
-function setModalImage(index) {
-    if (!currentModalImages[index]) return;
-    currentModalImageIndex = index;
-    updateGalleryUi();
-}
-
-function prevModalImage() {
-    if (currentModalImages.length < 2) return;
-    currentModalImageIndex = (currentModalImageIndex - 1 + currentModalImages.length) % currentModalImages.length;
-    updateGalleryUi();
-}
-
-function nextModalImage() {
-    if (currentModalImages.length < 2) return;
-    currentModalImageIndex = (currentModalImageIndex + 1) % currentModalImages.length;
-    updateGalleryUi();
-}
-
-function handleGalleryTouchStart(event) {
-    const touch = event.changedTouches?.[0];
-    galleryTouchStartX = touch ? touch.clientX : null;
-}
-
-function handleGalleryTouchEnd(event) {
-    const touch = event.changedTouches?.[0];
-    if (galleryTouchStartX === null || !touch) return;
-
-    const deltaX = touch.clientX - galleryTouchStartX;
-    galleryTouchStartX = null;
-
-    if (Math.abs(deltaX) < 35) return;
-    if (deltaX > 0) prevModalImage();
-    else nextModalImage();
 }
 
 async function openProductModal(productId) {
@@ -779,7 +893,7 @@ async function openProductModal(productId) {
 
         const primaryAction = isOwnProduct
             ? `<button class="own-product-btn" onclick="showAlert('Це ваше оголошення')">Ваш товар</button>`
-            : `<button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>`;
+            : `<button class="buy-btn" onclick="buyProduct(${Number(product.id)})">Купити</button>`;
 
         body.innerHTML = `
             <div class="modal-product">
@@ -820,96 +934,54 @@ async function createProduct() {
 
     const title = $("product-title")?.value.trim();
     const description = $("product-description")?.value.trim();
-    const rawPrice = String($("product-price")?.value || "").trim();
-    const price = Number(rawPrice);
-    const currency = $("product-currency")?.value.trim();
-    const category = $("product-category")?.value.trim();
-    const condition = $("product-condition")?.value.trim();
-    const city = $("product-city")?.value.trim();
-    const files = Array.from($("product-files")?.files || []);
-    const imageStatus = $("image-status");
-
-    if (!title || !description || !category || !condition || !city || !rawPrice || !currency) {
-        showAlert("Заповни всі обов'язкові поля");
-        return;
-    }
-
-    if (!Number.isFinite(price) || price <= 0) {
-        showAlert("Вкажи коректну ціну");
-        return;
-    }
-
-    if (files.length > 10) {
-        showAlert("Максимум 10 фото");
-        return;
-    }
+    const price = Number($("product-price")?.value);
+    const currency = $("product-currency")?.value || "USD";
+    const category = $("product-category")?.value;
+    const condition = $("product-condition")?.value;
+    const city = $("product-city")?.value;
+    const files = $("product-files")?.files || [];
 
     try {
         setLoading(true);
-        await wakeApi();
 
-        let imageUrls = [];
-
+        let imageUrls = editingExistingImages.slice();
         if (files.length) {
-            if (imageStatus) imageStatus.textContent = `Завантаження фото 0/${files.length}...`;
-
+            imageUrls = [];
+            $("image-status").textContent = `Завантаження фото: 0/${files.length}`;
             for (let i = 0; i < files.length; i += 1) {
-                const file = files[i];
-
-                if (file.size > 10 * 1024 * 1024) {
-                    throw new Error(`Фото "${file.name}" більше 10MB`);
-                }
-
-                const url = await uploadImageToCloudinary(file);
-                imageUrls.push(url);
-
-                if (imageStatus) {
-                    imageStatus.textContent = `Завантаження фото ${i + 1}/${files.length}...`;
-                }
+                const uploaded = await uploadImageToCloudinary(files[i]);
+                imageUrls.push(uploaded);
+                $("image-status").textContent = `Завантаження фото: ${i + 1}/${files.length}`;
             }
-
-            if (imageStatus) imageStatus.textContent = "Фото успішно завантажено";
         }
 
-        await safeFetch(`${API_BASE}/products`, {
-            method: "POST",
-            body: JSON.stringify({
-                seller_id: currentUser.id,
-                title,
-                description,
-                price,
-                currency,
-                category,
-                condition,
-                city,
-                image_url: imageUrls[0] || null,
-                image_urls: imageUrls
-            })
+        const payload = {
+            seller_id: currentUser.id,
+            title,
+            description,
+            price,
+            currency,
+            category,
+            condition,
+            city,
+            image_urls: imageUrls,
+            image_url: imageUrls[0] || null
+        };
+
+        const isEdit = Boolean(editingProductId);
+        await safeFetch(isEdit ? `${API_BASE}/products/${editingProductId}` : `${API_BASE}/products`, {
+            method: isEdit ? "PUT" : "POST",
+            body: JSON.stringify(payload)
         });
 
-        $("product-title").value = "";
-        $("product-description").value = "";
-        $("product-price").value = "";
-        $("product-currency").value = "";
-        $("product-category").value = "";
-        $("product-condition").value = "";
-        $("product-city").value = "";
-        if ($("product-files")) $("product-files").value = "";
-
-        $("image-preview-wrap")?.classList.add("hidden");
-        if ($("image-preview-grid")) $("image-preview-grid").innerHTML = "";
-        if (imageStatus) imageStatus.textContent = "Фото не вибрано";
-
-        showAlert("Оголошення створено");
-        myProductsView = "active";
+        showAlert(isEdit ? "Оголошення оновлено" : "Оголошення створено");
+        resetCreateForm();
         switchTab("my-products");
-        loadProducts();
         loadMyProducts();
+        loadProducts();
         loadStats();
     } catch (error) {
-        console.error("Create product error:", error);
-        if (imageStatus) imageStatus.textContent = error.message || "Помилка завантаження фото";
-        showAlert(error.message || "Не вдалося створити оголошення");
+        showAlert(error.message || "Помилка збереження оголошення");
     } finally {
         setLoading(false);
     }
@@ -930,18 +1002,78 @@ async function loadMyProducts() {
         const products = await safeFetch(url);
 
         if (!Array.isArray(products) || products.length === 0) {
+            await loadPurchaseRequests();
             list.innerHTML =
                 myProductsView === "active"
                     ? `<div class="empty-card">У вас поки немає активних оголошень</div>`
                     : myProductsView === "sold"
-                        ? `<div class="empty-card">У вас поки немає проданих товарів</div>`
-                        : `<div class="empty-card">Архів порожній</div>`;
+                      ? `<div class="empty-card">У вас поки немає проданих товарів</div>`
+                      : `<div class="empty-card">Архів порожній</div>`;
             return;
         }
 
         list.innerHTML = products.map(product => renderMyProductCard(product, myProductsView)).join("");
+        await loadPurchaseRequests();
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+    }
+}
+
+async function loadPurchaseRequests() {
+    const wrap = $("purchase-requests-wrap");
+    const list = $("purchase-requests-list");
+    if (!wrap || !list || !currentUser || myProductsView !== "active") {
+        wrap?.classList.add("hidden");
+        return;
+    }
+    try {
+        const requests = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=pending`);
+        if (!Array.isArray(requests) || !requests.length) {
+            wrap.classList.add("hidden");
+            list.innerHTML = "";
+            return;
+        }
+        wrap.classList.remove("hidden");
+        list.innerHTML = requests.map(item => `
+            <div class="card request-card">
+                <div class="card-body">
+                    <h3 class="card-title">${escapeHtml(item.product_title)}</h3>
+                    <p class="card-price">${formatPrice(item.offered_price, item.currency)}</p>
+                    <div class="request-meta">
+                        <div>Покупець: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
+                        ${item.buyer_full_name ? `<div>Ім'я: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
+                    </div>
+                    <div class="card-actions inline-actions">
+                        <button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Так</button>
+                        <button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Ні</button>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+    } catch (error) {
+        wrap.classList.add("hidden");
+    }
+}
+
+async function handlePurchaseRequest(orderId, approve) {
+    if (!currentUser || isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/orders/${orderId}/decision`, {
+            method: "POST",
+            body: JSON.stringify({ seller_id: currentUser.id, approve })
+        });
+        showAlert(approve ? "Покупку підтверджено" : "Запит відхилено");
+        closeProductModal();
+        await loadPurchaseRequests();
+        await loadMyProducts();
+        await loadProducts();
+        await loadCart();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося обробити запит");
+    } finally {
+        setLoading(false);
     }
 }
 
@@ -1024,11 +1156,11 @@ async function loadCart() {
 
         if (!data?.items?.length) {
             cartList.innerHTML = `<div class="empty-card">Кошик порожній</div>`;
-            cartTotal.textContent = "Разом: 0$";
+            cartTotal.textContent = renderCartTotals({});
             return;
         }
 
-        cartTotal.textContent = `Разом: ${formatCartTotals(data.total_by_currency || {})}`;
+        cartTotal.textContent = renderCartTotals(data.totals_by_currency || {});
 
         cartList.innerHTML = data.items.map(item => `
             <div class="card">
@@ -1123,8 +1255,6 @@ async function initApp() {
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeProductModal();
-    if (event.key === "ArrowLeft") prevModalImage();
-    if (event.key === "ArrowRight") nextModalImage();
 });
 
 initApp();
