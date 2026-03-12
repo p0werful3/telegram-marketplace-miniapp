@@ -68,6 +68,18 @@ function fillProfile() {
     document.getElementById("profile-fullname").textContent = currentUser.full_name || "—";
 }
 
+async function wakeApi() {
+    try {
+        await fetch(`${API_BASE}/`, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit"
+        });
+    } catch (e) {
+        console.error("Wake API error:", e);
+    }
+}
+
 async function registerNewUser() {
     const username = document.getElementById("register-username").value.trim();
     const full_name = document.getElementById("register-fullname").value.trim();
@@ -79,8 +91,12 @@ async function registerNewUser() {
     }
 
     try {
+        await wakeApi();
+
         const response = await fetch(`${API_BASE}/auth/register`, {
             method: "POST",
+            mode: "cors",
+            credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 username,
@@ -117,8 +133,12 @@ async function loginUser() {
     }
 
     try {
+        await wakeApi();
+
         const response = await fetch(`${API_BASE}/auth/login`, {
             method: "POST",
+            mode: "cors",
+            credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })
         });
@@ -152,8 +172,12 @@ async function loginWithTelegram() {
     }
 
     try {
+        await wakeApi();
+
         const response = await fetch(`${API_BASE}/auth/telegram`, {
             method: "POST",
+            mode: "cors",
+            credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 telegram_id: String(telegramUser.id),
@@ -194,7 +218,11 @@ async function loadProducts() {
         if (categoryValue !== "Усі") params.append("category", categoryValue);
         if ([...params.keys()].length > 0) url += `?${params.toString()}`;
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit"
+        });
         const products = await response.json();
 
         if (!response.ok) {
@@ -263,6 +291,8 @@ async function createProduct() {
     try {
         const response = await fetch(`${API_BASE}/products`, {
             method: "POST",
+            mode: "cors",
+            credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 seller_id: currentUser.id,
@@ -303,7 +333,11 @@ async function loadMyProducts() {
     list.innerHTML = `<div class="empty-card">Завантаження ваших оголошень...</div>`;
 
     try {
-        const response = await fetch(`${API_BASE}/users/${currentUser.id}/products`);
+        const response = await fetch(`${API_BASE}/users/${currentUser.id}/products`, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit"
+        });
         const products = await response.json();
 
         if (!response.ok) {
@@ -351,7 +385,9 @@ async function deleteProduct(productId) {
 
     try {
         const response = await fetch(`${API_BASE}/products/${productId}?user_id=${currentUser.id}`, {
-            method: "DELETE"
+            method: "DELETE",
+            mode: "cors",
+            credentials: "omit"
         });
 
         const data = await response.json();
@@ -376,6 +412,8 @@ async function addToCart(productId) {
     try {
         const response = await fetch(`${API_BASE}/cart/add`, {
             method: "POST",
+            mode: "cors",
+            credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 user_id: currentUser.id,
@@ -407,7 +445,11 @@ async function loadCart() {
     cartTotal.textContent = "Разом: 0$";
 
     try {
-        const response = await fetch(`${API_BASE}/cart/${currentUser.id}`);
+        const response = await fetch(`${API_BASE}/cart/${currentUser.id}`, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit"
+        });
         const data = await response.json();
 
         if (!response.ok) {
@@ -455,6 +497,8 @@ async function buyProduct(productId) {
     try {
         const response = await fetch(`${API_BASE}/orders/buy`, {
             method: "POST",
+            mode: "cors",
+            credentials: "omit",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 buyer_id: currentUser.id,
