@@ -18,6 +18,11 @@ function initTelegramWebApp() {
     }
 }
 
+function showAlert(message) {
+    if (tg) tg.showAlert(message);
+    else alert(message);
+}
+
 function saveSession(user) {
     const remember = document.getElementById("remember-me")?.checked;
     if (remember) {
@@ -174,11 +179,12 @@ async function loginWithTelegram(showSuccess = true) {
 
     if (!telegramUser) {
         showAlert("Telegram login доступний тільки всередині Telegram Mini App");
-        return;
+        return false;
     }
+
     if (!telegramUser.username) {
         showAlert("У вашого Telegram акаунта немає username");
-        return;
+        return false;
     }
 
     try {
@@ -200,30 +206,25 @@ async function loginWithTelegram(showSuccess = true) {
 
         if (!response.ok) {
             showAlert(data.detail || "Помилка входу через Telegram");
-            return;
+            return false;
         }
 
         currentUser = data;
         saveSession(data);
         if (showSuccess) showAlert("Вхід через Telegram успішний");
         showApp();
+        return true;
     } catch (error) {
         console.error(error);
         showAlert("API недоступне: " + error.message);
+        return false;
     }
 }
 
 async function autoLoginTelegram() {
     if (!telegramUser) return false;
     if (!telegramUser.username) return false;
-
-    try {
-        await loginWithTelegram(false);
-        return true;
-    } catch (error) {
-        console.error("Auto Telegram login error:", error);
-        return false;
-    }
+    return await loginWithTelegram(false);
 }
 
 function setupAuthScreen() {
@@ -238,7 +239,6 @@ function setupAuthScreen() {
     } else {
         if (tgButton) tgButton.textContent = "Telegram login доступний тільки в Telegram";
     }
-}
 }
 
 async function loadProducts() {
@@ -576,7 +576,3 @@ async function initApp() {
 }
 
 initApp();
-
-
-
-
