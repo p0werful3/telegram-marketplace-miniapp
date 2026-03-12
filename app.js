@@ -267,6 +267,18 @@ function handleImagePreview(event) {
 }
 
 async function uploadImageToCloudinary(file) {
+    if (!file) {
+        throw new Error("Файл не вибрано");
+    }
+
+    if (!CLOUDINARY_CLOUD_NAME) {
+        throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
+    }
+
+    if (!CLOUDINARY_UPLOAD_PRESET) {
+        throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
@@ -282,14 +294,28 @@ async function uploadImageToCloudinary(file) {
                 body: formData
             }
         );
-    } catch {
-        throw new Error("Не вдалося завантажити фото");
+    } catch (error) {
+        console.error("Cloudinary network error:", error);
+        throw new Error("Не вдалося підключитися до Cloudinary");
     }
 
-    const data = await response.json();
+    let data = null;
 
-    if (!response.ok || !data?.secure_url) {
-        throw new Error(data?.error?.message || "Помилка завантаження фото");
+    try {
+        data = await response.json();
+    } catch (error) {
+        console.error("Cloudinary JSON parse error:", error);
+        throw new Error("Cloudinary повернув некоректну відповідь");
+    }
+
+    if (!response.ok) {
+        console.error("Cloudinary error response:", data);
+        throw new Error(data?.error?.message || `Cloudinary error ${response.status}`);
+    }
+
+    if (!data?.secure_url) {
+        console.error("Cloudinary missing secure_url:", data);
+        throw new Error("Cloudinary не повернув URL зображення");
     }
 
     return data.secure_url;
@@ -545,9 +571,11 @@ function renderCatalogCard(product) {
                 <p class="card-description">${escapeHtml(product.description || "")}</p>
                 ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
                 <div class="card-actions">
-                    ${isOwnProduct
-                        ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
-                        : `<button class="buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">Додати в кошик</button>`}
+                    ${
+                        isOwnProduct
+                            ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
+                            : `<button class="buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">Додати в кошик</button>`
+                    }
                 </div>
             </div>
         </div>
@@ -644,7 +672,9 @@ function buildGallery(images, title) {
     return `
         <div class="gallery">
             <img id="modal-main-image" class="modal-product-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}">
-            ${safeImages.length > 1 ? `
+            ${
+                safeImages.length > 1
+                    ? `
                 <div class="gallery-thumbs">
                     ${safeImages.map((img, index) => `
                         <img
@@ -655,7 +685,9 @@ function buildGallery(images, title) {
                         >
                     `).join("")}
                 </div>
-            ` : ""}
+            `
+                    : ""
+            }
         </div>
     `;
 }
@@ -767,9 +799,18 @@ async function createProduct() {
             if (imageStatus) imageStatus.textContent = `Завантаження фото 0/${files.length}...`;
 
             for (let i = 0; i < files.length; i += 1) {
-                const url = await uploadImageToCloudinary(files[i]);
+                const file = files[i];
+
+                if (file.size > 10 * 1024 * 1024) {
+                    throw new Error(`Фото "${file.name}" більше 10MB`);
+                }
+
+                const url = await uploadImageToCloudinary(file);
                 imageUrls.push(url);
-                if (imageStatus) imageStatus.textContent = `Завантаження фото ${i + 1}/${files.length}...`;
+
+                if (imageStatus) {
+                    imageStatus.textContent = `Завантаження фото ${i + 1}/${files.length}...`;
+                }
             }
 
             if (imageStatus) imageStatus.textContent = "Фото успішно завантажено";
@@ -810,7 +851,7 @@ async function createProduct() {
         loadStats();
     } catch (error) {
         console.error("Create product error:", error);
-        if (imageStatus) imageStatus.textContent = "Помилка завантаження фото";
+        if (imageStatus) imageStatus.textContent = error.message || "Помилка завантаження фото";
         showAlert(error.message || "Не вдалося створити оголошення");
     } finally {
         setLoading(false);
@@ -832,11 +873,12 @@ async function loadMyProducts() {
         const products = await safeFetch(url);
 
         if (!Array.isArray(products) || products.length === 0) {
-            list.innerHTML = myProductsView === "active"
-                ? `<div class="empty-card">У вас поки немає активних оголошень</div>`
-                : myProductsView === "sold"
-                    ? `<div class="empty-card">У вас поки немає проданих товарів</div>`
-                    : `<div class="empty-card">Архів порожній</div>`;
+            list.innerHTML =
+                myProductsView === "active"
+                    ? `<div class="empty-card">У вас поки немає активних оголошень</div>`
+                    : myProductsView === "sold"
+                      ? `<div class="empty-card">У вас поки немає проданих товарів</div>`
+                      : `<div class="empty-card">Архів порожній</div>`;
             return;
         }
 
