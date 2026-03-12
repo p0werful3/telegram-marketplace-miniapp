@@ -1,14 +1,21 @@
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
-const tg = window.Telegram?.WebApp || null;
-if (tg) tg.expand();
-
-let telegramUser = tg?.initDataUnsafe?.user || null;
+let tg = null;
+let telegramUser = null;
 let currentUser = null;
 
-function showAlert(message) {
-    if (tg) tg.showAlert(message);
-    else alert(message);
+function initTelegramWebApp() {
+    tg = window.Telegram?.WebApp || null;
+
+    if (tg) {
+        tg.ready();
+        tg.expand();
+        telegramUser = tg.initDataUnsafe?.user || null;
+        console.log("Telegram user:", telegramUser);
+    } else {
+        telegramUser = null;
+        console.log("Telegram WebApp not found");
+    }
 }
 
 function saveSession(user) {
@@ -569,3 +576,4 @@ async function initApp() {
 }
 
 initApp();
+
