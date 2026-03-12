@@ -707,3 +707,90 @@ textarea {
         height: 220px;
     }
 }
+
+.price-row {
+    display: grid;
+    grid-template-columns: 1fr 120px;
+    gap: 10px;
+}
+
+.requests-header {
+    font-size: 18px;
+    margin-bottom: 12px;
+    color: #cbd5e1;
+}
+
+.requests-list {
+    margin-bottom: 16px;
+}
+
+.request-card {
+    border: 1px solid #334155;
+}
+
+.request-meta {
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.card-actions.inline-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.edit-btn {
+    background: #f59e0b;
+    color: white;
+}
+
+.approve-btn {
+    background: #10b981;
+    color: white;
+}
+
+.reject-btn {
+    background: #ef4444;
+    color: white;
+}
+
+
+.profile-subtitle {
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+
+.request-meta, .history-meta {
+    color: #cbd5e1;
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    width: fit-content;
+}
+
+.status-pill.pending { background: rgba(234,179,8,0.18); color: #fde68a; }
+.status-pill.approved { background: rgba(34,197,94,0.18); color: #86efac; }
+.status-pill.rejected { background: rgba(239,68,68,0.18); color: #fca5a5; }
+
+.history-card {
+    overflow: hidden;
+}
+
+.history-image {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    background: #0f172a;
+    display: block;
+}
