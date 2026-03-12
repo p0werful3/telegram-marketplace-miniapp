@@ -149,16 +149,20 @@ function fillProfile() {
 async function safeFetch(url, options = {}) {
     let response;
 
+    const method = (options.method || "GET").toUpperCase();
+    const headers = { ...(options.headers || {}) };
+
+    if (method !== "GET" && method !== "HEAD" && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+    }
+
     try {
         response = await fetch(url, {
             mode: "cors",
             credentials: "omit",
             cache: "no-store",
             ...options,
-            headers: {
-                "Content-Type": "application/json",
-                ...(options.headers || {})
-            }
+            headers
         });
     } catch (error) {
         console.error("Network error:", error);
@@ -542,4 +546,5 @@ function initApp() {
 }
 
 initApp();
+
 
