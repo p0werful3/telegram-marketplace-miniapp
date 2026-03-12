@@ -170,11 +170,12 @@ async function loginUser() {
 }
 
 async function loginWithTelegram(showSuccess = true) {
+    initTelegramWebApp();
+
     if (!telegramUser) {
         showAlert("Telegram login доступний тільки всередині Telegram Mini App");
         return;
     }
-
     if (!telegramUser.username) {
         showAlert("У вашого Telegram акаунта немає username");
         return;
@@ -576,4 +577,5 @@ async function initApp() {
 }
 
 initApp();
+
 
