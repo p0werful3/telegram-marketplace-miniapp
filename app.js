@@ -1,5 +1,3 @@
-console.log("APP VERSION 99");
-alert("APP VERSION 99");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 let tg = null;
@@ -63,7 +61,6 @@ function showAlert(message) {
 function setLoading(state) {
     isLoading = state;
     document.querySelectorAll("button").forEach(btn => {
-        if (btn.dataset.noDisable === "true") return;
         btn.disabled = state;
     });
 }
@@ -108,46 +105,21 @@ function logout() {
 
     $("app-screen")?.classList.add("hidden");
     $("auth-screen")?.classList.remove("hidden");
-
-    switchAuthTab("login", document.querySelector(".auth-tab.active") || document.querySelector(".auth-tab"));
 }
 
 function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
     fillProfile();
-    switchToTab("catalog");
     loadProducts();
 }
 
-function switchAuthTab(tabName, btn = null) {
+function switchAuthTab(tabName, btn) {
     document.querySelectorAll(".auth-tab").forEach(tab => tab.classList.remove("active"));
     document.querySelectorAll(".auth-panel").forEach(panel => panel.classList.remove("active"));
 
-    const targetPanel = $(`auth-${tabName}`);
-    if (targetPanel) targetPanel.classList.add("active");
-
-    if (btn) {
-        btn.classList.add("active");
-    } else {
-        const autoBtn = Array.from(document.querySelectorAll(".auth-tab")).find(el =>
-            el.textContent.toLowerCase().includes(tabName === "login" ? "вхід" : "реєстрац")
-        );
-        if (autoBtn) autoBtn.classList.add("active");
-    }
-}
-
-function switchToTab(tabName) {
-    document.querySelectorAll(".tab-section").forEach(section => section.classList.remove("active"));
-    document.querySelectorAll(".nav-btn").forEach(button => button.classList.remove("active"));
-
-    const section = $(`tab-${tabName}`);
-    if (section) section.classList.add("active");
-
-    const navBtn = Array.from(document.querySelectorAll(".nav-btn")).find(btn =>
-        btn.getAttribute("onclick")?.includes(`'${tabName}'`)
-    );
-    if (navBtn) navBtn.classList.add("active");
+    if (btn) btn.classList.add("active");
+    $(`auth-${tabName}`)?.classList.add("active");
 }
 
 function switchTab(tabName, btn) {
@@ -155,7 +127,7 @@ function switchTab(tabName, btn) {
     document.querySelectorAll(".nav-btn").forEach(button => button.classList.remove("active"));
 
     $(`tab-${tabName}`)?.classList.add("active");
-    btn?.classList.add("active");
+    if (btn) btn.classList.add("active");
 
     if (tabName === "catalog") loadProducts();
     if (tabName === "cart") loadCart();
@@ -188,7 +160,7 @@ async function safeFetch(url, options = {}) {
         });
     } catch (error) {
         console.error("Network error:", error);
-        throw new Error("Не вдалося підключитися до API. Перевір backend, HTTPS і CORS.");
+        throw new Error("Не вдалося підключитися до API");
     }
 
     const rawText = await response.text();
@@ -253,16 +225,6 @@ async function registerNewUser() {
         return;
     }
 
-    if (username.length < 3) {
-        showAlert("Username має бути мінімум 3 символи");
-        return;
-    }
-
-    if (password.length < 4) {
-        showAlert("Password має бути мінімум 4 символи");
-        return;
-    }
-
     try {
         setLoading(true);
         await wakeApi();
@@ -279,11 +241,6 @@ async function registerNewUser() {
 
         currentUser = data;
         saveSession(data);
-
-        $("register-username").value = "";
-        $("register-fullname").value = "";
-        $("register-password").value = "";
-
         showAlert("Реєстрація успішна");
         showApp();
     } catch (error) {
@@ -316,9 +273,6 @@ async function loginUser() {
 
         currentUser = data;
         saveSession(data);
-
-        $("login-password").value = "";
-
         showAlert("Вхід успішний");
         showApp();
     } catch (error) {
@@ -329,19 +283,19 @@ async function loginUser() {
     }
 }
 
-async function loginWithTelegram(showSuccess = true) {
-    if (isLoading) return false;
+async function loginWithTelegram() {
+    if (isLoading) return;
 
     initTelegramWebApp();
 
     if (!telegramUser) {
         showAlert("Telegram login доступний тільки всередині Telegram Mini App");
-        return false;
+        return;
     }
 
     if (!telegramUser.username) {
         showAlert("У вашого Telegram акаунта немає username");
-        return false;
+        return;
     }
 
     try {
@@ -359,14 +313,11 @@ async function loginWithTelegram(showSuccess = true) {
 
         currentUser = data;
         saveSession(data);
-
-        if (showSuccess) showAlert("Вхід через Telegram успішний");
+        showAlert("Вхід через Telegram успішний");
         showApp();
-        return true;
     } catch (error) {
         console.error("Telegram login error:", error);
         showAlert(error.message || "Помилка входу через Telegram");
-        return false;
     } finally {
         setLoading(false);
     }
@@ -374,61 +325,29 @@ async function loginWithTelegram(showSuccess = true) {
 
 async function loadProducts() {
     const productsList = $("products-list");
-    const searchValue = $("search-input")?.value?.trim() || "";
-    const categoryValue = $("category-filter")?.value || "Усі";
-
     if (!productsList) return;
 
     productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
 
     try {
-        let url = `${API_BASE}/products`;
-        const params = new URLSearchParams();
-
-        if (searchValue) params.append("q", searchValue);
-        if (categoryValue !== "Усі") params.append("category", categoryValue);
-        if ([...params.keys()].length > 0) url += `?${params.toString()}`;
-
-        const products = await safeFetch(url, { method: "GET", headers: {} });
+        const products = await safeFetch(`${API_BASE}/products`, { method: "GET", headers: {} });
 
         if (!Array.isArray(products) || products.length === 0) {
             productsList.innerHTML = `<div class="empty-card">Поки що немає товарів</div>`;
             return;
         }
 
-        productsList.innerHTML = "";
-
-        products.forEach(product => {
-            const image = product.image_url && isValidUrl(product.image_url)
-                ? `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
-                : `<div class="card-image"></div>`;
-
-            const sellerText = product.seller_username
-                ? `@${escapeHtml(product.seller_username)}`
-                : escapeHtml(product.seller_name || "Невідомий продавець");
-
-            const contactButton = product.seller_telegram_link && isValidUrl(product.seller_telegram_link)
-                ? `<a href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer"><button class="contact-btn">Написати продавцю</button></a>`
-                : "";
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-                ${image}
+        productsList.innerHTML = products.map(product => `
+            <div class="card">
                 <div class="card-body">
                     <div class="card-category">${escapeHtml(product.category)}</div>
                     <h3 class="card-title">${escapeHtml(product.title)}</h3>
                     <p class="card-description">${escapeHtml(product.description)}</p>
                     <p class="card-price">${escapeHtml(product.price)}$</p>
-                    <p class="card-seller">Продавець: ${sellerText}</p>
-                    <div class="card-actions">
-                        <button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>
-                        ${contactButton}
-                    </div>
+                    <button class="buy-btn" onclick="addToCart(${Number(product.id)})">Додати в кошик</button>
                 </div>
-            `;
-            productsList.appendChild(card);
-        });
+            </div>
+        `).join("");
     } catch (error) {
         console.error("Load products error:", error);
         productsList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "API недоступне")}</div>`;
@@ -441,33 +360,19 @@ async function createProduct() {
         return;
     }
 
-    if (isLoading) return;
-
     const title = $("product-title")?.value.trim();
     const description = $("product-description")?.value.trim();
-    const priceRaw = $("product-price")?.value.trim();
+    const price = Number($("product-price")?.value.trim());
     const category = $("product-category")?.value.trim();
     const image_url = $("product-image")?.value.trim();
 
-    if (!title || !description || !priceRaw || !category) {
+    if (!title || !description || !price || !category) {
         showAlert("Заповни всі обов'язкові поля");
-        return;
-    }
-
-    const price = Number(priceRaw);
-    if (!Number.isFinite(price) || price <= 0) {
-        showAlert("Вкажи коректну ціну");
-        return;
-    }
-
-    if (image_url && !isValidUrl(image_url)) {
-        showAlert("URL зображення некоректний");
         return;
     }
 
     try {
         setLoading(true);
-        await wakeApi();
 
         await safeFetch(`${API_BASE}/products`, {
             method: "POST",
@@ -481,12 +386,6 @@ async function createProduct() {
             })
         });
 
-        $("product-title").value = "";
-        $("product-description").value = "";
-        $("product-price").value = "";
-        $("product-category").value = "";
-        $("product-image").value = "";
-
         showAlert("Оголошення створено");
         loadProducts();
         loadMyProducts();
@@ -499,12 +398,10 @@ async function createProduct() {
 }
 
 async function loadMyProducts() {
-    if (!currentUser) return;
-
     const list = $("my-products-list");
-    if (!list) return;
+    if (!list || !currentUser) return;
 
-    list.innerHTML = `<div class="empty-card">Завантаження ваших оголошень...</div>`;
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
         const products = await safeFetch(`${API_BASE}/users/${currentUser.id}/products`, {
@@ -517,40 +414,21 @@ async function loadMyProducts() {
             return;
         }
 
-        list.innerHTML = "";
-
-        products.forEach(product => {
-            const image = product.image_url && isValidUrl(product.image_url)
-                ? `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`
-                : `<div class="card-image"></div>`;
-
-            const status = product.is_active ? "Активне" : "Неактивне";
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-                ${image}
+        list.innerHTML = products.map(product => `
+            <div class="card">
                 <div class="card-body">
-                    <div class="card-category">${escapeHtml(product.category)}</div>
                     <h3 class="card-title">${escapeHtml(product.title)}</h3>
-                    <p class="card-description">${escapeHtml(product.description)}</p>
                     <p class="card-price">${escapeHtml(product.price)}$</p>
-                    <p class="card-seller">Статус: ${escapeHtml(status)}</p>
-                    ${product.is_active ? `<button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити оголошення</button>` : ""}
+                    <button class="delete-btn" onclick="deleteProduct(${Number(product.id)})">Видалити</button>
                 </div>
-            `;
-            list.appendChild(card);
-        });
+            </div>
+        `).join("");
     } catch (error) {
-        console.error("Load my products error:", error);
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "API недоступне")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message)}</div>`;
     }
 }
 
 async function deleteProduct(productId) {
-    if (!currentUser) return;
-    if (isLoading) return;
-
     try {
         setLoading(true);
 
@@ -563,7 +441,6 @@ async function deleteProduct(productId) {
         loadMyProducts();
         loadProducts();
     } catch (error) {
-        console.error("Delete product error:", error);
         showAlert(error.message || "Не вдалося видалити оголошення");
     } finally {
         setLoading(false);
@@ -575,8 +452,6 @@ async function addToCart(productId) {
         showAlert("Спочатку увійди в акаунт");
         return;
     }
-
-    if (isLoading) return;
 
     try {
         setLoading(true);
@@ -591,7 +466,6 @@ async function addToCart(productId) {
 
         showAlert("Товар додано до кошика");
     } catch (error) {
-        console.error("Add to cart error:", error);
         showAlert(error.message || "Не вдалося додати товар");
     } finally {
         setLoading(false);
@@ -599,15 +473,11 @@ async function addToCart(productId) {
 }
 
 async function loadCart() {
-    if (!currentUser) return;
-
     const cartList = $("cart-list");
     const cartTotal = $("cart-total");
+    if (!cartList || !cartTotal || !currentUser) return;
 
-    if (!cartList || !cartTotal) return;
-
-    cartList.innerHTML = `<div class="empty-card">Завантаження кошика...</div>`;
-    cartTotal.textContent = "Разом: 0$";
+    cartList.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
         const data = await safeFetch(`${API_BASE}/cart/${currentUser.id}`, {
@@ -621,38 +491,22 @@ async function loadCart() {
             return;
         }
 
-        cartList.innerHTML = "";
         cartTotal.textContent = `Разом: ${data.total}$`;
-
-        data.items.forEach(item => {
-            const linkButton = item.seller_link && isValidUrl(item.seller_link)
-                ? `<a href="${escapeHtml(item.seller_link)}" target="_blank" rel="noopener noreferrer"><button class="contact-btn">Написати продавцю</button></a>`
-                : "";
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
+        cartList.innerHTML = data.items.map(item => `
+            <div class="card">
                 <div class="card-body">
                     <h3 class="card-title">${escapeHtml(item.title)}</h3>
                     <p class="card-price">${escapeHtml(item.price)}$</p>
-                    <div class="card-actions">
-                        <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити та отримати контакти продавця</button>
-                        ${linkButton}
-                    </div>
+                    <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
                 </div>
-            `;
-            cartList.appendChild(card);
-        });
+            </div>
+        `).join("");
     } catch (error) {
-        console.error("Load cart error:", error);
-        cartList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "API недоступне")}</div>`;
+        cartList.innerHTML = `<div class="empty-card">${escapeHtml(error.message)}</div>`;
     }
 }
 
 async function buyProduct(productId) {
-    if (!currentUser) return;
-    if (isLoading) return;
-
     try {
         setLoading(true);
 
@@ -664,37 +518,20 @@ async function buyProduct(productId) {
             })
         });
 
-        let message = "Покупку оформлено.\n\n";
-        if (data?.seller_username) message += `Telegram продавця: @${data.seller_username}\n`;
-        if (data?.seller_link) message += `Посилання: ${data.seller_link}`;
+        showAlert(
+            `Покупку оформлено\n${data?.seller_username ? `@${data.seller_username}` : ""}\n${data?.seller_link || ""}`
+        );
 
-        showAlert(message.trim());
         loadCart();
     } catch (error) {
-        console.error("Buy product error:", error);
         showAlert(error.message || "Помилка покупки");
     } finally {
         setLoading(false);
     }
 }
 
-function bindEnterKeys() {
-    $("login-password")?.addEventListener("keydown", e => {
-        if (e.key === "Enter") loginUser();
-    });
-
-    $("register-password")?.addEventListener("keydown", e => {
-        if (e.key === "Enter") registerNewUser();
-    });
-
-    $("search-input")?.addEventListener("keydown", e => {
-        if (e.key === "Enter") loadProducts();
-    });
-}
-
-async function initApp() {
+function initApp() {
     setupAuthScreen();
-    bindEnterKeys();
 
     if (loadSession()) return;
 
@@ -703,4 +540,3 @@ async function initApp() {
 }
 
 initApp();
-
