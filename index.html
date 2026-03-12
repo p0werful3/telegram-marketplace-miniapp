@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=132">
+    <link rel="stylesheet" href="style.css?v=134">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -64,7 +64,9 @@
 
                 <div class="catalog-toolbar">
                     <input id="search-input" type="text" placeholder="Пошук товарів...">
-                    <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри</button>
+                    <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">
+                        Фільтри
+                    </button>
                     <button class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
                 </div>
 
@@ -139,11 +141,19 @@
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
                 </div>
 
+                <div id="purchase-requests-wrap" class="hidden">
+                    <div class="requests-header">Запити на покупку</div>
+                    <div id="purchase-requests-list" class="cards requests-list"></div>
+                </div>
+
                 <div id="my-products-list" class="cards"></div>
             </section>
 
             <section id="tab-create" class="tab-section">
-                <h2>Створити оголошення</h2>
+                <div class="section-header">
+                    <h2 id="create-form-title">Створити оголошення</h2>
+                    <button id="cancel-edit-btn" class="secondary-btn section-btn hidden" onclick="cancelEditProduct()">Скасувати редагування</button>
+                </div>
 
                 <div class="form-card">
                     <label>Назва товару</label>
@@ -156,10 +166,9 @@
                     <div class="price-row">
                         <input id="product-price" type="number" placeholder="1000">
                         <select id="product-currency">
-                            <option value="">Валюта</option>
-                            <option value="USD">Долари ($)</option>
-                            <option value="UAH">Гривні (₴)</option>
-                            <option value="EUR">Євро (€)</option>
+                            <option value="USD">USD</option>
+                            <option value="UAH">UAH</option>
+                            <option value="EUR">EUR</option>
                         </select>
                     </div>
 
@@ -217,8 +226,9 @@
                     </div>
 
                     <p id="image-status" class="image-status">Фото не вибрано</p>
+                    <p id="edit-photos-hint" class="image-status hidden">Якщо вибереш нові фото, старі буде замінено.</p>
 
-                    <button class="primary-btn" onclick="createProduct()">Створити оголошення</button>
+                    <button id="submit-product-btn" class="primary-btn" onclick="createProduct()">Створити оголошення</button>
                 </div>
             </section>
 
@@ -245,12 +255,31 @@
                     <p><strong>Ім'я:</strong> <span id="profile-fullname">—</span></p>
                 </div>
 
+                <div class="profile-card">
+                    <h3 class="profile-subtitle">Редагування профілю</h3>
+                    <label>Тег / Username</label>
+                    <input id="profile-edit-username" type="text" placeholder="username">
+                    <label>Ім'я</label>
+                    <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
+                    <label>Новий пароль</label>
+                    <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
+                    <button class="primary-btn" onclick="saveProfile()">Зберегти профіль</button>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-card"><span class="stat-value" id="stat-active">0</span><span class="stat-label">Активні</span></div>
                     <div class="stat-card"><span class="stat-value" id="stat-sold">0</span><span class="stat-label">Продані</span></div>
                     <div class="stat-card"><span class="stat-value" id="stat-archived">0</span><span class="stat-label">Архів</span></div>
                     <div class="stat-card"><span class="stat-value" id="stat-favorites">0</span><span class="stat-label">Обране</span></div>
                     <div class="stat-card"><span class="stat-value" id="stat-cart">0</span><span class="stat-label">У кошику</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-pending">0</span><span class="stat-label">Запити</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-purchases">0</span><span class="stat-label">Покупки</span></div>
+                    <div class="stat-card"><span class="stat-value" id="stat-purchase-pending">0</span><span class="stat-label">Очікують</span></div>
+                </div>
+
+                <div class="profile-card">
+                    <h3 class="profile-subtitle">Історія покупок</h3>
+                    <div id="purchase-history-list" class="cards"></div>
                 </div>
 
                 <div class="profile-card">
@@ -285,6 +314,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=132"></script>
+    <script src="app.js?v=134"></script>
 </body>
 </html>
