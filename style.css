@@ -150,14 +150,32 @@ body {
     background: #2563eb;
 }
 
-.search-bar {
+.catalog-toolbar {
     display: grid;
+    grid-template-columns: 1fr auto auto;
     gap: 10px;
     margin-bottom: 16px;
 }
 
+.filters-panel {
+    background: #111c35;
+    border: 1px solid #24324d;
+    border-radius: 16px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.search-bar {
+    display: grid;
+    gap: 10px;
+}
+
 .search-bar-advanced {
-    grid-template-columns: 1.3fr 1fr 1fr 1fr 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+#filters-toggle-btn.active {
+    background: #2563eb;
 }
 
 .cards {
@@ -633,11 +651,15 @@ textarea {
 
 @media (max-width: 900px) {
     .search-bar-advanced {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 }
 
 @media (max-width: 600px) {
+    .catalog-toolbar {
+        grid-template-columns: 1fr;
+    }
+
     .search-bar-advanced {
         grid-template-columns: 1fr;
     }
