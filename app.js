@@ -1,3 +1,5 @@
+console.log("APP VERSION 99");
+alert("APP VERSION 99");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 let tg = null;
@@ -701,3 +703,4 @@ async function initApp() {
 }
 
 initApp();
+
