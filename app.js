@@ -1,10 +1,8 @@
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
-/*
-    ВСТАВЬ СВОИ ДАННЫЕ CLOUDINARY
-*/
-const CLOUDINARY_CLOUD_NAME = "PASTE_CLOUD_NAME_HERE";
-const CLOUDINARY_UPLOAD_PRESET = "PASTE_UPLOAD_PRESET_HERE";
+
+const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
+const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";;
 
 let tg = null;
 let telegramUser = null;
@@ -744,3 +742,4 @@ async function initApp() {
 }
 
 initApp();
+
