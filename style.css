@@ -825,13 +825,15 @@ body{
               linear-gradient(180deg, #08152e 0%, #061126 100%);
 }
 
-.auth-card,.card,.form-card,.profile-card,.cart-total-card,.empty-card,.stat-card,.topbar,.filters-panel{
+.auth-card,.card,.form-card,.profile-card,.cart-total-card,.empty-card,.stat-card,.filters-panel{
   border:1px solid rgba(120,168,255,.12);
 }
 
 .topbar{
   background: transparent;
-  padding:18px 16px 8px;
+  padding:16px 14px 6px;
+  border:none !important;
+  box-shadow:none !important;
 }
 .topbar .subtitle{display:none;}
 .topbar-mini{display:none;}
@@ -1039,9 +1041,9 @@ textarea{min-height:96px}
 .auth-brand-text h1{margin:0;text-align:left;font-size:34px;line-height:1.02}
 .auth-brand-mini{margin-top:4px;color:var(--soft);font-size:13px}
 .topbar{padding:16px 14px 10px}
-.topbar-brand{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;background:linear-gradient(180deg, rgba(16,33,61,.72), rgba(10,20,40,.42));border:1px solid rgba(120,168,255,.14)}
+.topbar-brand{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:22px;background:linear-gradient(135deg, rgba(18,35,63,.92), rgba(11,23,47,.82));border:1px solid rgba(120,168,255,.16);box-shadow:0 12px 28px rgba(0,0,0,.16)}
 .topbar-brand h1{text-align:left;margin:0;font-size:24px}
-.topbar-mini{display:block;margin-top:4px;color:#bcd0f7;font-size:12px;letter-spacing:.03em}
+.topbar-mini{display:block;margin-top:5px;color:#c9d8f8;font-size:12px;letter-spacing:.02em}
 .topbar-icon{width:48px;height:48px;border-radius:16px;font-size:24px}
 
 .cart-summary-card{padding:14px 16px}
@@ -1079,3 +1081,44 @@ textarea{min-height:96px}
   .profile-hero-card{padding:16px}
   .profile-avatar{width:72px;height:72px;flex-basis:72px}
 }
+
+
+.profile-overview-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:0 0 16px}
+.profile-mini-stat{background:linear-gradient(180deg, rgba(22,39,67,.98), rgba(14,27,49,.98));border:1px solid rgba(120,168,255,.16);border-radius:18px;padding:16px 15px;display:grid;gap:6px}
+.profile-mini-label{font-size:12px;color:#9fb6df;text-transform:uppercase;letter-spacing:.04em}
+.profile-mini-stat strong{font-size:24px;line-height:1;color:#fff}
+.profile-mini-stat small{color:#dbe7ff}
+.profile-card{margin-bottom:14px}
+.profile-menu-btn{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:15px 16px}
+.profile-menu-btn span:nth-child(2){flex:1;text-align:left}
+.profile-menu-icon{width:28px;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+.profile-menu-arrow{font-size:22px;opacity:.75}
+.profile-hero-card{padding:18px 20px;margin-bottom:18px}
+.profile-hero-main{gap:16px}
+.profile-avatar{width:76px;height:76px;flex:0 0 76px;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.profile-hero-text{display:grid;gap:4px}
+.profile-rating-badge{width:max-content}
+.user-profile-avatar{width:88px;height:88px;border-radius:24px;overflow:hidden;background:#28426b;display:flex;align-items:center;justify-content:center}
+.user-profile-avatar-img{width:100%;height:100%;object-fit:cover;display:block}
+.user-profile-avatar-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800;color:#fff;background:linear-gradient(135deg,#416aa8,#2a3f65)}
+.seller-profile-shell{padding-top:84px}
+.seller-cover{height:132px;border-radius:26px 26px 0 0;background:linear-gradient(135deg, rgba(77,141,255,.45), rgba(244,197,66,.18)), linear-gradient(180deg,#17305a,#10203f)}
+.seller-profile-card{border-radius:26px;padding:20px 18px 18px}
+.seller-profile-top{align-items:flex-end;margin-top:-72px}
+.seller-avatar-large{width:92px;height:92px;flex:0 0 92px;border:4px solid rgba(9,20,39,.95);border-radius:26px}
+.seller-profile-main{gap:7px;min-width:0}
+.user-profile-name{font-size:28px;line-height:1.05;margin:0}
+.user-profile-username{color:#d7e5ff;font-size:16px}
+.seller-badges{margin-top:2px}
+.seller-badge{font-weight:700}
+.review-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.review-stars{font-weight:800;color:#ffd65f}
+.review-date{font-size:13px;color:#b8c7e6}
+@media (max-width:700px){
+  .profile-overview-grid{grid-template-columns:1fr 1fr}
+  .profile-mini-stat strong{font-size:22px}
+  .user-profile-name{font-size:22px}
+}
+
+.topbar{border:none !important;box-shadow:none !important;background:transparent !important;}
+.topbar-brand{border:1px solid rgba(120,168,255,.12);box-shadow:none;}
