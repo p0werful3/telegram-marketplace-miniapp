@@ -94,7 +94,7 @@ function setLoading(state) {
 }
 
 function saveSession(user) {
-    const remember = $("remember-me")?.checked;
+    const remember = $("remember-me")?.checked ?? true;
 
     localStorage.removeItem("marketplace_user");
     sessionStorage.removeItem("marketplace_user");
@@ -115,13 +115,24 @@ function loadSession() {
 
     try {
         currentUser = JSON.parse(saved);
-        showApp();
         return true;
     } catch {
         localStorage.removeItem("marketplace_user");
         sessionStorage.removeItem("marketplace_user");
         currentUser = null;
         return false;
+    }
+}
+
+async function refreshCurrentUserFromApi() {
+    if (!currentUser?.id) return;
+
+    try {
+        const freshUser = await safeFetch(`${API_BASE}/users/${currentUser.id}`);
+        currentUser = freshUser;
+        saveSession(freshUser);
+    } catch (error) {
+        console.error("Refresh current user error:", error);
     }
 }
 
@@ -132,6 +143,8 @@ function logout() {
 
     $("app-screen")?.classList.add("hidden");
     $("auth-screen")?.classList.remove("hidden");
+
+    if ($("login-password")) $("login-password").value = "";
 }
 
 function setActiveNavButton(tabName) {
@@ -153,13 +166,67 @@ function toggleFilters(forceState = null) {
     toggleBtn.classList.toggle("active", filtersOpen);
 }
 
-function showApp() {
+function fillProfile() {
+    if (!currentUser) return;
+
+    const usernameEl = $("profile-username");
+    const fullnameEl = $("profile-fullname");
+
+    if (usernameEl) usernameEl.textContent = currentUser.username || "—";
+    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || "—";
+
+    if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
+    if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
+    if ($("profile-edit-password")) $("profile-edit-password").value = "";
+}
+
+function toggleProfileEdit(forceState = null) {
+    const wrap = $("profile-edit-wrap");
+    const btn = $("profile-edit-toggle-btn");
+    if (!wrap || !btn) return;
+
+    const shouldOpen = forceState === null
+        ? wrap.classList.contains("hidden")
+        : Boolean(forceState);
+
+    wrap.classList.toggle("hidden", !shouldOpen);
+    btn.textContent = shouldOpen ? "Сховати редагування" : "Редагувати профіль";
+}
+
+async function togglePurchaseHistory(forceState = null) {
+    const wrap = $("purchase-history-wrap");
+    const btn = $("purchase-history-toggle-btn");
+    if (!wrap || !btn) return;
+
+    const shouldOpen = forceState === null
+        ? wrap.classList.contains("hidden")
+        : Boolean(forceState);
+
+    wrap.classList.toggle("hidden", !shouldOpen);
+    btn.textContent = shouldOpen ? "Сховати історію покупок" : "Історія покупок";
+
+    if (shouldOpen) {
+        await loadPurchaseHistory();
+    }
+}
+
+async function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
+
     fillProfile();
+    toggleProfileEdit(false);
+
+    if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
+    if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
+
     resetCreateForm();
     toggleFilters(false);
     switchTab("catalog");
+
+    await refreshCurrentUserFromApi();
+    fillProfile();
+
     loadProducts();
     loadStats();
 }
@@ -173,9 +240,6 @@ function switchAuthTab(tabName, btn) {
 }
 
 function switchTab(tabName, btn = null) {
-    if (tabName !== "create" && editingProductId && btn?.dataset?.tab !== "create") {
-        // keep edit state until user saves/cancels explicitly
-    }
     document.querySelectorAll(".tab-section").forEach(section => section.classList.remove("active"));
     $(`tab-${tabName}`)?.classList.add("active");
 
@@ -191,8 +255,10 @@ function switchTab(tabName, btn = null) {
     if (tabName === "cart") loadCart();
     if (tabName === "profile") {
         fillProfile();
+        toggleProfileEdit(false);
+        if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
+        if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
         loadStats();
-        loadPurchaseHistory();
     }
 }
 
@@ -214,17 +280,6 @@ function switchMyProductsView(view) {
     $("my-products-sold-btn")?.classList.toggle("active", view === "sold");
     $("my-products-archived-btn")?.classList.toggle("active", view === "archived");
     loadMyProducts();
-}
-
-function fillProfile() {
-    if (!currentUser) return;
-    $("profile-id").textContent = currentUser.id ?? "—";
-    $("profile-telegram-id").textContent = currentUser.telegram_id || "—";
-    $("profile-username").textContent = currentUser.username || "—";
-    $("profile-fullname").textContent = currentUser.full_name || "—";
-    if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
-    if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
-    if ($("profile-edit-password")) $("profile-edit-password").value = "";
 }
 
 async function loadStats() {
@@ -256,13 +311,16 @@ function orderStatusLabel(status) {
 
 async function saveProfile() {
     if (!currentUser || isLoading) return;
+
     const username = $("profile-edit-username")?.value.trim();
     const full_name = $("profile-edit-fullname")?.value.trim();
     const password = $("profile-edit-password")?.value.trim();
+
     if (!username) {
         showAlert("Введи тег / username");
         return;
     }
+
     try {
         setLoading(true);
         const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/profile`, {
@@ -272,6 +330,7 @@ async function saveProfile() {
         currentUser = data;
         saveSession(data);
         fillProfile();
+        toggleProfileEdit(false);
         showAlert("Профіль оновлено");
     } catch (error) {
         showAlert(error.message || "Не вдалося оновити профіль");
@@ -283,13 +342,16 @@ async function saveProfile() {
 async function loadPurchaseHistory() {
     const list = $("purchase-history-list");
     if (!list || !currentUser) return;
+
     list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+
     try {
         const items = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`);
         if (!Array.isArray(items) || !items.length) {
             list.innerHTML = `<div class="empty-card">Історія покупок поки порожня</div>`;
             return;
         }
+
         list.innerHTML = items.map(item => `
             <div class="card history-card">
                 ${isValidUrl(item.product_image_url) ? `<img class="history-image" src="${escapeHtml(item.product_image_url)}" alt="${escapeHtml(item.product_title)}">` : ``}
@@ -342,7 +404,7 @@ function renderPreviewUrls(urls = []) {
     wrap.classList.remove("hidden");
     grid.innerHTML = urls.map((url, index) => `
         <div class="preview-item">
-            <img src="${escapeHtml(url)}" alt="preview-${index}">
+            <img class="preview-thumb" src="${escapeHtml(url)}" alt="preview-${index}">
         </div>
     `).join("");
 }
@@ -524,9 +586,9 @@ async function safeFetch(url, options = {}) {
         if (Array.isArray(data?.detail)) {
             detail = data.detail.map(item => {
                 if (typeof item === "string") return item;
-                const loc = Array.isArray(item?.loc) ? item.loc.join('.') + ': ' : '';
+                const loc = Array.isArray(item?.loc) ? item.loc.join(".") + ": " : "";
                 return `${loc}${item?.msg || JSON.stringify(item)}`;
-            }).join('');
+            }).join(", ");
         } else if (typeof data?.detail === "string") {
             detail = data.detail;
         } else if (typeof data?.message === "string") {
@@ -611,7 +673,7 @@ async function registerNewUser() {
         $("register-password").value = "";
 
         showAlert("Реєстрація успішна");
-        showApp();
+        await showApp();
     } catch (error) {
         showAlert(error.message || "Помилка реєстрації");
     } finally {
@@ -644,7 +706,7 @@ async function loginUser() {
         $("login-password").value = "";
 
         showAlert("Вхід успішний");
-        showApp();
+        await showApp();
     } catch (error) {
         showAlert(error.message || "Помилка входу");
     } finally {
@@ -684,7 +746,7 @@ async function loginWithTelegram() {
         saveSession(data);
 
         showAlert("Вхід через Telegram успішний");
-        showApp();
+        await showApp();
     } catch (error) {
         showAlert(error.message || "Помилка входу через Telegram");
     } finally {
@@ -1267,7 +1329,10 @@ async function toggleFavorite(productId, isFavoriteNow) {
 async function initApp() {
     setupAuthScreen();
 
-    if (loadSession()) return;
+    if (loadSession()) {
+        await showApp();
+        return;
+    }
 
     $("auth-screen")?.classList.remove("hidden");
     $("app-screen")?.classList.add("hidden");
@@ -1276,7 +1341,6 @@ async function initApp() {
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeProductModal();
 });
-
 
 const exposedFunctions = {
     switchAuthTab,
@@ -1298,16 +1362,16 @@ const exposedFunctions = {
     closeProductModal,
     closeProductModalOnBackdrop,
     openProductModal,
-    archiveProduct,
-    unarchiveProduct,
     deleteProduct,
     addToCart,
     removeFromCart,
     buyProduct,
     toggleFavorite,
-    acceptPurchaseRequest,
-    rejectPurchaseRequest,
     startEditProduct,
+    toggleProfileEdit,
+    togglePurchaseHistory,
+    setModalImage,
+    handlePurchaseRequest,
 };
 
 Object.assign(window, exposedFunctions);
