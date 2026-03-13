@@ -80,7 +80,8 @@ function stringifyErrorMessage(value) {
         const parts = value
             .map(item => stringifyErrorMessage(item))
             .filter(Boolean);
-        return parts.length ? parts.join("") : "Сталася помилка";
+        return parts.length ? parts.join("
+") : "Сталася помилка";
     }
     if (typeof value === "object") {
         if (typeof value.msg === "string") {
@@ -120,10 +121,11 @@ function setLoading(state) {
 }
 
 function saveSession(user) {
-    const remember = $("remember-me")?.checked;
+    const remember = $("remember-me")?.checked ?? true;
 
     localStorage.removeItem("marketplace_user");
     sessionStorage.removeItem("marketplace_user");
+    localStorage.setItem("marketplace_remember", remember ? "1" : "0");
 
     if (remember) {
         localStorage.setItem("marketplace_user", JSON.stringify(user));
@@ -141,6 +143,8 @@ function loadSession() {
 
     try {
         currentUser = JSON.parse(saved);
+        const remember = $("remember-me");
+        if (remember) remember.checked = localStorage.getItem("marketplace_remember") !== "0";
         showApp();
         return true;
     } catch {
@@ -154,6 +158,7 @@ function loadSession() {
 function logout() {
     localStorage.removeItem("marketplace_user");
     sessionStorage.removeItem("marketplace_user");
+    localStorage.removeItem("marketplace_remember");
     currentUser = null;
 
     $("app-screen")?.classList.add("hidden");
@@ -188,6 +193,7 @@ function showApp() {
     switchTab("catalog");
     loadProducts();
     loadStats();
+    refreshCurrentUser();
 }
 
 function switchAuthTab(tabName, btn) {
@@ -252,6 +258,20 @@ function fillProfile() {
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
 }
 
+async function refreshCurrentUser(silent = true) {
+    if (!currentUser?.id) return null;
+    try {
+        const freshUser = await safeFetch(`${API_BASE}/users/${currentUser.id}`);
+        currentUser = freshUser;
+        saveSession(freshUser);
+        fillProfile();
+        return freshUser;
+    } catch (error) {
+        if (!silent) showAlert(error.message || "Не вдалося оновити профіль");
+        return null;
+    }
+}
+
 function toggleProfileEdit(forceState = null) {
     const card = $("profile-edit-card");
     const btn = $("profile-edit-toggle-btn");
@@ -307,6 +327,7 @@ async function saveProfile() {
         saveSession(data);
         fillProfile();
         toggleProfileEdit(false);
+        await refreshCurrentUser();
         showAlert("Профіль оновлено");
     } catch (error) {
         showAlert(error.message || "Не вдалося оновити профіль");
@@ -539,7 +560,19 @@ async function safeFetch(url, options = {}) {
         });
     } catch (error) {
         console.error("Network error:", error);
-        throw new Error("Не вдалося підключитися до API");
+        try {
+            await wakeApi();
+            response = await fetch(url, {
+                mode: "cors",
+                credentials: "omit",
+                cache: "no-store",
+                ...options,
+                headers
+            });
+        } catch (retryError) {
+            console.error("Retry network error:", retryError);
+            throw new Error("Не вдалося підключитися до API");
+        }
     }
 
     const rawText = await response.text();
@@ -583,10 +616,13 @@ function setupAuthScreen() {
 
     const tgButton = $("tg-login-btn");
     const remember = $("remember-me");
+    const storedRemember = localStorage.getItem("marketplace_remember");
+
+    if (remember) remember.checked = storedRemember === null ? true : storedRemember === "1";
 
     if (telegramUser) {
         if (tgButton) tgButton.textContent = "Увійти через Telegram (рекомендується)";
-        if (remember) remember.checked = true;
+        if (remember && storedRemember === null) remember.checked = true;
     } else {
         if (tgButton) tgButton.textContent = "Telegram login доступний тільки в Telegram";
     }
