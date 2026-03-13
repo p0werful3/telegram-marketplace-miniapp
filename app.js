@@ -73,8 +73,34 @@ function initTelegramWebApp() {
     }
 }
 
+function stringifyErrorMessage(value) {
+    if (value == null) return "Сталася помилка";
+    if (typeof value === "string") return value;
+    if (Array.isArray(value)) {
+        const parts = value
+            .map(item => stringifyErrorMessage(item))
+            .filter(Boolean);
+        return parts.length ? parts.join("") : "Сталася помилка";
+    }
+    if (typeof value === "object") {
+        if (typeof value.msg === "string") {
+            const field = Array.isArray(value.loc) ? value.loc.filter(x => x !== "body").join(" → ") : "";
+            return field ? `${field}: ${value.msg}` : value.msg;
+        }
+        if (typeof value.detail === "string") return value.detail;
+        if (value.detail) return stringifyErrorMessage(value.detail);
+        if (typeof value.message === "string") return value.message;
+        try {
+            return JSON.stringify(value, null, 2);
+        } catch {
+            return "Сталася помилка";
+        }
+    }
+    return String(value);
+}
+
 function showAlert(message) {
-    const text = String(message || "Сталася помилка");
+    const text = stringifyErrorMessage(message);
     try {
         if (tg?.showAlert) {
             tg.showAlert(text);
@@ -191,6 +217,7 @@ function switchTab(tabName, btn = null) {
     if (tabName === "cart") loadCart();
     if (tabName === "profile") {
         fillProfile();
+        toggleProfileEdit(false);
         loadStats();
         loadPurchaseHistory();
     }
@@ -218,13 +245,20 @@ function switchMyProductsView(view) {
 
 function fillProfile() {
     if (!currentUser) return;
-    $("profile-id").textContent = currentUser.id ?? "—";
-    $("profile-telegram-id").textContent = currentUser.telegram_id || "—";
-    $("profile-username").textContent = currentUser.username || "—";
+    $("profile-username").textContent = currentUser.username ? `@${currentUser.username}` : "—";
     $("profile-fullname").textContent = currentUser.full_name || "—";
     if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
     if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
+}
+
+function toggleProfileEdit(forceState = null) {
+    const card = $("profile-edit-card");
+    const btn = $("profile-edit-toggle-btn");
+    if (!card || !btn) return;
+    const shouldShow = forceState === null ? card.classList.contains("hidden") : Boolean(forceState);
+    card.classList.toggle("hidden", !shouldShow);
+    btn.textContent = shouldShow ? "Сховати редагування" : "Редагувати профіль";
 }
 
 async function loadStats() {
@@ -272,6 +306,7 @@ async function saveProfile() {
         currentUser = data;
         saveSession(data);
         fillProfile();
+        toggleProfileEdit(false);
         showAlert("Профіль оновлено");
     } catch (error) {
         showAlert(error.message || "Не вдалося оновити профіль");
@@ -520,11 +555,11 @@ async function safeFetch(url, options = {}) {
 
     if (!response.ok) {
         const detail =
-            (data && typeof data === "object" && (data.detail || data.message)) ||
+            (data && typeof data === "object" && (data.detail ?? data.message ?? data)) ||
             (typeof data === "string" && data) ||
             `HTTP ${response.status}`;
 
-        throw new Error(detail);
+        throw new Error(stringifyErrorMessage(detail));
     }
 
     return data;
@@ -941,6 +976,31 @@ async function createProduct() {
     const city = $("product-city")?.value;
     const files = $("product-files")?.files || [];
 
+    if (!title || title.length < 2) {
+        showAlert("Назва товару має бути мінімум 2 символи");
+        return;
+    }
+    if (!description || description.length < 5) {
+        showAlert("Опис товару має бути мінімум 5 символів");
+        return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+        showAlert("Ціна повинна бути більшою за 0");
+        return;
+    }
+    if (!category) {
+        showAlert("Оберіть категорію");
+        return;
+    }
+    if (!condition) {
+        showAlert("Оберіть стан товару");
+        return;
+    }
+    if (!city) {
+        showAlert("Оберіть місто");
+        return;
+    }
+
     try {
         setLoading(true);
 
@@ -1257,10 +1317,7 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeProductModal();
 });
 
-initApp();
 
-
-// Expose handlers for inline onclick in Telegram WebView
 Object.assign(window, {
     switchAuthTab,
     loginUser,
@@ -1270,27 +1327,24 @@ Object.assign(window, {
     switchCatalogView,
     switchMyProductsView,
     toggleFilters,
-    loadProducts,
+    handleImagePreview,
+    createProduct,
+    cancelEditProduct,
     loadMyProducts,
     loadCart,
     logout,
-    createProduct,
-    saveProduct,
-    cancelEditProduct,
-    archiveProduct,
-    restoreProduct,
-    deleteProduct,
-    editProduct,
-    openProductModal,
+    saveProfile,
+    toggleProfileEdit,
     closeProductModal,
-    prevModalImage,
-    nextModalImage,
-    setModalImage,
+    closeProductModalOnBackdrop,
+    openProductModal,
+    toggleFavorite,
     addToCart,
     removeFromCart,
     buyProduct,
-    toggleFavorite,
-    updateProfile,
-    approvePurchaseRequest,
-    rejectPurchaseRequest
+    archiveProduct,
+    startEditProduct,
+    handleOrderDecision
 });
+
+initApp();
