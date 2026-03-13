@@ -1071,3 +1071,39 @@ input:focus, textarea:focus, select:focus {
         grid-template-columns: 1fr;
     }
 }
+
+.compact-date {
+    font-size: 12px;
+    color: #9fb0c9;
+    margin-top: 2px;
+}
+
+.admin-soft-btn {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
+}
+
+.admin-primary-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.admin-danger-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+}
+
+.admin-success-btn {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.admin-warn-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #111827;
+}
+
+.profile-showcase {
+    background: radial-gradient(circle at top left, rgba(59,130,246,.18), transparent 35%),
+                radial-gradient(circle at top right, rgba(250,204,21,.12), transparent 30%);
+}
+
+.profile-card textarea#suggestion-message {
+    min-height: 90px;
+}
