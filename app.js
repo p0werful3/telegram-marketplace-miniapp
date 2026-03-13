@@ -2,6 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
+const FRONTEND_VERSION = "152";
 
 let tg = null;
 let telegramUser = null;
@@ -171,26 +172,30 @@ function fillProfile() {
 
     const usernameEl = $("profile-username");
     const fullnameEl = $("profile-fullname");
+    const avatarEl = $("profile-avatar");
 
-    if (usernameEl) usernameEl.textContent = currentUser.username || "—";
-    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || "—";
+    if (usernameEl) usernameEl.textContent = currentUser.username ? `@${currentUser.username}` : "—";
+    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || currentUser.username || "Без імені";
+    if (avatarEl) {
+        if (currentUser.avatar_url && isValidUrl(currentUser.avatar_url)) {
+            avatarEl.innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" alt="avatar">`;
+        } else {
+            avatarEl.textContent = (currentUser.full_name || currentUser.username || "U").trim().charAt(0).toUpperCase();
+        }
+    }
 
     if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
     if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
+    if ($("profile-avatar-file")) $("profile-avatar-file").value = "";
 }
 
 function toggleProfileEdit(forceState = null) {
     const wrap = $("profile-edit-wrap");
-    const btn = $("profile-edit-toggle-btn");
-    if (!wrap || !btn) return;
+    if (!wrap) return;
 
-    const shouldOpen = forceState === null
-        ? wrap.classList.contains("hidden")
-        : Boolean(forceState);
-
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
     wrap.classList.toggle("hidden", !shouldOpen);
-    btn.textContent = shouldOpen ? "Сховати редагування" : "Редагувати профіль";
 }
 
 async function togglePurchaseHistory(forceState = null) {
@@ -198,16 +203,11 @@ async function togglePurchaseHistory(forceState = null) {
     const btn = $("purchase-history-toggle-btn");
     if (!wrap || !btn) return;
 
-    const shouldOpen = forceState === null
-        ? wrap.classList.contains("hidden")
-        : Boolean(forceState);
-
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
     wrap.classList.toggle("hidden", !shouldOpen);
     btn.textContent = shouldOpen ? "Сховати історію покупок" : "Історія покупок";
 
-    if (shouldOpen) {
-        await loadPurchaseHistory();
-    }
+    if (shouldOpen) await loadPurchaseHistory();
 }
 
 async function showApp() {
@@ -216,9 +216,11 @@ async function showApp() {
 
     fillProfile();
     toggleProfileEdit(false);
+    toggleStatsPanel(false);
 
     if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
     if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
+    if ($("admin-panel-body")) $("admin-panel-body").classList.add("hidden");
 
     resetCreateForm();
     toggleFilters(false);
@@ -226,6 +228,7 @@ async function showApp() {
 
     await refreshCurrentUserFromApi();
     fillProfile();
+    await detectAdminAccess();
 
     loadProducts();
     loadStats();
@@ -256,8 +259,10 @@ function switchTab(tabName, btn = null) {
     if (tabName === "profile") {
         fillProfile();
         toggleProfileEdit(false);
+        toggleStatsPanel(false);
         if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
         if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
+        detectAdminAccess();
         loadStats();
     }
 }
@@ -315,6 +320,7 @@ async function saveProfile() {
     const username = $("profile-edit-username")?.value.trim();
     const full_name = $("profile-edit-fullname")?.value.trim();
     const password = $("profile-edit-password")?.value.trim();
+    const avatarFile = $("profile-avatar-file")?.files?.[0] || null;
 
     if (!username) {
         showAlert("Введи тег / username");
@@ -323,12 +329,14 @@ async function saveProfile() {
 
     try {
         setLoading(true);
+        let avatar_url = currentUser.avatar_url || null;
+        if (avatarFile) avatar_url = await uploadImageToCloudinary(avatarFile);
         const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/profile`, {
             method: "PUT",
-            body: JSON.stringify({ username, full_name, password: password || null })
+            body: JSON.stringify({ username, full_name, avatar_url, password: password || null })
         });
-        currentUser = data;
-        saveSession(data);
+        currentUser = { ...currentUser, ...data, avatar_url };
+        saveSession(currentUser);
         fillProfile();
         toggleProfileEdit(false);
         showAlert("Профіль оновлено");
@@ -814,7 +822,7 @@ function renderCatalogCard(product) {
                 <h3 class="card-title">${escapeHtml(product.title)}</h3>
                 <p class="card-price card-price-large">${formatPrice(product.price, product.currency)}</p>
                 <p class="card-description">${escapeHtml(product.description || "")}</p>
-                ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
+                ${product.seller_username ? `<button class="seller-link-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                 <div class="card-actions">
                     ${
                         isOwnProduct
@@ -988,7 +996,7 @@ async function openProductModal(productId) {
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
                     <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
+                    ${product.seller_username ? `<button class="seller-link-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                     <div class="card-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
@@ -1326,6 +1334,261 @@ async function toggleFavorite(productId, isFavoriteNow) {
     }
 }
 
+
+function toggleStatsPanel(forceState = null) {
+    const wrap = $("stats-wrap");
+    const btn = $("stats-toggle-btn");
+    if (!wrap || !btn) return;
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
+    wrap.classList.toggle("hidden", !shouldOpen);
+    btn.textContent = shouldOpen ? "Сховати статистику" : "Статистика";
+}
+
+async function detectAdminAccess() {
+    const wrap = $("admin-panel-wrap");
+    if (!wrap || !currentUser?.id) return false;
+    try {
+        const summary = await safeFetch(`${API_BASE}/admin/summary?current_admin_id=${currentUser.id}`);
+        currentUser.is_admin = true;
+        saveSession(currentUser);
+        wrap.classList.remove("hidden");
+        renderAdminSummary(summary);
+        return true;
+    } catch {
+        currentUser.is_admin = false;
+        saveSession(currentUser);
+        wrap.classList.add("hidden");
+        return false;
+    }
+}
+
+function renderAdminSummary(summary) {
+    const box = $("admin-summary");
+    if (!box || !summary) return;
+    box.innerHTML = `
+        <div class="stats-grid compact-stats-grid admin-stats-grid">
+            <div class="stat-card"><span class="stat-value">${summary.users ?? 0}</span><span class="stat-label">Користувачі</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.banned_users ?? 0}</span><span class="stat-label">Бан</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.orders_pending ?? 0}</span><span class="stat-label">Запити</span></div>
+        </div>`;
+}
+
+async function toggleAdminPanel(forceState = null) {
+    const body = $("admin-panel-body");
+    const btn = $("admin-toggle-btn");
+    if (!body || !btn || !currentUser?.id) return;
+    const shouldOpen = forceState === null ? body.classList.contains("hidden") : Boolean(forceState);
+    body.classList.toggle("hidden", !shouldOpen);
+    btn.textContent = shouldOpen ? "Сховати адмін панель" : "Адмін панель";
+    if (shouldOpen) {
+        await loadAdminSummary();
+        await loadAdminUsers();
+    }
+}
+
+function switchAdminTab(tabName) {
+    ["users","products","logs"].forEach(name => {
+        $(`admin-${name}-tab`)?.classList.toggle("hidden", name !== tabName);
+        $(`admin-${name}-tab-btn`)?.classList.toggle("active", name === tabName);
+    });
+    if (tabName === "users") loadAdminUsers();
+    if (tabName === "products") loadAdminProducts();
+    if (tabName === "logs") loadAdminLogs();
+}
+
+async function loadAdminSummary() {
+    if (!currentUser?.id) return;
+    try {
+        const summary = await safeFetch(`${API_BASE}/admin/summary?current_admin_id=${currentUser.id}`);
+        renderAdminSummary(summary);
+    } catch (error) {
+        console.error("Admin summary error:", error);
+    }
+}
+
+async function loadAdminUsers() {
+    if (!currentUser?.id) return;
+    const list = $("admin-users-list");
+    if (!list) return;
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const q = $("admin-users-search")?.value.trim() || "";
+        const items = await safeFetch(`${API_BASE}/admin/users?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
+        list.innerHTML = items.length ? items.map(item => `
+            <div class="card"><div class="card-body">
+                <h3 class="card-title">@${escapeHtml(item.username || "")}</h3>
+                <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}</p>
+                <div class="request-meta">
+                    <div>Активні: ${Number(item.active_products || 0)}</div>
+                    <div>Продані: ${Number(item.sold_products || 0)}</div>
+                    <div>Статус: ${item.is_banned ? "Заблокований" : "Активний"}</div>
+                </div>
+                <div class="card-actions inline-actions admin-grid-3">
+                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
+                    ${item.is_banned ? `<button class="approve-btn" onclick="adminUnbanUser(${Number(item.id)})">Розбан</button>` : `<button class="reject-btn" onclick="adminBanUser(${Number(item.id)})">Бан</button>`}
+                    ${item.is_admin ? `<button class="remove-btn" onclick="adminRemoveAdmin(${Number(item.id)})">Зняти адмін</button>` : `<button class="buy-btn" onclick="adminMakeAdmin(${Number(item.id)})">Дати адмін</button>`}
+                </div>
+            </div></div>
+        `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+    }
+}
+
+async function adminBanUser(userId) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/users/${userId}/ban?current_admin_id=${currentUser.id}`, { method: "POST" });
+        await loadAdminSummary();
+        await loadAdminUsers();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
+async function adminUnbanUser(userId) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/users/${userId}/unban?current_admin_id=${currentUser.id}`, { method: "POST" });
+        await loadAdminSummary();
+        await loadAdminUsers();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
+async function adminMakeAdmin(userId) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/users/${userId}/make-admin?current_admin_id=${currentUser.id}`, { method: "POST" });
+        await loadAdminSummary();
+        await loadAdminUsers();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
+async function adminRemoveAdmin(userId) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/users/${userId}/remove-admin?current_admin_id=${currentUser.id}`, { method: "POST" });
+        await loadAdminSummary();
+        await loadAdminUsers();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
+async function loadAdminProducts() {
+    if (!currentUser?.id) return;
+    const list = $("admin-products-list");
+    if (!list) return;
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const q = $("admin-products-search")?.value.trim() || "";
+        const items = await safeFetch(`${API_BASE}/admin/products?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
+        list.innerHTML = items.length ? items.map(item => `
+            <div class="compact-card">
+                <div class="compact-image-wrap">${renderImageBlock(item)}</div>
+                <div class="compact-info">
+                    <div class="compact-top-row"><h3 class="compact-title">${escapeHtml(item.title)}</h3><div class="compact-price">${formatPrice(item.price, item.currency)}</div></div>
+                    <div class="compact-meta">${escapeHtml(item.status || "")}</div>
+                    <div class="compact-desc">Продавець: @${escapeHtml(item.seller_username || "")}</div>
+                    <div class="card-actions inline-actions admin-grid-3 compact-actions">
+                        <button class="secondary-btn" onclick="openUserProfile(${Number(item.seller_id)})">Продавець</button>
+                        <button class="remove-btn" onclick="adminArchiveProduct(${Number(item.id)})">Архів</button>
+                        <button class="reject-btn" onclick="adminDeleteProduct(${Number(item.id)})">Видалити</button>
+                    </div>
+                </div>
+            </div>`).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+    }
+}
+
+async function adminArchiveProduct(productId) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/products/${productId}/archive?current_admin_id=${currentUser.id}`, { method: "POST" });
+        await loadAdminSummary();
+        await loadAdminProducts();
+        await loadProducts();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
+async function adminDeleteProduct(productId) {
+    if (isLoading) return;
+    if (!confirm("Видалити оголошення повністю?")) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/products/${productId}?current_admin_id=${currentUser.id}`, { method: "DELETE" });
+        await loadAdminSummary();
+        await loadAdminProducts();
+        await loadProducts();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
+async function loadAdminLogs() {
+    if (!currentUser?.id) return;
+    const list = $("admin-logs-list");
+    if (!list) return;
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const items = await safeFetch(`${API_BASE}/admin/logs?current_admin_id=${currentUser.id}`);
+        list.innerHTML = items.length ? items.map(item => `
+            <div class="card"><div class="card-body">
+                <div class="status-pill approved">@${escapeHtml(item.admin_username || "admin")}</div>
+                <div class="request-meta"><div>${escapeHtml(item.action || "")}</div><div>${formatDate(item.created_at)}</div></div>
+            </div></div>`).join("") : `<div class="empty-card">Логи порожні</div>`;
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+    }
+}
+
+async function openUserProfile(userId) {
+    const modal = $("user-profile-modal");
+    const body = $("user-profile-modal-body");
+    if (!modal || !body) return;
+    modal.classList.remove("hidden");
+    body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const profile = await safeFetch(`${API_BASE}/users/${userId}/public-profile`);
+        const avatarHtml = profile.avatar_url && isValidUrl(profile.avatar_url)
+            ? `<img class="user-profile-avatar-img" src="${escapeHtml(profile.avatar_url)}" alt="avatar">`
+            : `<div class="user-profile-avatar-fallback">${escapeHtml((profile.full_name || profile.username || 'U').charAt(0).toUpperCase())}</div>`;
+        body.innerHTML = `
+            <div class="profile-card public-profile-card">
+                <div class="public-profile-header">
+                    <div class="user-profile-avatar">${avatarHtml}</div>
+                    <div>
+                        <div class="profile-hero-name">${escapeHtml(profile.full_name || profile.username || "Користувач")}</div>
+                        <div class="profile-hero-username">@${escapeHtml(profile.username || "")}</div>
+                    </div>
+                </div>
+                <div class="stats-grid compact-stats-grid">
+                    <div class="stat-card"><span class="stat-value">${profile.stats?.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
+                    <div class="stat-card"><span class="stat-value">${profile.stats?.sold_products ?? 0}</span><span class="stat-label">Продані</span></div>
+                    <div class="stat-card"><span class="stat-value">${profile.stats?.archived_products ?? 0}</span><span class="stat-label">Архів</span></div>
+                </div>
+                ${profile.telegram_link ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>` : ""}
+            </div>`;
+    } catch (error) {
+        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+    }
+}
+
+function closeUserProfileModal() {
+    $("user-profile-modal")?.classList.add("hidden");
+}
+
+function closeUserProfileOnBackdrop(event) {
+    if (event.target?.id === "user-profile-modal") closeUserProfileModal();
+}
+
 async function initApp() {
     setupAuthScreen();
 
@@ -1339,9 +1602,7 @@ async function initApp() {
 }
 
 document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && typeof closeProductModal === "function") {
-        closeProductModal();
-    }
+    if (event.key === "Escape") closeProductModal();
 });
 
 if (typeof switchAuthTab === "function") window.switchAuthTab = switchAuthTab;
@@ -1371,6 +1632,20 @@ if (typeof toggleFavorite === "function") window.toggleFavorite = toggleFavorite
 if (typeof startEditProduct === "function") window.startEditProduct = startEditProduct;
 if (typeof toggleProfileEdit === "function") window.toggleProfileEdit = toggleProfileEdit;
 if (typeof togglePurchaseHistory === "function") window.togglePurchaseHistory = togglePurchaseHistory;
+if (typeof toggleStatsPanel === "function") window.toggleStatsPanel = toggleStatsPanel;
+if (typeof toggleAdminPanel === "function") window.toggleAdminPanel = toggleAdminPanel;
+if (typeof switchAdminTab === "function") window.switchAdminTab = switchAdminTab;
+if (typeof loadAdminUsers === "function") window.loadAdminUsers = loadAdminUsers;
+if (typeof loadAdminProducts === "function") window.loadAdminProducts = loadAdminProducts;
+if (typeof adminBanUser === "function") window.adminBanUser = adminBanUser;
+if (typeof adminUnbanUser === "function") window.adminUnbanUser = adminUnbanUser;
+if (typeof adminMakeAdmin === "function") window.adminMakeAdmin = adminMakeAdmin;
+if (typeof adminRemoveAdmin === "function") window.adminRemoveAdmin = adminRemoveAdmin;
+if (typeof adminArchiveProduct === "function") window.adminArchiveProduct = adminArchiveProduct;
+if (typeof adminDeleteProduct === "function") window.adminDeleteProduct = adminDeleteProduct;
+if (typeof openUserProfile === "function") window.openUserProfile = openUserProfile;
+if (typeof closeUserProfileModal === "function") window.closeUserProfileModal = closeUserProfileModal;
+if (typeof closeUserProfileOnBackdrop === "function") window.closeUserProfileOnBackdrop = closeUserProfileOnBackdrop;
 if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
 
