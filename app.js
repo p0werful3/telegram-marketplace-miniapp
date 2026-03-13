@@ -14,7 +14,6 @@ let currentModalImages = [];
 let filtersOpen = false;
 let editingProductId = null;
 let editingExistingImages = [];
-let adminTab = "users";
 
 function $(id) {
     return document.getElementById(id);
@@ -179,18 +178,19 @@ function fillProfile() {
     if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
     if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
-    $("admin-panel-wrap")?.classList.toggle("hidden", !currentUser.is_admin);
 }
 
 function toggleProfileEdit(forceState = null) {
     const wrap = $("profile-edit-wrap");
-    if (!wrap) return;
+    const btn = $("profile-edit-toggle-btn");
+    if (!wrap || !btn) return;
 
     const shouldOpen = forceState === null
         ? wrap.classList.contains("hidden")
         : Boolean(forceState);
 
     wrap.classList.toggle("hidden", !shouldOpen);
+    btn.textContent = shouldOpen ? "Сховати редагування" : "Редагувати профіль";
 }
 
 async function togglePurchaseHistory(forceState = null) {
@@ -1326,175 +1326,6 @@ async function toggleFavorite(productId, isFavoriteNow) {
     }
 }
 
-
-function switchAdminTab(tab) {
-    adminTab = tab;
-    ["users", "products", "logs"].forEach(name => {
-        $("admin-" + name + "-tab")?.classList.toggle("hidden", name !== tab);
-        $("admin-" + name + "-tab")?.classList.toggle("active", name === tab);
-        $("admin-" + name + "-tab-btn")?.classList.toggle("active", name === tab);
-    });
-    if (tab === "users") loadAdminUsers();
-    if (tab === "products") loadAdminProducts();
-    if (tab === "logs") loadAdminLogs();
-}
-
-async function toggleAdminPanel() {
-    const body = $("admin-panel-body");
-    if (!body || !currentUser?.is_admin) return;
-    const shouldOpen = body.classList.contains("hidden");
-    body.classList.toggle("hidden", !shouldOpen);
-    if (shouldOpen) {
-        await loadAdminSummary();
-        switchAdminTab(adminTab);
-    }
-}
-
-async function loadAdminSummary() {
-    if (!currentUser?.is_admin) return;
-    const data = await safeFetch(`${API_BASE}/admin/summary?current_admin_id=${currentUser.id}`);
-    const el = $("admin-summary");
-    if (!el) return;
-    el.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-card"><span class="stat-value">${Number(data.users || 0)}</span><span class="stat-label">Користувачі</span></div>
-            <div class="stat-card"><span class="stat-value">${Number(data.banned_users || 0)}</span><span class="stat-label">Бан</span></div>
-            <div class="stat-card"><span class="stat-value">${Number(data.active_products || 0)}</span><span class="stat-label">Активні</span></div>
-            <div class="stat-card"><span class="stat-value">${Number(data.orders_pending || 0)}</span><span class="stat-label">Запити</span></div>
-            <div class="stat-card"><span class="stat-value">${Number(data.admins || 0)}</span><span class="stat-label">Адміни</span></div>
-        </div>`;
-}
-
-async function loadAdminUsers() {
-    if (!currentUser?.is_admin) return;
-    const list = $("admin-users-list");
-    if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
-    try {
-        const q = $("admin-users-search")?.value.trim() || "";
-        const items = await safeFetch(`${API_BASE}/admin/users?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
-        list.innerHTML = items.length ? items.map(item => `
-            <div class="card"><div class="card-body">
-                <h3 class="card-title">${escapeHtml(item.full_name || "Без імені")}</h3>
-                <p class="card-seller">@${escapeHtml(item.username || "")}</p>
-                <p class="compact-rating">${renderStars(item.rating || 0, item.rating_count || 0)}</p>
-                <div class="request-meta">
-                    <div>Активні: ${Number(item.active_products || 0)}</div>
-                    <div>Продані: ${Number(item.sold_products || 0)}</div>
-                    <div>${item.is_admin ? "Адмін" : "Користувач"} ${item.is_banned ? "• Заблокований" : ""}</div>
-                </div>
-                <div class="card-actions inline-actions admin-grid-3">
-                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
-                    <button class="${item.is_banned ? "approve-btn" : "reject-btn"}" onclick="adminToggleBan(${Number(item.id)}, ${item.is_banned ? "false" : "true"})">${item.is_banned ? "Розбан" : "Бан"}</button>
-                    <button class="${item.is_admin ? "remove-btn" : "buy-btn"}" onclick="adminToggleRole(${Number(item.id)}, ${item.is_admin ? "false" : "true"})">${item.is_admin ? "Зняти адміна" : "Зробити адміном"}</button>
-                </div>
-            </div></div>
-        `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
-    } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
-    }
-}
-
-async function adminToggleBan(userId, shouldBan) {
-    if (!currentUser?.is_admin || isLoading) return;
-    try {
-        setLoading(true);
-        await safeFetch(`${API_BASE}/admin/users/${userId}/${shouldBan ? "ban" : "unban"}?current_admin_id=${currentUser.id}`, { method: "POST" });
-        await loadAdminSummary();
-        await loadAdminUsers();
-    } catch (error) {
-        showAlert(error.message || "Помилка")
-    } finally { setLoading(false); }
-}
-
-async function adminToggleRole(userId, makeAdmin) {
-    if (!currentUser?.is_admin || isLoading) return;
-    try {
-        setLoading(true);
-        await safeFetch(`${API_BASE}/admin/users/${userId}/${makeAdmin ? "make-admin" : "remove-admin"}?current_admin_id=${currentUser.id}`, { method: "POST" });
-        await loadAdminSummary();
-        await loadAdminUsers();
-    } catch (error) {
-        showAlert(error.message || "Помилка")
-    } finally { setLoading(false); }
-}
-
-async function loadAdminProducts() {
-    if (!currentUser?.is_admin) return;
-    const list = $("admin-products-list");
-    if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
-    try {
-        const q = $("admin-products-search")?.value.trim() || "";
-        const items = await safeFetch(`${API_BASE}/admin/products?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
-        list.innerHTML = items.length ? items.map(item => `
-            <div class="compact-card">
-                <div class="compact-image-wrap">${renderImageBlock(item)}</div>
-                <div class="compact-info">
-                    <div class="compact-top-row"><h3 class="compact-title">${escapeHtml(item.title)}</h3><div class="compact-price">${formatPrice(item.price, item.currency)}</div></div>
-                    <div class="compact-meta">${escapeHtml(item.status || "")}</div>
-                    <div class="compact-desc">Продавець: @${escapeHtml(item.seller_username || "")}</div>
-                    <div class="card-actions inline-actions admin-grid-3 compact-actions">
-                        <button class="secondary-btn" onclick="openUserProfile(${Number(item.seller_id)})">Продавець</button>
-                        <button class="remove-btn" onclick="adminArchiveProduct(${Number(item.id)})">Архів</button>
-                        <button class="reject-btn" onclick="adminDeleteProduct(${Number(item.id)})">Видалити</button>
-                    </div>
-                </div>
-            </div>
-        `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
-    } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
-    }
-}
-
-async function adminArchiveProduct(productId) {
-    if (!currentUser?.is_admin || isLoading) return;
-    try {
-        setLoading(true);
-        await safeFetch(`${API_BASE}/admin/products/${productId}/archive?current_admin_id=${currentUser.id}`, { method: "POST" });
-        await loadAdminSummary();
-        await loadAdminProducts();
-        await loadProducts();
-    } catch (error) {
-        showAlert(error.message || "Помилка")
-    } finally { setLoading(false); }
-}
-
-async function adminDeleteProduct(productId) {
-    if (!currentUser?.is_admin || isLoading) return;
-    if (!confirm("Видалити оголошення повністю?")) return;
-    try {
-        setLoading(true);
-        await safeFetch(`${API_BASE}/admin/products/${productId}?current_admin_id=${currentUser.id}`, { method: "DELETE" });
-        await loadAdminSummary();
-        await loadAdminProducts();
-        await loadProducts();
-    } catch (error) {
-        showAlert(error.message || "Помилка")
-    } finally { setLoading(false); }
-}
-
-async function loadAdminLogs() {
-    if (!currentUser?.is_admin) return;
-    const list = $("admin-logs-list");
-    if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
-    try {
-        const items = await safeFetch(`${API_BASE}/admin/logs?current_admin_id=${currentUser.id}`);
-        list.innerHTML = items.length ? items.map(item => `
-            <div class="card"><div class="card-body">
-                <div class="status-pill approved">@${escapeHtml(item.admin_username || "admin")}</div>
-                <div class="request-meta">
-                    <div>${escapeHtml(item.action || "")}</div>
-                    <div>${formatDate(item.created_at)}</div>
-                </div>
-            </div></div>
-        `).join("") : `<div class="empty-card">Логи порожні</div>`;
-    } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
-    }
-}
-
 async function initApp() {
     setupAuthScreen();
 
@@ -1508,41 +1339,39 @@ async function initApp() {
 }
 
 document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeProductModal();
+    if (event.key === "Escape" && typeof closeProductModal === "function") {
+        closeProductModal();
+    }
 });
 
-const exposedFunctions = {
-    switchAuthTab,
-    loginUser,
-    registerNewUser,
-    loginWithTelegram,
-    switchTab,
-    switchCatalogView,
-    switchMyProductsView,
-    toggleFilters,
-    loadProducts,
-    loadMyProducts,
-    loadCart,
-    logout,
-    saveProfile,
-    createProduct,
-    cancelEditProduct,
-    handleImagePreview,
-    closeProductModal,
-    closeProductModalOnBackdrop,
-    openProductModal,
-    deleteProduct,
-    addToCart,
-    removeFromCart,
-    buyProduct,
-    toggleFavorite,
-    startEditProduct,
-    toggleProfileEdit,
-    togglePurchaseHistory,
-    setModalImage,
-    handlePurchaseRequest,
-};
-
-Object.assign(window, exposedFunctions);
+if (typeof switchAuthTab === "function") window.switchAuthTab = switchAuthTab;
+if (typeof loginUser === "function") window.loginUser = loginUser;
+if (typeof registerNewUser === "function") window.registerNewUser = registerNewUser;
+if (typeof loginWithTelegram === "function") window.loginWithTelegram = loginWithTelegram;
+if (typeof switchTab === "function") window.switchTab = switchTab;
+if (typeof switchCatalogView === "function") window.switchCatalogView = switchCatalogView;
+if (typeof switchMyProductsView === "function") window.switchMyProductsView = switchMyProductsView;
+if (typeof toggleFilters === "function") window.toggleFilters = toggleFilters;
+if (typeof loadProducts === "function") window.loadProducts = loadProducts;
+if (typeof loadMyProducts === "function") window.loadMyProducts = loadMyProducts;
+if (typeof loadCart === "function") window.loadCart = loadCart;
+if (typeof logout === "function") window.logout = logout;
+if (typeof saveProfile === "function") window.saveProfile = saveProfile;
+if (typeof createProduct === "function") window.createProduct = createProduct;
+if (typeof cancelEditProduct === "function") window.cancelEditProduct = cancelEditProduct;
+if (typeof handleImagePreview === "function") window.handleImagePreview = handleImagePreview;
+if (typeof closeProductModal === "function") window.closeProductModal = closeProductModal;
+if (typeof closeProductModalOnBackdrop === "function") window.closeProductModalOnBackdrop = closeProductModalOnBackdrop;
+if (typeof openProductModal === "function") window.openProductModal = openProductModal;
+if (typeof deleteProduct === "function") window.deleteProduct = deleteProduct;
+if (typeof addToCart === "function") window.addToCart = addToCart;
+if (typeof removeFromCart === "function") window.removeFromCart = removeFromCart;
+if (typeof buyProduct === "function") window.buyProduct = buyProduct;
+if (typeof toggleFavorite === "function") window.toggleFavorite = toggleFavorite;
+if (typeof startEditProduct === "function") window.startEditProduct = startEditProduct;
+if (typeof toggleProfileEdit === "function") window.toggleProfileEdit = toggleProfileEdit;
+if (typeof togglePurchaseHistory === "function") window.togglePurchaseHistory = togglePurchaseHistory;
+if (typeof setModalImage === "function") window.setModalImage = setModalImage;
+if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
 
 initApp();
