@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "210";
+const FRONTEND_VERSION = "211";
 
 let tg = null;
 let telegramUser = null;
@@ -58,6 +58,20 @@ function formatDate(value) {
     }
 }
 
+function parseTelegramUserFromInitData(initData) {
+    if (!initData) return null;
+    try {
+        const params = new URLSearchParams(initData);
+        const userRaw = params.get("user");
+        if (!userRaw) return null;
+        const user = JSON.parse(userRaw);
+        return user && typeof user === "object" ? user : null;
+    } catch (error) {
+        console.error("Parse Telegram initData error:", error);
+        return null;
+    }
+}
+
 function ideaStatusLabel(status) {
     if (status === "done") return "Виконано";
     if (status === "review") return "На розгляді";
@@ -73,12 +87,12 @@ function renderCartTotals(totalsByCurrency = {}) {
 
 function initTelegramWebApp() {
     try {
-        tg = window.Telegram?.WebApp || null;
+        tg = window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || null;
 
         if (tg) {
             tg.ready();
             tg.expand();
-            telegramUser = tg.initDataUnsafe?.user || null;
+            telegramUser = tg.initDataUnsafe?.user || parseTelegramUserFromInitData(tg.initData) || null;
         } else {
             telegramUser = null;
         }
@@ -88,6 +102,7 @@ function initTelegramWebApp() {
         telegramUser = null;
     }
 }
+
 
 function showAlert(message) {
     const text = String(message || "Сталася помилка");
@@ -707,6 +722,7 @@ async function wakeApi() {
 
 function setupAuthScreen() {
     initTelegramWebApp();
+    setTimeout(initTelegramWebApp, 400);
 
     const tgButton = $("tg-login-btn");
     const remember = $("remember-me");
@@ -723,14 +739,15 @@ function setupAuthScreen() {
 
     if (tgButton) {
         tgButton.textContent = "Увійти через Telegram";
-        tgButton.disabled = !telegramUser;
-        tgButton.classList.toggle("tg-ready", Boolean(telegramUser));
-        tgButton.classList.toggle("tg-disabled", !telegramUser);
+        const canUseTelegramLogin = Boolean(telegramUser || tg?.initData);
+        tgButton.disabled = !canUseTelegramLogin;
+        tgButton.classList.toggle("tg-ready", canUseTelegramLogin);
+        tgButton.classList.toggle("tg-disabled", !canUseTelegramLogin);
     }
 
     const hint = $("tg-login-hint");
     if (hint) {
-        hint.textContent = telegramUser
+        hint.textContent = (telegramUser || tg?.initData)
             ? "Швидкий вхід через ваш Telegram акаунт"
             : "Працює лише всередині Telegram Mini App";
     }
@@ -816,13 +833,11 @@ async function loginWithTelegram() {
 
     initTelegramWebApp();
 
-    if (!telegramUser) {
-        showAlert("Telegram login доступний тільки всередині Telegram Mini App");
-        return;
-    }
+    const parsedUser = telegramUser || parseTelegramUserFromInitData(tg?.initData);
+    const telegramId = parsedUser?.id || tg?.initDataUnsafe?.user?.id || null;
 
-    if (!telegramUser.username) {
-        showAlert("У вашого Telegram акаунта немає username");
+    if (!telegramId && !tg?.initData) {
+        showAlert("Telegram login доступний тільки всередині Telegram Mini App");
         return;
     }
 
@@ -833,9 +848,10 @@ async function loginWithTelegram() {
         const data = await safeFetch(`${API_BASE}/auth/telegram`, {
             method: "POST",
             body: JSON.stringify({
-                telegram_id: String(telegramUser.id),
-                username: telegramUser.username,
-                full_name: `${telegramUser.first_name || ""} ${telegramUser.last_name || ""}`.trim()
+                telegram_id: telegramId ? String(telegramId) : null,
+                username: parsedUser?.username || null,
+                full_name: `${parsedUser?.first_name || ""} ${parsedUser?.last_name || ""}`.trim() || null,
+                init_data: tg?.initData || null
             })
         });
 
@@ -850,6 +866,7 @@ async function loginWithTelegram() {
         setLoading(false);
     }
 }
+
 
 function renderCardTags(product) {
     const tags = [
@@ -1334,6 +1351,7 @@ async function removeFromCart(cartItemId) {
 async function loadCart() {
     const cartList = $("cart-list");
     const cartTotal = $("cart-total");
+    const buyAllBtn = $("buy-all-btn");
     if (!cartList || !cartTotal || !currentUser) return;
 
     cartList.innerHTML = `<div class="empty-card">Завантаження...</div>`;
@@ -1344,27 +1362,53 @@ async function loadCart() {
         if (!data?.items?.length) {
             cartList.innerHTML = `<div class="empty-card">Кошик порожній</div>`;
             cartTotal.textContent = renderCartTotals({});
+            if (buyAllBtn) buyAllBtn.disabled = true;
             return;
         }
 
+        if (buyAllBtn) buyAllBtn.disabled = false;
         cartTotal.textContent = renderCartTotals(data.totals_by_currency || {});
 
         cartList.innerHTML = data.items.map(item => `
-            <div class="card">
-                ${isValidUrl(item.image_url) ? `<img class="card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : ""}
-                <div class="card-body">
-                    <h3 class="card-title">${escapeHtml(item.title)}</h3>
-                    <p class="card-price card-price-large">${formatPrice(item.price, item.currency)}</p>
-                    ${item.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(item.seller_username)}</p>` : ""}
-                    <div class="card-actions">
+            <div class="compact-card cart-compact-card">
+                <div class="compact-image-wrap">${isValidUrl(item.image_url) ? `<img class="card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : `<div class="card-image card-image-placeholder">Без фото</div>`}</div>
+                <div class="compact-info">
+                    <div class="compact-top-row">
+                        <h3 class="compact-title">${escapeHtml(item.title)}</h3>
+                        <div class="compact-price">${formatPrice(item.price, item.currency)}</div>
+                    </div>
+                    ${item.seller_username ? `<div class="compact-desc cart-seller-line">Продавець: @${escapeHtml(item.seller_username)}</div>` : ""}
+                    <div class="card-actions compact-actions cart-card-actions">
                         <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
-                        <button class="remove-btn" onclick="removeFromCart(${Number(item.cart_item_id)})">Видалити з кошика</button>
+                        <button class="remove-btn" onclick="removeFromCart(${Number(item.cart_item_id)})">Видалити</button>
                     </div>
                 </div>
             </div>
         `).join("");
     } catch (error) {
         cartList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+        if (buyAllBtn) buyAllBtn.disabled = true;
+    }
+}
+
+
+async function buyAllFromCart() {
+    if (!currentUser || isLoading) return;
+    if (!confirm("Надіслати запит на покупку для всіх товарів у кошику?")) return;
+
+    try {
+        setLoading(true);
+        const data = await safeFetch(`${API_BASE}/orders/buy-all?user_id=${currentUser.id}`, { method: "POST" });
+        showAlert(`Готово. Запитів створено: ${data?.created ?? 0}`);
+        closeProductModal();
+        await loadCart();
+        await loadProducts();
+        await loadMyProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося купити всі товари");
+    } finally {
+        setLoading(false);
     }
 }
 
@@ -1991,6 +2035,7 @@ if (typeof deleteProduct === "function") window.deleteProduct = deleteProduct;
 if (typeof addToCart === "function") window.addToCart = addToCart;
 if (typeof removeFromCart === "function") window.removeFromCart = removeFromCart;
 if (typeof buyProduct === "function") window.buyProduct = buyProduct;
+if (typeof buyAllFromCart === "function") window.buyAllFromCart = buyAllFromCart;
 if (typeof toggleFavorite === "function") window.toggleFavorite = toggleFavorite;
 if (typeof startEditProduct === "function") window.startEditProduct = startEditProduct;
 if (typeof toggleProfileEdit === "function") window.toggleProfileEdit = toggleProfileEdit;
