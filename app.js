@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "152";
+const FRONTEND_VERSION = "203";
 
 let tg = null;
 let telegramUser = null;
@@ -382,13 +382,13 @@ async function loadPurchaseHistory() {
             const reviewActions = item.can_review
                 ? `
                     <div class="review-block">
-                        <div class="review-badge">Оцініть продавця</div>
+                        <div class="review-badge">Оцініть продавця та залиште відгук</div>
                         <div class="review-actions">
                             ${[1,2,3,4,5].map(value => `<button class="secondary-btn" onclick="submitReview(${Number(item.order_id)}, ${value})">${value}★</button>`).join("")}
                         </div>
                     </div>
                 `
-                : (item.review_rating ? `<div class="review-badge">Ваша оцінка: ${Number(item.review_rating)}★</div>` : "");
+                : (item.review_rating ? `<div class="review-badge">Ваша оцінка: ${Number(item.review_rating)}★${item.review_comment ? ` • ${escapeHtml(item.review_comment)}` : ""}</div>` : "");
 
             return `
                 <div class="card history-card">
@@ -439,13 +439,14 @@ async function cancelPurchaseRequest(orderId) {
 
 async function submitReview(orderId, rating) {
     if (!currentUser || isLoading) return;
+    const comment = prompt("Напишіть короткий відгук про продавця (необов'язково):", "") ?? "";
     try {
         setLoading(true);
         await safeFetch(`${API_BASE}/orders/${orderId}/review`, {
             method: "POST",
-            body: JSON.stringify({ buyer_id: currentUser.id, rating, comment: null })
+            body: JSON.stringify({ buyer_id: currentUser.id, rating, comment })
         });
-        showAlert("Дякуємо за оцінку");
+        showAlert("Дякуємо за оцінку та відгук");
         await loadPurchaseHistory();
     } catch (error) {
         showAlert(error.message || "Не вдалося зберегти оцінку");
@@ -913,6 +914,7 @@ function renderCatalogCard(product) {
                     <div class="compact-price">${formatPrice(product.price, product.currency)}</div>
                 </div>
                 <div class="compact-meta">${escapeHtml(product.city || "Без міста")} • ${escapeHtml(product.condition || "Новий")} • ${escapeHtml(product.category || "Інше")}</div>
+                <div class="compact-date">Опубліковано: ${formatDate(product.created_at)}</div>
                 <div class="compact-desc">${escapeHtml(product.description || "")}</div>
                 ${product.seller_username ? `<div class="compact-seller">@${escapeHtml(product.seller_username)}</div>` : ""}
                 ${compactSellerRating(product)}
@@ -1482,12 +1484,13 @@ async function toggleAdminPanel(forceState = null) {
 }
 
 function switchAdminTab(tabName) {
-    ["users","products","logs"].forEach(name => {
+    ["users","products","suggestions","logs"].forEach(name => {
         $(`admin-${name}-tab`)?.classList.toggle("hidden", name !== tabName);
         $(`admin-${name}-tab-btn`)?.classList.toggle("active", name === tabName);
     });
     if (tabName === "users") loadAdminUsers();
     if (tabName === "products") loadAdminProducts();
+    if (tabName === "suggestions") loadAdminSuggestions();
     if (tabName === "logs") loadAdminLogs();
 }
 
@@ -1519,9 +1522,9 @@ async function loadAdminUsers() {
                     <div>Статус: ${item.is_banned ? "Заблокований" : "Активний"}</div>
                 </div>
                 <div class="card-actions inline-actions admin-grid-3">
-                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
-                    ${item.is_banned ? `<button class="approve-btn" onclick="adminUnbanUser(${Number(item.id)})">Розбан</button>` : `<button class="reject-btn" onclick="adminBanUser(${Number(item.id)})">Бан</button>`}
-                    ${item.is_admin ? `<button class="remove-btn" onclick="adminRemoveAdmin(${Number(item.id)})">Зняти адмін</button>` : `<button class="buy-btn" onclick="adminMakeAdmin(${Number(item.id)})">Дати адмін</button>`}
+                    <button class="secondary-btn admin-soft-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
+                    ${item.is_banned ? `<button class="approve-btn admin-success-btn" onclick="adminUnbanUser(${Number(item.id)})">Розбан</button>` : `<button class="reject-btn admin-danger-btn" onclick="adminBanUser(${Number(item.id)})">Бан</button>`}
+                    ${item.is_admin ? `<button class="remove-btn admin-warn-btn" onclick="adminRemoveAdmin(${Number(item.id)})">Зняти адмін</button>` : `<button class="buy-btn admin-primary-btn" onclick="adminMakeAdmin(${Number(item.id)})">Дати адмін</button>`}
                 </div>
             </div></div>
         `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
@@ -1590,9 +1593,11 @@ async function loadAdminProducts() {
                     <div class="compact-meta">${escapeHtml(item.status || "")} • ${escapeHtml(item.city || "")}</div>
                     <div class="compact-desc">Продавець: @${escapeHtml(item.seller_username || "")}</div>
                     <div class="compact-actions compact-actions-3">
-                        <button class="secondary-btn" onclick="openUserProfile(${Number(item.seller_id)})">Продавець</button>
-                        <button class="remove-btn" onclick="adminArchiveProduct(${Number(item.id)})">Архів</button>
-                        <button class="reject-btn" onclick="adminDeleteProduct(${Number(item.id)})">Видалити</button>
+                        <button class="secondary-btn admin-soft-btn" onclick="openUserProfile(${Number(item.seller_id)})">Продавець</button>
+                        ${item.status === "archived"
+                            ? `<button class="approve-btn admin-success-btn" onclick="adminRestoreProduct(${Number(item.id)})">Відновити</button>`
+                            : `<button class="remove-btn admin-warn-btn" onclick="adminArchiveProduct(${Number(item.id)})">В архів</button>`}
+                        <button class="reject-btn admin-danger-btn" onclick="adminDeleteProduct(${Number(item.id)})">Видалити</button>
                     </div>
                 </div>
             </div>`).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
@@ -1613,6 +1618,18 @@ async function adminArchiveProduct(productId) {
     finally { setLoading(false); }
 }
 
+async function adminRestoreProduct(productId) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/products/${productId}/restore?current_admin_id=${currentUser.id}`, { method: "POST" });
+        await loadAdminSummary();
+        await loadAdminProducts();
+        await loadProducts();
+    } catch (error) { showAlert(error.message || "Помилка"); }
+    finally { setLoading(false); }
+}
+
 async function adminDeleteProduct(productId) {
     if (isLoading) return;
     if (!confirm("Видалити оголошення повністю?")) return;
@@ -1624,6 +1641,72 @@ async function adminDeleteProduct(productId) {
         await loadProducts();
     } catch (error) { showAlert(error.message || "Помилка"); }
     finally { setLoading(false); }
+}
+
+async function submitSuggestion() {
+    if (!currentUser || isLoading) return;
+    const title = $("suggestion-title")?.value.trim() || "";
+    const message = $("suggestion-message")?.value.trim() || "";
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/suggestions`, {
+            method: "POST",
+            body: JSON.stringify({ user_id: currentUser.id, title, message })
+        });
+        if ($("suggestion-title")) $("suggestion-title").value = "";
+        if ($("suggestion-message")) $("suggestion-message").value = "";
+        showAlert("Ідею відправлено адміністрації");
+        if (currentUser.is_admin) loadAdminSummary();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося надіслати ідею");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function loadAdminSuggestions() {
+    if (!currentUser?.id) return;
+    const list = $("admin-suggestions-list");
+    if (!list) return;
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const items = await safeFetch(`${API_BASE}/admin/suggestions?current_admin_id=${currentUser.id}`);
+        list.innerHTML = items.length ? items.map(item => `
+            <div class="card"><div class="card-body">
+                <div class="request-meta">
+                    <div><strong>${escapeHtml(item.title)}</strong></div>
+                    <div>Від: ${item.username ? `@${escapeHtml(item.username)}` : `#${Number(item.user_id)}`}</div>
+                    <div>Дата: ${formatDate(item.created_at)}</div>
+                    <div>Статус: ${escapeHtml(item.status || "new")}</div>
+                </div>
+                <p class="card-description" style="margin-top:10px;">${escapeHtml(item.message || "")}</p>
+                <div class="compact-actions compact-actions-3">
+                    <button class="secondary-btn admin-soft-btn" onclick="adminSetSuggestionStatus(${Number(item.id)}, 'reviewed')">На розгляді</button>
+                    <button class="approve-btn admin-success-btn" onclick="adminSetSuggestionStatus(${Number(item.id)}, 'done')">Виконано</button>
+                    <button class="remove-btn admin-warn-btn" onclick="adminSetSuggestionStatus(${Number(item.id)}, 'new')">Повернути в нові</button>
+                </div>
+            </div></div>
+        `).join("") : `<div class="empty-card">Ідей поки немає</div>`;
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+    }
+}
+
+async function adminSetSuggestionStatus(suggestionId, status) {
+    if (isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/suggestions/${suggestionId}/status?current_admin_id=${currentUser.id}`, {
+            method: "POST",
+            body: JSON.stringify({ status })
+        });
+        await loadAdminSummary();
+        await loadAdminSuggestions();
+    } catch (error) {
+        showAlert(error.message || "Помилка");
+    } finally {
+        setLoading(false);
+    }
 }
 
 async function loadAdminLogs() {
@@ -1653,17 +1736,37 @@ async function openUserProfile(userId) {
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
-        const profile = await safeFetch(`${API_BASE}/users/${userId}/public-profile`);
+        const [profile, reviews] = await Promise.all([
+            safeFetch(`${API_BASE}/users/${userId}/public-profile`),
+            safeFetch(`${API_BASE}/users/${userId}/reviews`)
+        ]);
 
         const avatar = profile.avatar_url && isValidUrl(profile.avatar_url)
             ? `<img class="user-profile-avatar-img" src="${escapeHtml(profile.avatar_url)}" alt="${escapeHtml(profile.username || "user")}">`
             : `<div class="user-profile-avatar-fallback">${escapeHtml((profile.full_name || profile.username || "U").charAt(0).toUpperCase())}</div>`;
 
+        const reviewsHtml = Array.isArray(reviews) && reviews.length
+            ? reviews.slice(0, 10).map(item => `
+                <div class="review-item">
+                    <div class="review-item-top">
+                        <strong>${escapeHtml(item.buyer_full_name || (item.buyer_username ? `@${item.buyer_username}` : "Покупець"))}</strong>
+                        <span class="review-stars">${"★".repeat(Number(item.rating || 0))}</span>
+                    </div>
+                    ${item.comment ? `<div class="review-item-text">${escapeHtml(item.comment)}</div>` : `<div class="review-item-text muted-inline">Без текстового відгуку</div>`}
+                    <div class="review-item-date">${formatDate(item.created_at)}</div>
+                </div>
+            `).join("")
+            : `<div class="empty-card">Відгуків поки немає</div>`;
+
         body.innerHTML = `
-            <div class="public-profile-card">
+            <div class="public-profile-card profile-showcase">
                 <div class="public-profile-header">
                     <div class="user-profile-avatar">${avatar}</div>
                     <div class="user-profile-main">
+                        <div class="public-badge-row">
+                            <span class="mini-badge">Продавець</span>
+                            ${profile.is_admin ? `<span class="mini-badge mini-badge-gold">Адмін</span>` : ""}
+                        </div>
                         <h3 class="user-profile-name">${escapeHtml(profile.full_name || "Без імені")}</h3>
                         <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
                         <div class="user-profile-rating">⭐ ${escapeHtml(String(profile.rating || 0))} <span class="muted-inline">(${escapeHtml(String(profile.rating_count || 0))} оцінок)</span></div>
@@ -1671,19 +1774,14 @@ async function openUserProfile(userId) {
                 </div>
 
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-value">${Number(profile.active_products || 0)}</span>
-                        <span class="stat-label">Активні</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">${Number(profile.sold_products || 0)}</span>
-                        <span class="stat-label">Продані</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">${Number(profile.archived_products || 0)}</span>
-                        <span class="stat-label">Архів</span>
-                    </div>
+                    <div class="stat-card"><span class="stat-value">${Number(profile.active_products || 0)}</span><span class="stat-label">Активні</span></div>
+                    <div class="stat-card"><span class="stat-value">${Number(profile.sold_products || 0)}</span><span class="stat-label">Продані</span></div>
+                    <div class="stat-card"><span class="stat-value">${Number(profile.archived_products || 0)}</span><span class="stat-label">Архів</span></div>
+                    <div class="stat-card"><span class="stat-value">${Number(profile.reviews_count || 0)}</span><span class="stat-label">Відгуки</span></div>
                 </div>
+
+                <div class="profile-section-title">Відгуки покупців</div>
+                <div class="reviews-list">${reviewsHtml}</div>
 
                 ${profile.telegram_link
                     ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
@@ -1757,6 +1855,9 @@ if (typeof adminMakeAdmin === "function") window.adminMakeAdmin = adminMakeAdmin
 if (typeof adminRemoveAdmin === "function") window.adminRemoveAdmin = adminRemoveAdmin;
 if (typeof adminArchiveProduct === "function") window.adminArchiveProduct = adminArchiveProduct;
 if (typeof adminDeleteProduct === "function") window.adminDeleteProduct = adminDeleteProduct;
+if (typeof submitSuggestion === "function") window.submitSuggestion = submitSuggestion;
+if (typeof adminRestoreProduct === "function") window.adminRestoreProduct = adminRestoreProduct;
+if (typeof adminSetSuggestionStatus === "function") window.adminSetSuggestionStatus = adminSetSuggestionStatus;
 if (typeof openUserProfile === "function") window.openUserProfile = openUserProfile;
 if (typeof closeUserProfileModal === "function") window.closeUserProfileModal = closeUserProfileModal;
 if (typeof closeUserProfileOnBackdrop === "function") window.closeUserProfileOnBackdrop = closeUserProfileOnBackdrop;
