@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=203">
+    <link rel="stylesheet" href="style.css?v=170">
     <style>
         .profile-hero-card{background:#1e293b;border-radius:18px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
         .profile-hero-main{display:flex;align-items:center;gap:14px;min-width:0}
@@ -24,7 +24,7 @@
         .public-profile-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
         .user-profile-avatar{width:72px;height:72px;border-radius:50%;overflow:hidden;background:#334155;display:flex;align-items:center;justify-content:center;flex:0 0 72px}
         .user-profile-avatar-img{width:100%;height:100%;object-fit:cover}
-        .user-profile-avatar-fallback{font-size:28px;font-weight:700}.public-badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}.mini-badge{display:inline-flex;padding:6px 10px;border-radius:999px;background:#1d4ed8;color:#fff;font-size:12px}.mini-badge-gold{background:#f59e0b;color:#111827}.profile-section-title{font-size:18px;font-weight:700;margin:16px 0 10px}.reviews-list{display:grid;gap:10px}.review-item{background:#0f172a;border:1px solid #334155;border-radius:14px;padding:12px}.review-item-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.review-stars{color:#facc15}.review-item-text{line-height:1.4;color:#e2e8f0}.review-item-date{margin-top:8px;color:#94a3b8;font-size:12px}
+        .user-profile-avatar-fallback{font-size:28px;font-weight:700}
         @media (max-width:600px){.profile-hero-name{font-size:22px}.admin-grid-3{grid-template-columns:1fr!important}.admin-search-row{grid-template-columns:1fr}.profile-avatar{width:64px;height:64px;flex-basis:64px}}
     </style>
 </head>
@@ -97,33 +97,27 @@
                             <option value="Усі">Усі категорії</option>
                             <option value="Смартфони">Смартфони</option>
                             <option value="Ноутбуки">Ноутбуки</option>
-                            <option value="Планшети">Планшети</option>
                             <option value="Навушники">Навушники</option>
                             <option value="Ігрові приставки">Ігрові приставки</option>
-                            <option value="Комп'ютери та ПК">Комп'ютери та ПК</option>
-                            <option value="Побутова техніка">Побутова техніка</option>
+                            <option value="Планшети">Планшети</option>
+                            <option value="Аксесуари">Аксесуари</option>
                             <option value="Одяг та взуття">Одяг та взуття</option>
-                            <option value="Автотовари">Автотовари</option>
                             <option value="Дім та сад">Дім та сад</option>
+                            <option value="Меблі">Меблі</option>
                             <option value="Будматеріали">Будматеріали</option>
                             <option value="Тварини">Тварини</option>
                             <option value="Нерухомість">Нерухомість</option>
-                            <option value="Меблі">Меблі</option>
-                            <option value="Спорт">Спорт</option>
+                            <option value="Автотовари">Автотовари</option>
+                            <option value="Спорт і хобі">Спорт і хобі</option>
+                            <option value="Дитячі товари">Дитячі товари</option>
+                            <option value="Краса та здоров'я">Краса та здоров'я</option>
                             <option value="Книги">Книги</option>
-                            <option value="Аксесуари">Аксесуари</option>
                             <option value="Інше">Інше</option>
                         </select>
 
                         <select id="city-filter" onchange="loadProducts()">
                             <option value="Усі">Усі міста</option>
                             <option value="Київ">Київ</option>
-                            <option value="Харків">Харків</option>
-                            <option value="Одеса">Одеса</option>
-                            <option value="Дніпро">Дніпро</option>
-                            <option value="Львів">Львів</option>
-                            <option value="Запоріжжя">Запоріжжя</option>
-                            <option value="Вінниця">Вінниця</option>
                             <option value="Прага">Прага</option>
                             <option value="Берлін">Берлін</option>
                             <option value="Рим">Рим</option>
@@ -131,11 +125,28 @@
                             <option value="Відень">Відень</option>
                             <option value="Париж">Париж</option>
                             <option value="Мадрид">Мадрид</option>
-                            <option value="Лісабон">Лісабон</option>
-                            <option value="Амстердам">Амстердам</option>
-                            <option value="Брюссель">Брюссель</option>
                             <option value="Будапешт">Будапешт</option>
                             <option value="Братислава">Братислава</option>
+                            <option value="Львів">Львів</option>
+                            <option value="Одеса">Одеса</option>
+                            <option value="Дніпро">Дніпро</option>
+                            <option value="Харків">Харків</option>
+                            <option value="Запоріжжя">Запоріжжя</option>
+                            <option value="Вінниця">Вінниця</option>
+                            <option value="Полтава">Полтава</option>
+                            <option value="Чернігів">Чернігів</option>
+                            <option value="Черкаси">Черкаси</option>
+                            <option value="Житомир">Житомир</option>
+                            <option value="Хмельницький">Хмельницький</option>
+                            <option value="Тернопіль">Тернопіль</option>
+                            <option value="Івано-Франківськ">Івано-Франківськ</option>
+                            <option value="Луцьк">Луцьк</option>
+                            <option value="Рівне">Рівне</option>
+                            <option value="Ужгород">Ужгород</option>
+                            <option value="Чернівці">Чернівці</option>
+                            <option value="Миколаїв">Миколаїв</option>
+                            <option value="Суми">Суми</option>
+                            <option value="Кропивницький">Кропивницький</option>
                             <option value="Інше">Інше</option>
                         </select>
 
@@ -148,9 +159,9 @@
                         <select id="sort-filter" onchange="loadProducts()">
                             <option value="newest">Спочатку нові</option>
                             <option value="oldest">Спочатку старі</option>
-                            <option value="price_asc">Спочатку дешевші</option>
-                            <option value="price_desc">Спочатку дорожчі</option>
-                            <option value="rating_desc">Кращий рейтинг продавця</option>
+                            <option value="price_asc">Дешевші спочатку</option>
+                            <option value="price_desc">Дорожчі спочатку</option>
+                            <option value="seller_rating">Кращий рейтинг продавця</option>
                         </select>
 
                         <input id="price-min-filter" type="number" placeholder="Ціна від">
@@ -158,7 +169,7 @@
                     </div>
                 </div>
 
-                <div id="products-list" class="cards"></div>
+                <div id="products-list" class="cards cards-grid"></div>
             </section>
 
             <section id="tab-my-products" class="tab-section">
@@ -206,24 +217,23 @@
 
                     <label>Категорія</label>
                     <select id="product-category">
-                        <option value="">Оберіть категорію</option>
                             <option value="Смартфони">Смартфони</option>
                             <option value="Ноутбуки">Ноутбуки</option>
-                            <option value="Планшети">Планшети</option>
                             <option value="Навушники">Навушники</option>
                             <option value="Ігрові приставки">Ігрові приставки</option>
-                            <option value="Комп'ютери та ПК">Комп'ютери та ПК</option>
-                            <option value="Побутова техніка">Побутова техніка</option>
+                            <option value="Планшети">Планшети</option>
+                            <option value="Аксесуари">Аксесуари</option>
                             <option value="Одяг та взуття">Одяг та взуття</option>
-                            <option value="Автотовари">Автотовари</option>
                             <option value="Дім та сад">Дім та сад</option>
+                            <option value="Меблі">Меблі</option>
                             <option value="Будматеріали">Будматеріали</option>
                             <option value="Тварини">Тварини</option>
                             <option value="Нерухомість">Нерухомість</option>
-                            <option value="Меблі">Меблі</option>
-                            <option value="Спорт">Спорт</option>
+                            <option value="Автотовари">Автотовари</option>
+                            <option value="Спорт і хобі">Спорт і хобі</option>
+                            <option value="Дитячі товари">Дитячі товари</option>
+                            <option value="Краса та здоров'я">Краса та здоров'я</option>
                             <option value="Книги">Книги</option>
-                            <option value="Аксесуари">Аксесуари</option>
                             <option value="Інше">Інше</option>
                     </select>
 
@@ -236,14 +246,7 @@
 
                     <label>Місто</label>
                     <select id="product-city">
-                        <option value="">Оберіть місто</option>
                             <option value="Київ">Київ</option>
-                            <option value="Харків">Харків</option>
-                            <option value="Одеса">Одеса</option>
-                            <option value="Дніпро">Дніпро</option>
-                            <option value="Львів">Львів</option>
-                            <option value="Запоріжжя">Запоріжжя</option>
-                            <option value="Вінниця">Вінниця</option>
                             <option value="Прага">Прага</option>
                             <option value="Берлін">Берлін</option>
                             <option value="Рим">Рим</option>
@@ -251,11 +254,28 @@
                             <option value="Відень">Відень</option>
                             <option value="Париж">Париж</option>
                             <option value="Мадрид">Мадрид</option>
-                            <option value="Лісабон">Лісабон</option>
-                            <option value="Амстердам">Амстердам</option>
-                            <option value="Брюссель">Брюссель</option>
                             <option value="Будапешт">Будапешт</option>
                             <option value="Братислава">Братислава</option>
+                            <option value="Львів">Львів</option>
+                            <option value="Одеса">Одеса</option>
+                            <option value="Дніпро">Дніпро</option>
+                            <option value="Харків">Харків</option>
+                            <option value="Запоріжжя">Запоріжжя</option>
+                            <option value="Вінниця">Вінниця</option>
+                            <option value="Полтава">Полтава</option>
+                            <option value="Чернігів">Чернігів</option>
+                            <option value="Черкаси">Черкаси</option>
+                            <option value="Житомир">Житомир</option>
+                            <option value="Хмельницький">Хмельницький</option>
+                            <option value="Тернопіль">Тернопіль</option>
+                            <option value="Івано-Франківськ">Івано-Франківськ</option>
+                            <option value="Луцьк">Луцьк</option>
+                            <option value="Рівне">Рівне</option>
+                            <option value="Ужгород">Ужгород</option>
+                            <option value="Чернівці">Чернівці</option>
+                            <option value="Миколаїв">Миколаїв</option>
+                            <option value="Суми">Суми</option>
+                            <option value="Кропивницький">Кропивницький</option>
                             <option value="Інше">Інше</option>
                     </select>
 
@@ -295,6 +315,7 @@
                         <div class="profile-hero-text">
                             <div id="profile-fullname" class="profile-hero-name">Без імені</div>
                             <div id="profile-username" class="profile-hero-username">@username</div>
+                            <div id="profile-rating-badge" class="profile-rating-badge">Новий продавець</div>
                         </div>
                     </div>
                     <button id="profile-edit-toggle-btn" class="icon-circle-btn" onclick="toggleProfileEdit()" title="Налаштування">⚙</button>
@@ -343,22 +364,26 @@
                 </div>
 
                 <div class="profile-card">
-                    <h3 class="profile-subtitle">Ідея для покращення</h3>
-                    <label>Назва ідеї</label>
-                    <input id="suggestion-title" type="text" placeholder="Наприклад: Додати чат між продавцем і покупцем">
-                    <label>Опишіть вашу пропозицію</label>
-                    <textarea id="suggestion-message" placeholder="Що саме хочете покращити або додати?"></textarea>
-                    <button class="primary-btn" onclick="submitSuggestion()">Надіслати ідею</button>
+                    <button class="secondary-btn full-btn" onclick="toggleIdeasPanel()">Ідеї та побажання</button>
+                    <div id="ideas-wrap" class="hidden" style="margin-top: 14px;">
+                        <h3 class="profile-subtitle">Ідея для покращення</h3>
+                        <label>Назва ідеї</label>
+                        <input id="idea-title" type="text" placeholder="Наприклад: Додати чат між продавцем і покупцем">
+                        <label>Опишіть вашу пропозицію</label>
+                        <textarea id="idea-message" rows="4" placeholder="Що саме хочете покращити або додати?"></textarea>
+                        <button class="primary-btn" onclick="submitIdea()">Надіслати ідею</button>
+                    </div>
                 </div>
 
                 <div id="admin-panel-wrap" class="profile-card hidden">
                     <button id="admin-toggle-btn" class="secondary-btn full-btn" onclick="toggleAdminPanel()">Адмін панель</button>
                     <div id="admin-panel-body" class="hidden" style="margin-top: 14px;">
                         <div id="admin-summary" class="admin-summary"></div>
-                        <div class="subtabs">
+                        <div class="subtabs admin-subtabs">
                             <button id="admin-users-tab-btn" class="subtab-btn active" onclick="switchAdminTab('users')">Користувачі</button>
                             <button id="admin-products-tab-btn" class="subtab-btn" onclick="switchAdminTab('products')">Оголошення</button>
-                            <button id="admin-suggestions-tab-btn" class="subtab-btn" onclick="switchAdminTab('suggestions')">Ідеї</button>
+                            <button id="admin-ideas-tab-btn" class="subtab-btn" onclick="switchAdminTab('ideas')">Ідеї</button>
+                            <button id="admin-reports-tab-btn" class="subtab-btn" onclick="switchAdminTab('reports')">Скарги</button>
                             <button id="admin-logs-tab-btn" class="subtab-btn" onclick="switchAdminTab('logs')">Логи</button>
                         </div>
                         <div id="admin-users-tab" class="admin-tab-section">
@@ -375,8 +400,11 @@
                             </div>
                             <div id="admin-products-list" class="cards"></div>
                         </div>
-                        <div id="admin-suggestions-tab" class="admin-tab-section hidden">
-                            <div id="admin-suggestions-list" class="cards"></div>
+                        <div id="admin-ideas-tab" class="admin-tab-section hidden">
+                            <div id="admin-ideas-list" class="cards"></div>
+                        </div>
+                        <div id="admin-reports-tab" class="admin-tab-section hidden">
+                            <div id="admin-reports-list" class="cards"></div>
                         </div>
                         <div id="admin-logs-tab" class="admin-tab-section hidden">
                             <div id="admin-logs-list" class="cards"></div>
@@ -424,10 +452,51 @@
         </div>
     </div>
 
-    <script src="app.js?v=203"></script>
+    <div id="review-modal" class="modal hidden" onclick="if(event.target.id==='review-modal') closeReviewModal()">
+        <div class="modal-content small-modal-content">
+            <button class="modal-close" onclick="closeReviewModal()">×</button>
+            <h3 style="margin-bottom:12px;">Залишити відгук</h3>
+            <label>Оцінка</label>
+            <select id="review-rating">
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+            </select>
+            <label>Коментар</label>
+            <textarea id="review-comment" rows="4" placeholder="Поділіться враженням від покупки"></textarea>
+            <button class="primary-btn" onclick="submitReview()">Надіслати</button>
+        </div>
+    </div>
+
+    <div id="report-modal" class="modal hidden" onclick="if(event.target.id==='report-modal') closeReportModal()">
+        <div class="modal-content small-modal-content">
+            <button class="modal-close" onclick="closeReportModal()">×</button>
+            <h3 style="margin-bottom:12px;">Скарга на оголошення</h3>
+            <p id="report-product-title" class="subtitle" style="text-align:left; margin-bottom:10px;"></p>
+            <input id="report-product-id" type="hidden">
+            <label>Причина</label>
+            <select id="report-reason" onchange="handleReportReasonChange()">
+                <option value="Шахрайство">Шахрайство</option>
+                <option value="Неправдивий опис">Неправдивий опис</option>
+                <option value="Заборонений товар">Заборонений товар</option>
+                <option value="Спам">Спам</option>
+                <option value="Інше">Інше</option>
+            </select>
+            <div id="report-custom-reason-wrap" class="hidden">
+                <label>Вкажіть причину</label>
+                <textarea id="report-custom-reason" rows="3" placeholder="Опишіть причину"></textarea>
+            </div>
+            <label>Коментар</label>
+            <textarea id="report-comment" rows="3" placeholder="Додатково, якщо потрібно"></textarea>
+            <button class="primary-btn" onclick="submitReport()">Надіслати скаргу</button>
+        </div>
+    </div>
+
+    <script src="app.js?v=180"></script>
 </body>
 </html>
-
 
 
 
