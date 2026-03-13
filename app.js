@@ -1552,32 +1552,58 @@ async function loadAdminLogs() {
 async function openUserProfile(userId) {
     const modal = $("user-profile-modal");
     const body = $("user-profile-modal-body");
+
     if (!modal || !body) return;
+
     modal.classList.remove("hidden");
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+
     try {
         const profile = await safeFetch(`${API_BASE}/users/${userId}/public-profile`);
-        const avatarHtml = profile.avatar_url && isValidUrl(profile.avatar_url)
-            ? `<img class="user-profile-avatar-img" src="${escapeHtml(profile.avatar_url)}" alt="avatar">`
-            : `<div class="user-profile-avatar-fallback">${escapeHtml((profile.full_name || profile.username || 'U').charAt(0).toUpperCase())}</div>`;
+
+        const avatar = profile.avatar_url
+            ? `<img class="user-profile-avatar-img" src="${escapeHtml(profile.avatar_url)}" alt="${escapeHtml(profile.username || "user")}">`
+            : `<div class="user-profile-avatar-fallback">${escapeHtml((profile.full_name || profile.username || "U").charAt(0).toUpperCase())}</div>`;
+
         body.innerHTML = `
-            <div class="profile-card public-profile-card">
-                <div class="public-profile-header">
-                    <div class="user-profile-avatar">${avatarHtml}</div>
-                    <div>
-                        <div class="profile-hero-name">${escapeHtml(profile.full_name || profile.username || "Користувач")}</div>
-                        <div class="profile-hero-username">@${escapeHtml(profile.username || "")}</div>
+            <div class="user-profile-modal-card">
+                <div class="user-profile-header">
+                    <div class="user-profile-avatar">${avatar}</div>
+                    <div class="user-profile-main">
+                        <h3 class="user-profile-name">${escapeHtml(profile.full_name || "Без імені")}</h3>
+                        <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
+                        ${
+                            profile.rating_count > 0
+                                ? `<div class="user-profile-rating">⭐ ${escapeHtml(String(profile.rating))} (${escapeHtml(String(profile.rating_count))})</div>`
+                                : ``
+                        }
                     </div>
                 </div>
-                <div class="stats-grid compact-stats-grid">
-                    <div class="stat-card"><span class="stat-value">${profile.stats?.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
-                    <div class="stat-card"><span class="stat-value">${profile.stats?.sold_products ?? 0}</span><span class="stat-label">Продані</span></div>
-                    <div class="stat-card"><span class="stat-value">${profile.stats?.archived_products ?? 0}</span><span class="stat-label">Архів</span></div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value">${profile.active_products ?? 0}</span>
+                        <span class="stat-label">Активні</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">${profile.sold_products ?? 0}</span>
+                        <span class="stat-label">Продані</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">${profile.archived_products ?? 0}</span>
+                        <span class="stat-label">Архів</span>
+                    </div>
                 </div>
-                ${profile.telegram_link ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>` : ""}
-            </div>`;
+
+                ${
+                    profile.telegram_link
+                        ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
+                        : `<button class="own-product-btn" disabled>Telegram недоступний</button>`
+                }
+            </div>
+        `;
     } catch (error) {
-        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити профіль")}</div>`;
     }
 }
 
@@ -1650,3 +1676,4 @@ if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
 
 initApp();
+
