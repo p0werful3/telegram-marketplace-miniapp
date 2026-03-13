@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "211";
+const FRONTEND_VERSION = "212";
 
 let tg = null;
 let telegramUser = null;
@@ -57,6 +57,18 @@ function formatDate(value) {
         return "";
     }
 }
+function getUserAverageRating(user = currentUser) {
+    const count = Number(user?.rating_count || 0);
+    if (!count) return 0;
+    return Number((Number(user?.rating_sum || 0) / count).toFixed(1));
+}
+
+function getUserRatingLabel(user = currentUser) {
+    const count = Number(user?.rating_count || 0);
+    if (!count) return "Новий продавець";
+    return `⭐ ${getUserAverageRating(user)} · ${count} відгук${count > 1 ? 'ів' : ''}`;
+}
+
 
 function parseTelegramUserFromInitData(initData) {
     if (!initData) return null;
@@ -69,6 +81,57 @@ function parseTelegramUserFromInitData(initData) {
     } catch (error) {
         console.error("Parse Telegram initData error:", error);
         return null;
+    }
+}
+
+function getTelegramInitDataFromLocation() {
+    try {
+        const candidates = [window.location.search || "", window.location.hash || ""];
+        for (const raw of candidates) {
+            if (!raw) continue;
+            const clean = raw.startsWith("#") || raw.startsWith("?") ? raw.slice(1) : raw;
+            const params = new URLSearchParams(clean);
+            const direct = params.get("tgWebAppData") || params.get("tgWebAppInitData") || params.get("initData");
+            if (direct) return direct;
+        }
+    } catch (error) {
+        console.error("Telegram location initData parse error:", error);
+    }
+    return null;
+}
+
+function getTelegramUserFromEnvironment() {
+    return telegramUser
+        || tg?.initDataUnsafe?.user
+        || parseTelegramUserFromInitData(tg?.initData)
+        || parseTelegramUserFromInitData(getTelegramInitDataFromLocation())
+        || null;
+}
+
+function getTelegramInitData() {
+    return tg?.initData || getTelegramInitDataFromLocation() || null;
+}
+
+function refreshTelegramLoginUi() {
+    const tgButton = $("tg-login-btn");
+    const hint = $("tg-login-hint");
+    if (!tgButton && !hint) return;
+
+    const currentTgUser = getTelegramUserFromEnvironment();
+    const initData = getTelegramInitData();
+    const hasTelegramEnv = Boolean(tg || window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || initData || currentTgUser);
+
+    if (tgButton) {
+        tgButton.textContent = "Увійти через Telegram";
+        tgButton.disabled = false;
+        tgButton.classList.toggle("tg-ready", hasTelegramEnv);
+        tgButton.classList.toggle("tg-disabled", !hasTelegramEnv);
+    }
+
+    if (hint) {
+        hint.textContent = hasTelegramEnv
+            ? "Швидкий вхід через ваш Telegram акаунт"
+            : "Працює лише всередині Telegram Mini App";
     }
 }
 
@@ -87,20 +150,26 @@ function renderCartTotals(totalsByCurrency = {}) {
 
 function initTelegramWebApp() {
     try {
-        tg = window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || null;
+        tg = window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || tg || null;
 
         if (tg) {
-            tg.ready();
-            tg.expand();
-            telegramUser = tg.initDataUnsafe?.user || parseTelegramUserFromInitData(tg.initData) || null;
+            tg.ready?.();
+            tg.expand?.();
+            telegramUser = tg.initDataUnsafe?.user
+                || parseTelegramUserFromInitData(tg.initData)
+                || parseTelegramUserFromInitData(getTelegramInitDataFromLocation())
+                || telegramUser
+                || null;
         } else {
-            telegramUser = null;
+            telegramUser = parseTelegramUserFromInitData(getTelegramInitDataFromLocation()) || telegramUser || null;
         }
     } catch (error) {
         console.error("Telegram init error:", error);
         tg = null;
-        telegramUser = null;
+        telegramUser = parseTelegramUserFromInitData(getTelegramInitDataFromLocation()) || null;
     }
+
+    refreshTelegramLoginUi();
 }
 
 
@@ -219,8 +288,13 @@ function fillProfile() {
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
     if ($("profile-avatar-file")) $("profile-avatar-file").value = "";
     if ($("profile-rating-badge")) {
-        const rating = Number(currentUser.rating_count) > 0 ? `⭐ ${(Number(currentUser.rating_sum || 0) / Number(currentUser.rating_count || 1)).toFixed(1)} · ${currentUser.rating_count} відгук.` : "Новий продавець";
-        $("profile-rating-badge").textContent = rating;
+        $("profile-rating-badge").textContent = getUserRatingLabel(currentUser);
+    }
+    if ($("profile-rating-value")) {
+        $("profile-rating-value").textContent = Number(currentUser.rating_count || 0) > 0 ? `${getUserAverageRating(currentUser)}` : "—";
+    }
+    if ($("profile-rating-count")) {
+        $("profile-rating-count").textContent = `${Number(currentUser.rating_count || 0)} відгуків`;
     }
 }
 
@@ -243,6 +317,45 @@ async function togglePurchaseHistory(forceState = null) {
 
     if (shouldOpen) await loadPurchaseHistory();
 }
+async function toggleMyReviews(forceState = null) {
+    const wrap = $("my-reviews-wrap");
+    const btn = $("my-reviews-toggle-btn");
+    if (!wrap || !btn) return;
+
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
+    wrap.classList.toggle("hidden", !shouldOpen);
+    btn.classList.toggle("is-open", shouldOpen);
+
+    if (shouldOpen) await loadMyReviews();
+}
+
+async function loadMyReviews() {
+    const list = $("my-reviews-list");
+    if (!list || !currentUser?.id) return;
+
+    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+
+    try {
+        const items = await safeFetch(`${API_BASE}/users/${currentUser.id}/reviews`);
+        if (!Array.isArray(items) || !items.length) {
+            list.innerHTML = `<div class="empty-card">У вас поки немає відгуків</div>`;
+            return;
+        }
+
+        list.innerHTML = `<div class="cards">${items.map(item => `
+            <div class="card"><div class="card-body">
+                <div class="review-topline">
+                    <div class="review-stars">⭐ ${Number(item.rating || 0)}/5</div>
+                    <div class="review-date">${formatDate(item.created_at) || "—"}</div>
+                </div>
+                <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
+                <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
+            </div></div>
+        `).join("")}</div>`;
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити відгуки")}</div>`;
+    }
+}
 
 async function showApp() {
     $("auth-screen")?.classList.add("hidden");
@@ -254,6 +367,7 @@ async function showApp() {
 
     if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
     if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
+    if ($("my-reviews-wrap")) $("my-reviews-wrap").classList.add("hidden");
     if ($("admin-panel-body")) $("admin-panel-body").classList.add("hidden");
 
     resetCreateForm();
@@ -722,9 +836,15 @@ async function wakeApi() {
 
 function setupAuthScreen() {
     initTelegramWebApp();
-    setTimeout(initTelegramWebApp, 400);
+    [250, 700, 1400].forEach(delay => setTimeout(() => {
+        initTelegramWebApp();
+        refreshTelegramLoginUi();
+    }, delay));
+    window.addEventListener("load", () => {
+        initTelegramWebApp();
+        refreshTelegramLoginUi();
+    }, { once: true });
 
-    const tgButton = $("tg-login-btn");
     const remember = $("remember-me");
 
     if (remember && !localStorage.getItem("remember-me-choice")) {
@@ -737,20 +857,7 @@ function setupAuthScreen() {
         localStorage.setItem("remember-me-choice", remember.checked ? "1" : "0");
     });
 
-    if (tgButton) {
-        tgButton.textContent = "Увійти через Telegram";
-        const canUseTelegramLogin = Boolean(telegramUser || tg?.initData);
-        tgButton.disabled = !canUseTelegramLogin;
-        tgButton.classList.toggle("tg-ready", canUseTelegramLogin);
-        tgButton.classList.toggle("tg-disabled", !canUseTelegramLogin);
-    }
-
-    const hint = $("tg-login-hint");
-    if (hint) {
-        hint.textContent = (telegramUser || tg?.initData)
-            ? "Швидкий вхід через ваш Telegram акаунт"
-            : "Працює лише всередині Telegram Mini App";
-    }
+    refreshTelegramLoginUi();
 }
 
 async function registerNewUser() {
@@ -832,11 +939,13 @@ async function loginWithTelegram() {
     if (isLoading) return;
 
     initTelegramWebApp();
+    refreshTelegramLoginUi();
 
-    const parsedUser = telegramUser || parseTelegramUserFromInitData(tg?.initData);
+    const parsedUser = getTelegramUserFromEnvironment();
+    const initData = getTelegramInitData();
     const telegramId = parsedUser?.id || tg?.initDataUnsafe?.user?.id || null;
 
-    if (!telegramId && !tg?.initData) {
+    if (!telegramId && !initData) {
         showAlert("Telegram login доступний тільки всередині Telegram Mini App");
         return;
     }
@@ -851,7 +960,7 @@ async function loginWithTelegram() {
                 telegram_id: telegramId ? String(telegramId) : null,
                 username: parsedUser?.username || null,
                 full_name: `${parsedUser?.first_name || ""} ${parsedUser?.last_name || ""}`.trim() || null,
-                init_data: tg?.initData || null
+                init_data: initData
             })
         });
 
@@ -1929,8 +2038,8 @@ async function openUserProfile(userId) {
                             <h3 class="user-profile-name">${escapeHtml(profile.full_name || "Без імені")}</h3>
                             <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
                             <div class="seller-badges">
-                                <span class="seller-badge">${profile.rating_count > 0 ? `⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))} відгуків` : "Новий продавець"}</span>
-                                ${profile.is_admin ? `<span class="seller-badge accent">Адміністратор</span>` : ``}
+                                <span class="seller-badge accent">${profile.rating_count > 0 ? `⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))} відгуків` : "Новий продавець"}</span>
+                                ${profile.is_admin ? `<span class="seller-badge">Адміністратор</span>` : ``}
                             </div>
                         </div>
                     </div>
@@ -2040,6 +2149,7 @@ if (typeof toggleFavorite === "function") window.toggleFavorite = toggleFavorite
 if (typeof startEditProduct === "function") window.startEditProduct = startEditProduct;
 if (typeof toggleProfileEdit === "function") window.toggleProfileEdit = toggleProfileEdit;
 if (typeof togglePurchaseHistory === "function") window.togglePurchaseHistory = togglePurchaseHistory;
+if (typeof toggleMyReviews === "function") window.toggleMyReviews = toggleMyReviews;
 if (typeof toggleStatsPanel === "function") window.toggleStatsPanel = toggleStatsPanel;
 if (typeof toggleAdminPanel === "function") window.toggleAdminPanel = toggleAdminPanel;
 if (typeof switchAdminTab === "function") window.switchAdminTab = switchAdminTab;
