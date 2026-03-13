@@ -49,22 +49,13 @@ function formatPrice(price, currency = "USD") {
 }
 
 function formatDate(dateString) {
-    if (!dateString) return "—";
-
+    if (!dateString) return "";
     const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return "—";
-
+    if (Number.isNaN(date.getTime())) return "";
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-
     return `${day}.${month}.${year}`;
-}
-
-function shortDescription(value, maxLength = 96) {
-    const text = String(value || "").trim();
-    if (text.length <= maxLength) return text;
-    return `${text.slice(0, maxLength).trim()}…`;
 }
 
 function renderCartTotals(totalsByCurrency = {}) {
@@ -190,9 +181,17 @@ function fillProfile() {
 
     const usernameEl = $("profile-username");
     const fullnameEl = $("profile-fullname");
+    const avatarEl = $("profile-avatar");
 
-    if (usernameEl) usernameEl.textContent = currentUser.username || "—";
-    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || "—";
+    if (usernameEl) usernameEl.textContent = currentUser.username ? `@${currentUser.username}` : "—";
+    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || "Без імені";
+    if (avatarEl) {
+        if (currentUser.avatar_url && isValidUrl(currentUser.avatar_url)) {
+            avatarEl.innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" alt="avatar">`;
+        } else {
+            avatarEl.textContent = (currentUser.full_name || currentUser.username || "U").trim().charAt(0).toUpperCase();
+        }
+    }
 
     if ($("profile-edit-username")) $("profile-edit-username").value = currentUser.username || "";
     if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
@@ -325,6 +324,7 @@ async function loadStats() {
 function orderStatusLabel(status) {
     if (status === "approved") return "Підтверджено";
     if (status === "rejected") return "Відхилено";
+    if (status === "canceled") return "Скасовано";
     return "Очікує підтвердження";
 }
 
@@ -334,6 +334,7 @@ async function saveProfile() {
     const username = $("profile-edit-username")?.value.trim();
     const full_name = $("profile-edit-fullname")?.value.trim();
     const password = $("profile-edit-password")?.value.trim();
+    const avatarFile = $("profile-avatar-file")?.files?.[0] || null;
 
     if (!username) {
         showAlert("Введи тег / username");
@@ -342,9 +343,13 @@ async function saveProfile() {
 
     try {
         setLoading(true);
+        let avatar_url = currentUser.avatar_url || null;
+        if (avatarFile) {
+            avatar_url = await uploadImageToCloudinary(avatarFile);
+        }
         const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/profile`, {
             method: "PUT",
-            body: JSON.stringify({ username, full_name, password: password || null })
+            body: JSON.stringify({ username, full_name, avatar_url, password: password || null })
         });
         currentUser = data;
         saveSession(data);
@@ -383,6 +388,7 @@ async function loadPurchaseHistory() {
                         ${item.seller_full_name ? `<div>Ім'я продавця: ${escapeHtml(item.seller_full_name)}</div>` : ``}
                         <div>Статус: ${orderStatusLabel(item.status)}</div>
                     </div>
+                    ${item.status === "pending" ? `<button class="remove-btn" onclick="cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ``}
                 </div>
             </div>
         `).join("");
@@ -784,87 +790,106 @@ function renderCardTags(product) {
     if (product.status === "archived") tags.push("Архів");
 
     return `
-        <div class="card-tags compact-tags">
+        <div class="card-tags">
             ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
         </div>
     `;
 }
 
-function renderImageBlock(product, className = "card-image") {
+function renderImageBlock(product) {
     if (Array.isArray(product.image_urls) && product.image_urls.length) {
-        return `<img class="${className}" src="${escapeHtml(product.image_urls[0])}" alt="${escapeHtml(product.title)}">`;
+        return `<img class="card-image" src="${escapeHtml(product.image_urls[0])}" alt="${escapeHtml(product.title)}">`;
     }
 
     if (isValidUrl(product.image_url)) {
-        return `<img class="${className}" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`;
+        return `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`;
     }
 
-    return `<div class="${className} card-image-placeholder">Фото відсутнє</div>`;
+    return `<div class="card-image card-image-placeholder">Фото відсутнє</div>`;
 }
 
-function renderCompactCatalogCard(product, options = {}) {
-    const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
-    const isManageView = Boolean(options.manageView);
-    const showSeller = Boolean(options.showSeller);
-    const clickableClass = options.clickable === false ? "" : "card-clickable";
-    const dateLabel = product.created_at ? `Опубліковано: ${formatDate(product.created_at)}` : "Дата не вказана";
+function renderFavoriteButton(product) {
+    if (!currentUser) return "";
 
-    let footerActions = "";
-
-    if (isManageView) {
-        if (options.view === "active") {
-            footerActions = `
-                <div class="compact-actions-row">
-                    <button class="edit-btn compact-action-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
-                    <button class="delete-btn compact-action-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
-                </div>
-            `;
-        } else if (options.view === "sold") {
-            footerActions = `<div class="compact-status-badge sold">Продано</div>`;
-        } else {
-            footerActions = `<div class="compact-status-badge archived">В архіві</div>`;
-        }
-    } else if (isOwnProduct) {
-        footerActions = `<button class="own-product-btn compact-buy-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`;
-    } else {
-        footerActions = `<button class="buy-btn compact-buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">До кошика</button>`;
-    }
+    const isOwnProduct = Number(product.seller_id) === Number(currentUser.id);
+    if (isOwnProduct) return "";
 
     return `
-        <div class="market-card compact-market-card ${clickableClass}" onclick="openProductModal(${Number(product.id)})">
-            <div class="market-card-media compact-media">
-                ${renderImageBlock(product, "compact-thumb")}
-                ${!isManageView ? renderFavoriteButton(product) : ""}
+        <button
+            class="favorite-btn ${product.is_favorite ? "active" : ""}"
+            onclick="event.stopPropagation(); toggleFavorite(${Number(product.id)}, ${product.is_favorite ? "true" : "false"})"
+            title="Обране"
+        >
+            ${product.is_favorite ? "♥" : "♡"}
+        </button>
+    `;
+}
+
+function renderCatalogCard(product) {
+    const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
+
+    return `
+        <div class="compact-card" onclick="openProductModal(${Number(product.id)})">
+            <div class="compact-image-wrap">
+                ${renderImageBlock(product)}
+                ${renderFavoriteButton(product)}
             </div>
-            <div class="market-card-body compact-body">
-                <div class="compact-head-row">
-                    <div class="compact-head-main">
-                        <h3 class="compact-title">${escapeHtml(product.title)}</h3>
-                        <div class="compact-price">${formatPrice(product.price, product.currency)}</div>
-                    </div>
+            <div class="compact-info">
+                <div class="compact-top-row">
+                    <h3 class="compact-title">${escapeHtml(product.title)}</h3>
+                    <div class="compact-price">${formatPrice(product.price, product.currency)}</div>
                 </div>
-                <div class="compact-meta-row">
-                    <span>${escapeHtml(product.city || "Без міста")}</span>
-                    <span>•</span>
-                    <span>${escapeHtml(product.condition || "Не вказано")}</span>
+                <div class="compact-meta">${escapeHtml(product.city || "")}${product.city && product.condition ? " • " : ""}${escapeHtml(product.condition || "")}</div>
+                <div class="compact-desc">${escapeHtml(product.description || "")}</div>
+                <div class="compact-bottom">
+                    <button class="seller-link-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>
+                    <span class="compact-date">${product.created_at ? `Опубліковано: ${formatDate(product.created_at)}` : ""}</span>
                 </div>
-                <p class="compact-description">${escapeHtml(shortDescription(product.description || "", 110))}</p>
-                ${showSeller && product.seller_username ? `<p class="compact-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
-                <div class="compact-footer-row">
-                    <span class="compact-date">${dateLabel}</span>
-                    ${footerActions}
+                <div class="compact-actions">
+                    ${
+                        isOwnProduct
+                            ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
+                            : `<button class="buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">Додати в кошик</button>`
+                    }
                 </div>
             </div>
         </div>
     `;
 }
 
-function renderCatalogCard(product) {
-    return renderCompactCatalogCard(product, { showSeller: false });
-}
-
 function renderMyProductCard(product, view) {
-    return renderCompactCatalogCard(product, { manageView: true, view, showSeller: false });
+    let actionButton = "";
+
+    if (view === "active") {
+        actionButton = `
+            <div class="card-actions inline-actions">
+                <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
+            </div>
+        `;
+    } else if (view === "sold") {
+        actionButton = `<button class="sold-btn" disabled>Продано</button>`;
+    } else {
+        actionButton = `<button class="archive-btn" disabled>В архіві</button>`;
+    }
+
+    return `
+        <div class="compact-card" onclick="openProductModal(${Number(product.id)})">
+            <div class="compact-image-wrap">${renderImageBlock(product)}</div>
+            <div class="compact-info">
+                <div class="compact-top-row">
+                    <h3 class="compact-title">${escapeHtml(product.title)}</h3>
+                    <div class="compact-price">${formatPrice(product.price, product.currency)}</div>
+                </div>
+                <div class="compact-meta">${escapeHtml(product.city || "")} ${product.condition ? `• ${escapeHtml(product.condition)}` : ""}</div>
+                <div class="compact-desc">${escapeHtml(product.description || "")}</div>
+                <div class="compact-bottom">
+                    <span class="compact-date">${product.created_at ? `Опубліковано: ${formatDate(product.created_at)}` : ""}</span>
+                </div>
+                <div class="compact-actions">${actionButton}</div>
+            </div>
+        </div>
+    `;
 }
 
 async function loadProducts() {
@@ -996,9 +1021,8 @@ async function openProductModal(productId) {
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
                     <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    <div class="modal-product-meta">${escapeHtml(product.city || "Без міста")} • ${escapeHtml(product.condition || "Не вказано")}</div>
-                    <div class="modal-product-date">Опубліковано: ${formatDate(product.created_at)}</div>
-                    ${product.seller_username ? `<p class="card-seller">Продавець: @${escapeHtml(product.seller_username)}</p>` : ""}
+                    ${product.created_at ? `<p class="card-seller">Опубліковано: ${formatDate(product.created_at)}</p>` : ""}
+                    ${product.seller_username ? `<button class="seller-link-btn" onclick="openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                     <div class="card-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
@@ -1336,6 +1360,61 @@ async function toggleFavorite(productId, isFavoriteNow) {
     }
 }
 
+
+
+async function cancelPurchaseRequest(orderId) {
+    if (!currentUser || isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/orders/${orderId}/cancel?buyer_id=${currentUser.id}`, { method: "POST" });
+        showAlert("Запит скасовано");
+        await loadPurchaseHistory();
+        await loadStats();
+        await loadMyProducts();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося скасувати запит");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function openUserProfile(userId) {
+    const modal = $("user-modal");
+    const body = $("user-modal-body");
+    if (!modal || !body) return;
+    modal.classList.remove("hidden");
+    body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    try {
+        const data = await safeFetch(`${API_BASE}/users/${userId}/public-profile`);
+        const avatar = data.avatar_url && isValidUrl(data.avatar_url)
+            ? `<img class="user-profile-avatar-img" src="${escapeHtml(data.avatar_url)}" alt="avatar">`
+            : `<div class="user-profile-avatar-fallback">${escapeHtml((data.full_name || data.username || "U").charAt(0).toUpperCase())}</div>`;
+        body.innerHTML = `
+            <div class="user-profile-card">
+                <div class="user-profile-avatar">${avatar}</div>
+                <div class="user-profile-name">${escapeHtml(data.full_name || "Без імені")}</div>
+                <div class="user-profile-username">@${escapeHtml(data.username || "")}</div>
+                <div class="user-profile-stats">
+                    <div class="mini-stat"><strong>${Number(data.stats?.active_products || 0)}</strong><span>Активні</span></div>
+                    <div class="mini-stat"><strong>${Number(data.stats?.sold_products || 0)}</strong><span>Продані</span></div>
+                    <div class="mini-stat"><strong>${Number(data.stats?.archived_products || 0)}</strong><span>Архів</span></div>
+                </div>
+                ${data.telegram_link ? `<a class="contact-btn contact-link" href="${escapeHtml(data.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>` : ""}
+            </div>
+        `;
+    } catch (error) {
+        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+    }
+}
+
+function closeUserModal() {
+    $("user-modal")?.classList.add("hidden");
+}
+
+function closeUserModalOnBackdrop(event) {
+    if (event.target?.id === "user-modal") closeUserModal();
+}
+
 async function initApp() {
     setupAuthScreen();
 
@@ -1382,6 +1461,10 @@ const exposedFunctions = {
     togglePurchaseHistory,
     setModalImage,
     handlePurchaseRequest,
+    cancelPurchaseRequest,
+    openUserProfile,
+    closeUserModal,
+    closeUserModalOnBackdrop,
 };
 
 Object.assign(window, exposedFunctions);
