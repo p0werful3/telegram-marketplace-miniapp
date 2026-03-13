@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "180";
+const FRONTEND_VERSION = "210";
 
 let tg = null;
 let telegramUser = null;
@@ -721,10 +721,18 @@ function setupAuthScreen() {
         localStorage.setItem("remember-me-choice", remember.checked ? "1" : "0");
     });
 
-    if (telegramUser) {
-        if (tgButton) tgButton.textContent = "Увійти через Telegram (рекомендується)";
-    } else {
-        if (tgButton) tgButton.textContent = "Telegram login доступний тільки в Telegram";
+    if (tgButton) {
+        tgButton.textContent = "Увійти через Telegram";
+        tgButton.disabled = !telegramUser;
+        tgButton.classList.toggle("tg-ready", Boolean(telegramUser));
+        tgButton.classList.toggle("tg-disabled", !telegramUser);
+    }
+
+    const hint = $("tg-login-hint");
+    if (hint) {
+        hint.textContent = telegramUser
+            ? "Швидкий вхід через ваш Telegram акаунт"
+            : "Працює лише всередині Telegram Mini App";
     }
 }
 
@@ -1640,6 +1648,99 @@ async function adminDeleteProduct(productId) {
     finally { setLoading(false); }
 }
 
+
+async function toggleIdeasPanel(forceState = null) {
+    const wrap = $("ideas-wrap");
+    const btn = $("ideas-toggle-btn");
+    if (!wrap || !btn) return;
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
+    wrap.classList.toggle("hidden", !shouldOpen);
+    btn.textContent = shouldOpen ? "Сховати ідеї та побажання" : "Ідеї та побажання";
+}
+
+async function submitIdea() {
+    if (!currentUser || isLoading) return;
+    const title = $("idea-title")?.value.trim() || "";
+    const message = $("idea-message")?.value.trim() || "";
+    if (!title || !message) {
+        showAlert("Заповни назву та опис ідеї");
+        return;
+    }
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/suggestions`, {
+            method: "POST",
+            body: JSON.stringify({ user_id: currentUser.id, title, message })
+        });
+        $("idea-title").value = "";
+        $("idea-message").value = "";
+        showAlert("Ідею надіслано");
+        if (currentUser.is_admin) await loadAdminSummary();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося надіслати ідею");
+    } finally {
+        setLoading(false);
+    }
+}
+
+function openReportModal(productId, title = "") {
+    const modal = $("report-modal");
+    if (!modal) return;
+    $("report-product-id").value = String(productId || "");
+    $("report-title").textContent = title ? `Скарга на: ${title}` : "Скарга на оголошення";
+    $("report-reason").value = "Шахрайство";
+    $("report-comment").value = "";
+    $("report-custom-reason-wrap")?.classList.add("hidden");
+    modal.classList.remove("hidden");
+}
+
+function handleReportReasonChange() {
+    const reason = $("report-reason")?.value || "Шахрайство";
+    $("report-custom-reason-wrap")?.classList.toggle("hidden", reason !== "Інше");
+}
+
+function closeReportModal() {
+    $("report-modal")?.classList.add("hidden");
+}
+
+function closeReportModalOnBackdrop(event) {
+    if (event.target?.id === "report-modal") closeReportModal();
+}
+
+async function submitReport() {
+    if (!currentUser || isLoading) return;
+    const listingId = Number($("report-product-id")?.value || 0);
+    let reason = $("report-reason")?.value || "Шахрайство";
+    const comment = $("report-comment")?.value.trim() || "";
+    if (!listingId) {
+        showAlert("Оголошення не знайдено");
+        return;
+    }
+    if (reason === "Інше" && !comment) {
+        showAlert("Опиши свою причину скарги");
+        return;
+    }
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/reports`, {
+            method: "POST",
+            body: JSON.stringify({
+                reporter_id: currentUser.id,
+                listing_id: listingId,
+                reason,
+                comment: comment || null
+            })
+        });
+        closeReportModal();
+        showAlert("Скаргу надіслано");
+        if (currentUser.is_admin) await loadAdminSummary();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося надіслати скаргу");
+    } finally {
+        setLoading(false);
+    }
+}
+
 async function loadAdminIdeas() {
     const list = $("admin-ideas-list");
     if (!list || !currentUser) return;
@@ -1775,40 +1876,37 @@ async function openUserProfile(userId) {
             : `<div class="user-profile-avatar-fallback">${escapeHtml((profile.full_name || profile.username || "U").charAt(0).toUpperCase())}</div>`;
 
         body.innerHTML = `
-            <div class="user-profile-modal-card">
-                <div class="user-profile-header">
-                    <div class="user-profile-avatar">${avatar}</div>
-                    <div class="user-profile-main">
-                        <h3 class="user-profile-name">${escapeHtml(profile.full_name || "Без імені")}</h3>
-                        <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
-                        ${
-                            profile.rating_count > 0
-                                ? `<div class="user-profile-rating">⭐ ${escapeHtml(String(profile.rating))} (${escapeHtml(String(profile.rating_count))})</div>`
-                                : ``
+            <div class="seller-profile-shell">
+                <div class="seller-cover"></div>
+                <div class="seller-profile-card">
+                    <div class="seller-profile-top">
+                        <div class="user-profile-avatar seller-avatar-large">${avatar}</div>
+                        <div class="seller-profile-main">
+                            <h3 class="user-profile-name">${escapeHtml(profile.full_name || "Без імені")}</h3>
+                            <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
+                            <div class="seller-badges">
+                                <span class="seller-badge">${profile.rating_count > 0 ? `⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))} відгуків` : "Новий продавець"}</span>
+                                ${profile.is_admin ? `<span class="seller-badge accent">Адміністратор</span>` : ``}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="seller-stats-grid">
+                        <div class="seller-stat"><span class="stat-value">${profile.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.sold_products ?? 0}</span><span class="stat-label">Продані</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.archived_products ?? 0}</span><span class="stat-label">Архів</span></div>
+                    </div>
+
+                    <div class="card-actions seller-action-stack">
+                        ${profile.telegram_link
+                            ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
+                            : `<button class="own-product-btn" disabled>Telegram недоступний</button>`
                         }
+                        <button class="secondary-btn full-btn" onclick="loadSellerReviews(${Number(profile.id)})">Відгуки</button>
                     </div>
-                </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-value">${profile.active_products ?? 0}</span>
-                        <span class="stat-label">Активні</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">${profile.sold_products ?? 0}</span>
-                        <span class="stat-label">Продані</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value">${profile.archived_products ?? 0}</span>
-                        <span class="stat-label">Архів</span>
-                    </div>
+                    <div id="seller-reviews-wrap" class="seller-reviews-wrap"></div>
                 </div>
-
-                ${
-                    profile.telegram_link
-                        ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
-                        : `<button class="own-product-btn" disabled>Telegram недоступний</button>`
-                }
             </div>
         `;
     } catch (error) {
@@ -1879,6 +1977,7 @@ if (typeof submitIdea === "function") window.submitIdea = submitIdea;
 if (typeof openReportModal === "function") window.openReportModal = openReportModal;
 if (typeof handleReportReasonChange === "function") window.handleReportReasonChange = handleReportReasonChange;
 if (typeof closeReportModal === "function") window.closeReportModal = closeReportModal;
+if (typeof closeReportModalOnBackdrop === "function") window.closeReportModalOnBackdrop = closeReportModalOnBackdrop;
 if (typeof submitReport === "function") window.submitReport = submitReport;
 if (typeof logout === "function") window.logout = logout;
 if (typeof saveProfile === "function") window.saveProfile = saveProfile;
