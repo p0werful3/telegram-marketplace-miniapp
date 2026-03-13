@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=136">
+    <link rel="stylesheet" href="style.css?v=137">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -249,13 +249,12 @@
                 <h2>Профіль</h2>
 
                 <div class="profile-card">
-                    <p><strong>ID:</strong> <span id="profile-id">—</span></p>
-                    <p><strong>Telegram ID:</strong> <span id="profile-telegram-id">—</span></p>
                     <p><strong>Username:</strong> <span id="profile-username">—</span></p>
                     <p><strong>Ім'я:</strong> <span id="profile-fullname">—</span></p>
+                    <button id="profile-edit-toggle-btn" class="secondary-btn" onclick="toggleProfileEdit()">Редагувати профіль</button>
                 </div>
 
-                <div class="profile-card">
+                <div id="profile-edit-card" class="profile-card hidden">
                     <h3 class="profile-subtitle">Редагування профілю</h3>
                     <label>Тег / Username</label>
                     <input id="profile-edit-username" type="text" placeholder="username">
@@ -314,6 +313,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=136"></script>
+    <script src="app.js?v=137"></script>
 </body>
 </html>
