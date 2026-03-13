@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=150">
+    <link rel="stylesheet" href="style.css?v=151">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -19,13 +19,13 @@
             </div>
 
             <div id="auth-login" class="auth-panel active">
-                <input id="login-username" type="text" placeholder="Username">
+                <input id="login-username" type="text" placeholder="Username (без @)">
                 <input id="login-password" type="password" placeholder="Password">
                 <button class="primary-btn" onclick="loginUser()">Увійти</button>
             </div>
 
             <div id="auth-register" class="auth-panel">
-                <input id="register-username" type="text" placeholder="Username">
+                <input id="register-username" type="text" placeholder="Username (без @)">
                 <input id="register-fullname" type="text" placeholder="Ім'я">
                 <input id="register-password" type="password" placeholder="Password">
                 <button class="primary-btn" onclick="registerNewUser()">Зареєструватися</button>
@@ -258,7 +258,7 @@
                         Редагувати профіль
                     </button>
 
-                    <div id="profile-edit-wrap" class="hidden" style="margin-top: px;">
+                    <div id="profile-edit-wrap" class="hidden" style="margin-top: 14px;">
                         <h3 class="profile-subtitle">Редагування профілю</h3>
 
                         <label>Тег / Username</label>
@@ -296,45 +296,38 @@
                     </div>
                 </div>
 
-                
-                <div id="admin-panel-wrap" class="profile-card hidden">
-                    <button id="admin-toggle-btn" class="secondary-btn full-btn" onclick="toggleAdminPanel()">Адмін панель</button>
-                    <div id="admin-panel-body" class="hidden" style="margin-top:14px;">
-                        <div class="subtabs">
-                            <button id="admin-users-tab-btn" class="subtab-btn active" onclick="switchAdminTab('users')">Користувачі</button>
-                            <button id="admin-products-tab-btn" class="subtab-btn" onclick="switchAdminTab('products')">Оголошення</button>
-                            <button id="admin-logs-tab-btn" class="subtab-btn" onclick="switchAdminTab('logs')">Логи</button>
-                        </div>
-                        <div id="admin-summary" class="admin-summary"></div>
-                        <div id="admin-users-tab" class="admin-tab-section active">
-                            <div class="admin-search-row">
-                                <input id="admin-users-search" type="text" placeholder="Пошук користувача">
-                                <button class="secondary-btn" onclick="loadAdminUsers()">Шукати</button>
-                            </div>
-                            <div id="admin-users-list" class="cards"></div>
-                        </div>
-                        <div id="admin-products-tab" class="admin-tab-section hidden">
-                            <div class="admin-search-row">
-                                <input id="admin-products-search" type="text" placeholder="Пошук оголошення">
-                                <button class="secondary-btn" onclick="loadAdminProducts()">Шукати</button>
-                            </div>
-                            <div id="admin-products-list" class="cards"></div>
-                        </div>
-                        <div id="admin-logs-tab" class="admin-tab-section hidden">
-                            <div id="admin-logs-list" class="cards"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="profile-card">
                     <button class="primary-btn" onclick="logout()">Змінити акаунт / Вийти</button>
                 </div>
-           </section>
-</main>
+            </section>
+        </main>
 
-<script src="app.js?v=150"></script>
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-tab="catalog" onclick="switchTab('catalog', this)">
+                <span class="nav-label">Каталог</span>
+            </button>
+            <button class="nav-btn" data-tab="my-products" onclick="switchTab('my-products', this)">
+                <span class="nav-label">Мої</span>
+            </button>
+            <button class="nav-btn nav-create" data-tab="create" onclick="switchTab('create', this)">
+                <span class="nav-plus">+</span>
+            </button>
+            <button class="nav-btn" data-tab="cart" onclick="switchTab('cart', this)">
+                <span class="nav-label">Кошик</span>
+            </button>
+            <button class="nav-btn" data-tab="profile" onclick="switchTab('profile', this)">
+                <span class="nav-label">Профіль</span>
+            </button>
+        </nav>
+    </div>
 
+    <div id="product-modal" class="modal hidden" onclick="closeProductModalOnBackdrop(event)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeProductModal()">×</button>
+            <div id="product-modal-body"></div>
+        </div>
+    </div>
+
+    <script src="app.js?v=151"></script>
 </body>
 </html>
-
-
