@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=210">
+    <link rel="stylesheet" href="style.css?v=212">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -240,6 +240,19 @@
                     <button class="primary-btn" onclick="saveProfile()">Зберегти зміни</button>
                 </div>
 
+                <div class="profile-overview-grid">
+                    <div class="profile-mini-stat">
+                        <span class="profile-mini-label">Рейтинг</span>
+                        <strong id="profile-rating-value">—</strong>
+                        <small id="profile-rating-count">0 відгуків</small>
+                    </div>
+                    <div class="profile-mini-stat">
+                        <span class="profile-mini-label">Статус</span>
+                        <strong>PRO</strong>
+                        <small>Профіль продавця</small>
+                    </div>
+                </div>
+
                 <div class="profile-card"><button id="stats-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleStatsPanel()"><span class="profile-menu-icon">📊</span><span>Статистика</span><span class="profile-menu-arrow">›</span></button>
                     <div id="stats-wrap" class="hidden" style="margin-top:14px;">
                         <div class="stats-grid compact-stats-grid">
@@ -258,6 +271,12 @@
                 <div class="profile-card"><button id="purchase-history-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="togglePurchaseHistory()"><span class="profile-menu-icon">🛍</span><span>Історія покупок</span><span class="profile-menu-arrow">›</span></button>
                     <div id="purchase-history-wrap" class="hidden" style="margin-top:14px;">
                         <div id="purchase-history-list" class="cards"></div>
+                    </div>
+                </div>
+
+                <div class="profile-card"><button id="my-reviews-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleMyReviews()"><span class="profile-menu-icon">⭐</span><span>Мої відгуки</span><span class="profile-menu-arrow">›</span></button>
+                    <div id="my-reviews-wrap" class="hidden" style="margin-top:14px;">
+                        <div id="my-reviews-list"></div>
                     </div>
                 </div>
 
