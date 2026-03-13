@@ -10,8 +10,12 @@
 <body>
     <div id="auth-screen" class="auth-screen">
         <div class="auth-card">
-            <div class="auth-brand">
-                <h1>🛍 Telegram Marketplace</h1>
+            <div class="auth-brand auth-brand-fancy">
+                <div class="auth-brand-badge">🛍</div>
+                <div class="auth-brand-text">
+                    <h1>Telegram Marketplace</h1>
+                    <div class="auth-brand-mini">Mini App маркетплейс</div>
+                </div>
             </div>
             <p class="subtitle">Увійдіть або зареєструйтеся</p>
 
@@ -50,7 +54,13 @@
 
     <div id="app-screen" class="app hidden">
         <header class="topbar">
-            <h1>🛍 Telegram Marketplace</h1>
+            <div class="topbar-brand">
+                <div class="topbar-icon">🛍</div>
+                <div class="topbar-brand-text">
+                    <h1>Telegram Marketplace</h1>
+                    <div class="topbar-mini">Маркетплейс у Telegram</div>
+                </div>
+            </div>
         </header>
 
         <main class="content">
@@ -194,7 +204,12 @@
                     <button class="secondary-btn section-btn" onclick="loadCart()">Оновити</button>
                 </div>
                 <div id="cart-list" class="cards"></div>
-                <div class="cart-total-card"><p id="cart-total">Разом: 0$</p></div>
+                <div class="cart-total-card cart-summary-card">
+                    <div class="cart-summary-top">
+                        <p id="cart-total">Разом: 0$</p>
+                        <button id="buy-all-btn" class="primary-btn buy-all-btn" onclick="buyAllFromCart()">Купити все</button>
+                    </div>
+                </div>
             </section>
 
             <section id="tab-profile" class="tab-section">
@@ -225,7 +240,7 @@
                     <button class="primary-btn" onclick="saveProfile()">Зберегти зміни</button>
                 </div>
 
-                <div class="profile-card"><button id="stats-toggle-btn" class="secondary-btn full-btn" onclick="toggleStatsPanel()">Статистика</button>
+                <div class="profile-card"><button id="stats-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleStatsPanel()"><span class="profile-menu-icon">📊</span><span>Статистика</span><span class="profile-menu-arrow">›</span></button>
                     <div id="stats-wrap" class="hidden" style="margin-top:14px;">
                         <div class="stats-grid compact-stats-grid">
                             <div class="stat-card"><span class="stat-value" id="stat-active">0</span><span class="stat-label">Активні</span></div>
@@ -240,13 +255,13 @@
                     </div>
                 </div>
 
-                <div class="profile-card"><button id="purchase-history-toggle-btn" class="secondary-btn full-btn" onclick="togglePurchaseHistory()">Історія покупок</button>
+                <div class="profile-card"><button id="purchase-history-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="togglePurchaseHistory()"><span class="profile-menu-icon">🛍</span><span>Історія покупок</span><span class="profile-menu-arrow">›</span></button>
                     <div id="purchase-history-wrap" class="hidden" style="margin-top:14px;">
                         <div id="purchase-history-list" class="cards"></div>
                     </div>
                 </div>
 
-                <div class="profile-card"><button id="ideas-toggle-btn" class="secondary-btn full-btn" onclick="toggleIdeasPanel()">Ідеї та побажання</button>
+                <div class="profile-card"><button id="ideas-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleIdeasPanel()"><span class="profile-menu-icon">💡</span><span>Ідеї та побажання</span><span class="profile-menu-arrow">›</span></button>
                     <div id="ideas-wrap" class="hidden" style="margin-top:14px;">
                         <label>Назва ідеї</label>
                         <input id="idea-title" type="text" placeholder="Наприклад: Додати чат між продавцем і покупцем">
@@ -257,7 +272,7 @@
                 </div>
 
                 <div id="admin-panel-wrap" class="profile-card hidden">
-                    <button id="admin-toggle-btn" class="secondary-btn full-btn" onclick="toggleAdminPanel()">Адмін панель</button>
+                    <button id="admin-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleAdminPanel()"><span class="profile-menu-icon">🛡</span><span>Адмін панель</span><span class="profile-menu-arrow">›</span></button>
                     <div id="admin-panel-body" class="hidden" style="margin-top:14px;">
                         <div id="admin-summary" class="admin-summary"></div>
                         <div class="subtabs">
@@ -288,7 +303,7 @@
                 </div>
 
                 <div class="profile-card">
-                    <button class="primary-btn" onclick="logout()">Змінити акаунт / Вийти</button>
+                    <button class="primary-btn profile-logout-btn" onclick="logout()"><span class="profile-menu-icon">🚪</span><span>Змінити акаунт / Вийти</span></button>
                 </div>
             </section>
         </main>
