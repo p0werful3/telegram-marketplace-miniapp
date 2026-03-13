@@ -74,9 +74,7 @@ function initTelegramWebApp() {
 }
 
 function showAlert(message) {
-    const text = typeof message === "string"
-        ? message
-        : (message?.message || JSON.stringify(message) || "Сталася помилка");
+    const text = String(message || "Сталася помилка");
     try {
         if (tg?.showAlert) {
             tg.showAlert(text);
@@ -521,28 +519,12 @@ async function safeFetch(url, options = {}) {
     }
 
     if (!response.ok) {
-        let detail = `HTTP ${response.status}`;
+        const detail =
+            (data && typeof data === "object" && (data.detail || data.message)) ||
+            (typeof data === "string" && data) ||
+            `HTTP ${response.status}`;
 
-        if (Array.isArray(data?.detail)) {
-            detail = data.detail
-                .map(item => {
-                    if (!item) return null;
-                    if (typeof item === "string") return item;
-                    const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : "field";
-                    const msg = item.msg || "Некоректне значення";
-                    return `${field}: ${msg}`;
-                })
-                .filter(Boolean)
-                .join("");
-        } else if (data && typeof data === "object") {
-            if (typeof data.detail === "string") detail = data.detail;
-            else if (typeof data.message === "string") detail = data.message;
-            else if (data.detail) detail = JSON.stringify(data.detail);
-        } else if (typeof data === "string" && data) {
-            detail = data;
-        }
-
-        throw new Error(detail || `HTTP ${response.status}`);
+        throw new Error(detail);
     }
 
     return data;
@@ -959,31 +941,6 @@ async function createProduct() {
     const city = $("product-city")?.value;
     const files = $("product-files")?.files || [];
 
-    if (!title || title.length < 2) {
-        showAlert("Назва товару має бути мінімум 2 символи");
-        return;
-    }
-    if (!description || description.length < 5) {
-        showAlert("Опис товару має бути мінімум 5 символів");
-        return;
-    }
-    if (!Number.isFinite(price) || price <= 0) {
-        showAlert("Вкажи коректну ціну");
-        return;
-    }
-    if (!category) {
-        showAlert("Обери категорію");
-        return;
-    }
-    if (!condition) {
-        showAlert("Обери стан товару");
-        return;
-    }
-    if (!city || typeof city !== "string") {
-        showAlert("Обери місто");
-        return;
-    }
-
     try {
         setLoading(true);
 
@@ -1301,3 +1258,39 @@ document.addEventListener("keydown", (event) => {
 });
 
 initApp();
+
+
+// Expose handlers for inline onclick in Telegram WebView
+Object.assign(window, {
+    switchAuthTab,
+    loginUser,
+    registerNewUser,
+    loginWithTelegram,
+    switchTab,
+    switchCatalogView,
+    switchMyProductsView,
+    toggleFilters,
+    loadProducts,
+    loadMyProducts,
+    loadCart,
+    logout,
+    createProduct,
+    saveProduct,
+    cancelEditProduct,
+    archiveProduct,
+    restoreProduct,
+    deleteProduct,
+    editProduct,
+    openProductModal,
+    closeProductModal,
+    prevModalImage,
+    nextModalImage,
+    setModalImage,
+    addToCart,
+    removeFromCart,
+    buyProduct,
+    toggleFavorite,
+    updateProfile,
+    approvePurchaseRequest,
+    rejectPurchaseRequest
+});
