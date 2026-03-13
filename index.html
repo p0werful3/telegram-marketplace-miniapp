@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=139">
+    <link rel="stylesheet" href="style.css?v=140">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -254,14 +254,24 @@
                 </div>
 
                 <div class="profile-card">
-                    <h3 class="profile-subtitle">Редагувати профіль</h3>
-                    <label>Тег / Username</label>
-                    <input id="profile-edit-username" type="text" placeholder="username">
-                    <label>Ім'я</label>
-                    <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
-                    <label>Новий пароль</label>
-                    <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
-                    <button class="primary-btn" onclick="saveProfile()">Зберегти профіль</button>
+                    <button id="profile-edit-toggle-btn" class="secondary-btn full-btn" onclick="toggleProfileEdit()">
+                        Редагувати профіль
+                    </button>
+
+                    <div id="profile-edit-wrap" class="hidden" style="margin-top: 14px;">
+                        <h3 class="profile-subtitle">Редагування профілю</h3>
+
+                        <label>Тег / Username</label>
+                        <input id="profile-edit-username" type="text" placeholder="username">
+
+                        <label>Ім'я</label>
+                        <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
+
+                        <label>Новий пароль</label>
+                        <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
+
+                        <button class="primary-btn" onclick="saveProfile()">Зберегти профіль</button>
+                    </div>
                 </div>
 
                 <div class="stats-grid">
@@ -276,8 +286,14 @@
                 </div>
 
                 <div class="profile-card">
-                    <h3 class="profile-subtitle">Історія покупок</h3>
-                    <div id="purchase-history-list" class="cards"></div>
+                    <button id="purchase-history-toggle-btn" class="secondary-btn full-btn" onclick="togglePurchaseHistory()">
+                        Історія покупок
+                    </button>
+
+                    <div id="purchase-history-wrap" class="hidden" style="margin-top: 14px;">
+                        <h3 class="profile-subtitle">Історія покупок</h3>
+                        <div id="purchase-history-list" class="cards"></div>
+                    </div>
                 </div>
 
                 <div class="profile-card">
@@ -312,6 +328,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=139"></script>
+    <script src="app.js?v=140"></script>
 </body>
 </html>
