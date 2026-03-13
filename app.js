@@ -533,8 +533,7 @@ async function safeFetch(url, options = {}) {
                     return `${field}: ${msg}`;
                 })
                 .filter(Boolean)
-                .join("
-");
+                .join("");
         } else if (data && typeof data === "object") {
             if (typeof data.detail === "string") detail = data.detail;
             else if (typeof data.message === "string") detail = data.message;
