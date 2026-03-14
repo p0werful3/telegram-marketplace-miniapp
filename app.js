@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "213";
+const FRONTEND_VERSION = "262";
 
 let tg = null;
 let telegramUser = null;
@@ -83,6 +83,11 @@ function formatDate(value) {
     } catch {
         return "";
     }
+}
+
+function renderDealAmount(amount, currency = "USD") {
+    if (amount === null || amount === undefined || amount === "") return "Сума не вказана";
+    return formatPrice(amount, currency);
 }
 function getUserAverageRating(user = currentUser) {
     const count = Number(user?.rating_count || 0);
@@ -415,7 +420,12 @@ async function loadMyReviews() {
                     <div class="review-date">${formatDate(item.created_at) || "—"}</div>
                 </div>
                 <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
+                <div class="history-meta">
+                    <div>Сума угоди: ${escapeHtml(renderDealAmount(item.deal_amount, item.deal_currency))}</div>
+                    ${item.product_title ? `<div>Товар: ${escapeHtml(item.product_title)}</div>` : ``}
+                </div>
                 <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
+                ${item.buyer_id ? `<div class="card-actions compact-actions"><button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль автора</button></div>` : ``}
             </div></div>
         `).join("")}</div>`;
     } catch (error) {
@@ -1018,8 +1028,8 @@ async function loginWithTelegram() {
         || null;
     const hasTelegramShell = Boolean(window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || window.Telegram?.WebView || tg);
 
-    if ((!telegramId && !initData) || !parsedUser) {
-        for (const delay of [350, 800, 1400]) {
+    if (!telegramId && !initData) {
+        for (const delay of [350, 800, 1400, 2200]) {
             await new Promise(resolve => setTimeout(resolve, delay));
             initTelegramWebApp();
             parsedUser = getTelegramUserFromEnvironment();
@@ -1028,16 +1038,16 @@ async function loginWithTelegram() {
                 || tg?.initDataUnsafe?.user?.id
                 || window.Telegram?.WebApp?.initDataUnsafe?.user?.id
                 || null;
-            if (telegramId || initData || parsedUser?.username) break;
+            if (telegramId || initData) break;
         }
     }
 
     cacheTelegramState(parsedUser, initData);
 
-    const canTryAuth = Boolean(telegramId || initData || parsedUser?.username || parsedUser?.first_name);
+    const canTryAuth = Boolean(telegramId || initData);
     if (!canTryAuth) {
         showAlert(hasTelegramShell
-            ? "Не вдалося отримати Telegram ID. Закрийте Mini App і відкрийте його знову кнопкою бота."
+            ? "Не вдалося отримати дані Telegram. Закрийте Mini App і відкрийте його знову кнопкою бота."
             : "Відкрийте застосунок саме через кнопку бота в Telegram Mini App");
         return;
     }
@@ -1173,7 +1183,12 @@ function renderMyProductCard(product, view) {
     } else if (view === "sold") {
         actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
-        actionButton = `<button class="archive-btn" disabled>В архіві</button>`;
+        actionButton = `
+            <div class="card-actions inline-actions">
+                <button class="approve-btn" onclick="event.stopPropagation(); restoreMyProduct(${Number(product.id)})">Повернути в продаж</button>
+                <button class="archive-btn" disabled>В архіві</button>
+            </div>
+        `;
     }
 
     return `
@@ -1522,6 +1537,25 @@ async function deleteProduct(productId) {
     }
 }
 
+async function restoreMyProduct(productId) {
+    if (!currentUser || isLoading) return;
+
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/products/${productId}/restore?user_id=${currentUser.id}`, {
+            method: "POST"
+        });
+        showAlert("Оголошення повернуто в продаж");
+        await loadMyProducts();
+        await loadProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || "Не вдалося повернути оголошення");
+    } finally {
+        setLoading(false);
+    }
+}
+
 async function addToCart(productId) {
     if (!currentUser || isLoading) return;
 
@@ -1781,7 +1815,7 @@ async function loadAdminUsers() {
         list.innerHTML = items.length ? items.map(item => `
             <div class="card"><div class="card-body">
                 <h3 class="card-title">@${escapeHtml(item.username || "")}</h3>
-                <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}</p>
+                <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}${item.is_superadmin ? " · Суперадмін" : item.is_admin ? " · Адмін" : ""}</p>
                 <div class="request-meta">
                     <div>Активні: ${Number(item.active_products || 0)}</div>
                     <div>Продані: ${Number(item.sold_products || 0)}</div>
@@ -2190,10 +2224,17 @@ async function loadSellerReviews(userId) {
         }
         wrap.innerHTML = `<div class="cards">${items.map(item => `
             <div class="card"><div class="card-body">
-                <div class="status-pill approved">${Number(item.rating)}/5</div>
+                <div class="review-topline">
+                    <div class="review-stars">⭐ ${Number(item.rating || 0)}/5</div>
+                    <div class="review-date">${formatDate(item.created_at) || "—"}</div>
+                </div>
                 <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
+                <div class="history-meta">
+                    <div>Сума угоди: ${escapeHtml(renderDealAmount(item.deal_amount, item.deal_currency))}</div>
+                    ${item.product_title ? `<div>Товар: ${escapeHtml(item.product_title)}</div>` : ``}
+                </div>
                 <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
-                <div class="history-meta"><div>${formatDate(item.created_at)}</div></div>
+                ${item.buyer_id ? `<div class="card-actions compact-actions"><button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль автора</button></div>` : ``}
             </div></div>
         `).join("")}</div>`;
     } catch (error) {
@@ -2252,6 +2293,7 @@ if (typeof closeProductModal === "function") window.closeProductModal = closePro
 if (typeof closeProductModalOnBackdrop === "function") window.closeProductModalOnBackdrop = closeProductModalOnBackdrop;
 if (typeof openProductModal === "function") window.openProductModal = openProductModal;
 if (typeof deleteProduct === "function") window.deleteProduct = deleteProduct;
+if (typeof restoreMyProduct === "function") window.restoreMyProduct = restoreMyProduct;
 if (typeof addToCart === "function") window.addToCart = addToCart;
 if (typeof removeFromCart === "function") window.removeFromCart = removeFromCart;
 if (typeof contactSeller === "function") window.contactSeller = contactSeller;
