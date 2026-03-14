@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "262";
+const FRONTEND_VERSION = "264";
 
 let tg = null;
 let telegramUser = null;
@@ -18,6 +18,96 @@ let editingExistingImages = [];
 
 const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
+
+const APP_LANG_KEY = "marketplace_lang";
+let currentLanguage = localStorage.getItem(APP_LANG_KEY) || "uk";
+
+const I18N = {
+    uk: {
+        authLoginTitle: "Увійдіть або зареєструйтеся",
+        tgLogin: "Увійти через Telegram",
+        tgHintReady: "Швидкий вхід через ваш Telegram акаунт",
+        tgHintUnavailable: "Кнопку Telegram тимчасово приховано — використайте звичайний вхід",
+        stats: "Статистика", hideStats: "Сховати статистику",
+        purchases: "Історія покупок", hidePurchases: "Сховати історію покупок",
+        reviews: "Мої відгуки",
+        admin: "Адмін панель", hideAdmin: "Сховати адмін панель",
+        ideas: "Ідеї та побажання", hideIdeas: "Сховати ідеї та побажання",
+        logout: "Змінити акаунт / Вийти",
+        navCatalog: "Каталог", navMine: "Мої", navCart: "Кошик", navProfile: "Профіль",
+        rating: "Рейтинг"
+    },
+    ru: {
+        authLoginTitle: "Войдите или зарегистрируйтесь",
+        tgLogin: "Войти через Telegram",
+        tgHintReady: "Быстрый вход через ваш Telegram аккаунт",
+        tgHintUnavailable: "Кнопка Telegram временно скрыта — используйте обычный вход",
+        stats: "Статистика", hideStats: "Скрыть статистику",
+        purchases: "История покупок", hidePurchases: "Скрыть историю покупок",
+        reviews: "Мои отзывы",
+        admin: "Админ панель", hideAdmin: "Скрыть админ панель",
+        ideas: "Идеи и пожелания", hideIdeas: "Скрыть идеи и пожелания",
+        logout: "Сменить аккаунт / Выйти",
+        navCatalog: "Каталог", navMine: "Мои", navCart: "Корзина", navProfile: "Профиль",
+        rating: "Рейтинг"
+    },
+    en: {
+        authLoginTitle: "Sign in or register",
+        tgLogin: "Sign in with Telegram",
+        tgHintReady: "Fast sign-in with your Telegram account",
+        tgHintUnavailable: "Telegram button is temporarily hidden — use regular sign in",
+        stats: "Statistics", hideStats: "Hide statistics",
+        purchases: "Purchase history", hidePurchases: "Hide purchase history",
+        reviews: "My reviews",
+        admin: "Admin panel", hideAdmin: "Hide admin panel",
+        ideas: "Ideas & suggestions", hideIdeas: "Hide ideas & suggestions",
+        logout: "Switch account / Log out",
+        navCatalog: "Catalog", navMine: "Mine", navCart: "Cart", navProfile: "Profile",
+        rating: "Rating"
+    }
+};
+
+function t(key) {
+    return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
+}
+
+function setProfileMenuButton(btnId, icon, label, isOpen = false) {
+    const btn = $(btnId);
+    if (!btn) return;
+    const text = isOpen ? (t('hide' + label.charAt(0).toUpperCase() + label.slice(1)) || label) : t(label);
+    btn.innerHTML = `<span class="profile-menu-icon">${icon}</span><span>${escapeHtml(text)}</span><span class="profile-menu-arrow">›</span>`;
+}
+
+function applyLanguageTexts() {
+    const authTitle = document.querySelector('.auth-title-line');
+    if (authTitle) authTitle.textContent = t('authLoginTitle');
+    const tgBtn = $('tg-login-btn');
+    if (tgBtn) tgBtn.textContent = t('tgLogin');
+    const ratingLabel = document.querySelector('.profile-mini-label');
+    if (ratingLabel) ratingLabel.innerHTML = `<span class="profile-menu-icon">⭐</span> ${escapeHtml(t('rating'))}`;
+    setProfileMenuButton('stats-toggle-btn', '📊', 'stats', $('stats-wrap') && !$('stats-wrap').classList.contains('hidden'));
+    setProfileMenuButton('purchase-history-toggle-btn', '🛍', 'purchases', $('purchase-history-wrap') && !$('purchase-history-wrap').classList.contains('hidden'));
+    setProfileMenuButton('my-reviews-toggle-btn', '⭐', 'reviews', $('my-reviews-wrap') && !$('my-reviews-wrap').classList.contains('hidden'));
+    setProfileMenuButton('admin-toggle-btn', '🛡', 'admin', $('admin-panel-body') && !$('admin-panel-body').classList.contains('hidden'));
+    setProfileMenuButton('ideas-toggle-btn', '💡', 'ideas', $('ideas-wrap') && !$('ideas-wrap').classList.contains('hidden'));
+    const logoutBtn = document.querySelector('.profile-logout-btn');
+    if (logoutBtn) logoutBtn.innerHTML = `<span class="profile-menu-icon">🚪</span><span>${escapeHtml(t('logout'))}</span>`;
+    const navMap = { 'nav-catalog-btn': 'navCatalog', 'nav-my-products-btn': 'navMine', 'nav-cart-btn': 'navCart', 'nav-profile-btn': 'navProfile' };
+    Object.entries(navMap).forEach(([id,key]) => {
+        const btn = $(id);
+        const label = btn?.querySelector('.nav-label');
+        if (label) label.textContent = t(key);
+    });
+    const langSelect = $('language-select');
+    if (langSelect) langSelect.value = currentLanguage;
+}
+
+function changeLanguage(lang) {
+    currentLanguage = ['uk','ru','en'].includes(lang) ? lang : 'uk';
+    try { localStorage.setItem(APP_LANG_KEY, currentLanguage); } catch {}
+    applyLanguageTexts();
+}
+
 
 function cacheTelegramState(user, initData) {
     try {
@@ -83,11 +173,6 @@ function formatDate(value) {
     } catch {
         return "";
     }
-}
-
-function renderDealAmount(amount, currency = "USD") {
-    if (amount === null || amount === undefined || amount === "") return "Сума не вказана";
-    return formatPrice(amount, currency);
 }
 function getUserAverageRating(user = currentUser) {
     const count = Number(user?.rating_count || 0);
@@ -173,26 +258,33 @@ function getTelegramInitData() {
         || null;
 }
 
-function refreshTelegramLoginUi() {
+function refreshTelegramLoginUi(forceHide = false) {
     const tgButton = $("tg-login-btn");
     const hint = $("tg-login-hint");
+    const wrap = $("tg-login-wrap");
     if (!tgButton && !hint) return;
 
     const currentTgUser = getTelegramUserFromEnvironment();
     const initData = getTelegramInitData();
-    const hasTelegramEnv = Boolean(tg || window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || initData || currentTgUser);
+    const hasTelegramShell = Boolean(tg || window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || window.Telegram?.WebView);
+    const hasUsableTelegramData = Boolean(initData || currentTgUser?.id || currentTgUser?.username);
+    const hasTelegramEnv = Boolean(hasTelegramShell || hasUsableTelegramData);
+
+    if (wrap) wrap.classList.toggle('hidden', forceHide || (hasTelegramShell && !hasUsableTelegramData));
 
     if (tgButton) {
-        tgButton.textContent = "Увійти через Telegram";
-        tgButton.disabled = false;
-        tgButton.classList.toggle("tg-ready", hasTelegramEnv);
-        tgButton.classList.toggle("tg-disabled", !hasTelegramEnv);
+        tgButton.textContent = t('tgLogin');
+        tgButton.disabled = forceHide || !hasUsableTelegramData;
+        tgButton.classList.toggle("tg-ready", hasUsableTelegramData);
+        tgButton.classList.toggle("tg-disabled", forceHide || !hasUsableTelegramData);
     }
 
     if (hint) {
-        hint.textContent = hasTelegramEnv
-            ? "Швидкий вхід через ваш Telegram акаунт"
-            : "Працює лише всередині Telegram Mini App";
+        hint.textContent = forceHide || (hasTelegramShell && !hasUsableTelegramData)
+            ? t('tgHintUnavailable')
+            : hasTelegramEnv
+                ? t('tgHintReady')
+                : "Працює лише всередині Telegram Mini App";
     }
 }
 
@@ -235,6 +327,14 @@ function initTelegramWebApp() {
     }
 
     refreshTelegramLoginUi();
+    setTimeout(() => {
+        const currentTgUser = getTelegramUserFromEnvironment();
+        const initData = getTelegramInitData();
+        const hasTelegramShell = Boolean(window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || window.Telegram?.WebView || tg);
+        if (hasTelegramShell && !(initData || currentTgUser?.id || currentTgUser?.username)) {
+            refreshTelegramLoginUi(true);
+        }
+    }, 3200);
 }
 
 
@@ -384,7 +484,7 @@ async function togglePurchaseHistory(forceState = null) {
 
     const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
     wrap.classList.toggle("hidden", !shouldOpen);
-    btn.textContent = shouldOpen ? "Сховати історію покупок" : "Історія покупок";
+    setProfileMenuButton('purchase-history-toggle-btn', '🛍', 'purchases', shouldOpen);
 
     if (shouldOpen) await loadPurchaseHistory();
 }
@@ -420,12 +520,7 @@ async function loadMyReviews() {
                     <div class="review-date">${formatDate(item.created_at) || "—"}</div>
                 </div>
                 <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
-                <div class="history-meta">
-                    <div>Сума угоди: ${escapeHtml(renderDealAmount(item.deal_amount, item.deal_currency))}</div>
-                    ${item.product_title ? `<div>Товар: ${escapeHtml(item.product_title)}</div>` : ``}
-                </div>
                 <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
-                ${item.buyer_id ? `<div class="card-actions compact-actions"><button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль автора</button></div>` : ``}
             </div></div>
         `).join("")}</div>`;
     } catch (error) {
@@ -442,9 +537,9 @@ async function showApp() {
     toggleStatsPanel(false);
 
     if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
-    if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
     if ($("my-reviews-wrap")) $("my-reviews-wrap").classList.add("hidden");
     if ($("admin-panel-body")) $("admin-panel-body").classList.add("hidden");
+    applyLanguageTexts();
 
     resetCreateForm();
     toggleFilters(false);
@@ -485,7 +580,9 @@ function switchTab(tabName, btn = null) {
         toggleProfileEdit(false);
         toggleStatsPanel(false);
         if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
-        if ($("purchase-history-toggle-btn")) $("purchase-history-toggle-btn").textContent = "Історія покупок";
+        if ($("my-reviews-wrap")) $("my-reviews-wrap").classList.add("hidden");
+        if ($("admin-panel-body")) $("admin-panel-body").classList.add("hidden");
+        applyLanguageTexts();
         detectAdminAccess();
         loadStats();
     }
@@ -915,6 +1012,7 @@ async function wakeApi() {
 
 function setupAuthScreen() {
     initTelegramWebApp();
+    applyLanguageTexts();
     [200, 500, 1000, 1800, 2600].forEach(delay => setTimeout(() => {
         initTelegramWebApp();
         refreshTelegramLoginUi();
@@ -937,6 +1035,14 @@ function setupAuthScreen() {
     });
 
     refreshTelegramLoginUi();
+    setTimeout(() => {
+        const currentTgUser = getTelegramUserFromEnvironment();
+        const initData = getTelegramInitData();
+        const hasTelegramShell = Boolean(window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || window.Telegram?.WebView || tg);
+        if (hasTelegramShell && !(initData || currentTgUser?.id || currentTgUser?.username)) {
+            refreshTelegramLoginUi(true);
+        }
+    }, 3200);
 }
 
 async function registerNewUser() {
@@ -1028,8 +1134,8 @@ async function loginWithTelegram() {
         || null;
     const hasTelegramShell = Boolean(window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || window.Telegram?.WebView || tg);
 
-    if (!telegramId && !initData) {
-        for (const delay of [350, 800, 1400, 2200]) {
+    if ((!telegramId && !initData) || !parsedUser) {
+        for (const delay of [350, 800, 1400]) {
             await new Promise(resolve => setTimeout(resolve, delay));
             initTelegramWebApp();
             parsedUser = getTelegramUserFromEnvironment();
@@ -1038,16 +1144,17 @@ async function loginWithTelegram() {
                 || tg?.initDataUnsafe?.user?.id
                 || window.Telegram?.WebApp?.initDataUnsafe?.user?.id
                 || null;
-            if (telegramId || initData) break;
+            if (telegramId || initData || parsedUser?.username) break;
         }
     }
 
     cacheTelegramState(parsedUser, initData);
 
-    const canTryAuth = Boolean(telegramId || initData);
+    const canTryAuth = Boolean(telegramId || initData || parsedUser?.username || parsedUser?.first_name);
     if (!canTryAuth) {
+        if (hasTelegramShell) refreshTelegramLoginUi(true);
         showAlert(hasTelegramShell
-            ? "Не вдалося отримати дані Telegram. Закрийте Mini App і відкрийте його знову кнопкою бота."
+            ? "Telegram-вхід недоступний у поточному запуску Mini App. Залишив звичайний вхід, а кнопку Telegram тимчасово сховав."
             : "Відкрийте застосунок саме через кнопку бота в Telegram Mini App");
         return;
     }
@@ -1183,12 +1290,7 @@ function renderMyProductCard(product, view) {
     } else if (view === "sold") {
         actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
-        actionButton = `
-            <div class="card-actions inline-actions">
-                <button class="approve-btn" onclick="event.stopPropagation(); restoreMyProduct(${Number(product.id)})">Повернути в продаж</button>
-                <button class="archive-btn" disabled>В архіві</button>
-            </div>
-        `;
+        actionButton = `<button class="archive-btn" disabled>В архіві</button>`;
     }
 
     return `
@@ -1537,25 +1639,6 @@ async function deleteProduct(productId) {
     }
 }
 
-async function restoreMyProduct(productId) {
-    if (!currentUser || isLoading) return;
-
-    try {
-        setLoading(true);
-        await safeFetch(`${API_BASE}/products/${productId}/restore?user_id=${currentUser.id}`, {
-            method: "POST"
-        });
-        showAlert("Оголошення повернуто в продаж");
-        await loadMyProducts();
-        await loadProducts();
-        await loadStats();
-    } catch (error) {
-        showAlert(error.message || "Не вдалося повернути оголошення");
-    } finally {
-        setLoading(false);
-    }
-}
-
 async function addToCart(productId) {
     if (!currentUser || isLoading) return;
 
@@ -1734,7 +1817,7 @@ function toggleStatsPanel(forceState = null) {
     if (!wrap || !btn) return;
     const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
     wrap.classList.toggle("hidden", !shouldOpen);
-    btn.textContent = shouldOpen ? "Сховати статистику" : "Статистика";
+    setProfileMenuButton('stats-toggle-btn', '📊', 'stats', shouldOpen);
 }
 
 async function detectAdminAccess() {
@@ -1775,7 +1858,7 @@ async function toggleAdminPanel(forceState = null) {
     if (!body || !btn || !currentUser?.id) return;
     const shouldOpen = forceState === null ? body.classList.contains("hidden") : Boolean(forceState);
     body.classList.toggle("hidden", !shouldOpen);
-    btn.textContent = shouldOpen ? "Сховати адмін панель" : "Адмін панель";
+    setProfileMenuButton('admin-toggle-btn', '🛡', 'admin', shouldOpen);
     if (shouldOpen) {
         await loadAdminSummary();
         await loadAdminUsers();
@@ -1815,7 +1898,7 @@ async function loadAdminUsers() {
         list.innerHTML = items.length ? items.map(item => `
             <div class="card"><div class="card-body">
                 <h3 class="card-title">@${escapeHtml(item.username || "")}</h3>
-                <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}${item.is_superadmin ? " · Суперадмін" : item.is_admin ? " · Адмін" : ""}</p>
+                <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}</p>
                 <div class="request-meta">
                     <div>Активні: ${Number(item.active_products || 0)}</div>
                     <div>Продані: ${Number(item.sold_products || 0)}</div>
@@ -1951,7 +2034,7 @@ async function toggleIdeasPanel(forceState = null) {
     if (!wrap || !btn) return;
     const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
     wrap.classList.toggle("hidden", !shouldOpen);
-    btn.textContent = shouldOpen ? "Сховати ідеї та побажання" : "Ідеї та побажання";
+    setProfileMenuButton('ideas-toggle-btn', '💡', 'ideas', shouldOpen);
 }
 
 async function submitIdea() {
@@ -2224,17 +2307,10 @@ async function loadSellerReviews(userId) {
         }
         wrap.innerHTML = `<div class="cards">${items.map(item => `
             <div class="card"><div class="card-body">
-                <div class="review-topline">
-                    <div class="review-stars">⭐ ${Number(item.rating || 0)}/5</div>
-                    <div class="review-date">${formatDate(item.created_at) || "—"}</div>
-                </div>
+                <div class="status-pill approved">${Number(item.rating)}/5</div>
                 <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
-                <div class="history-meta">
-                    <div>Сума угоди: ${escapeHtml(renderDealAmount(item.deal_amount, item.deal_currency))}</div>
-                    ${item.product_title ? `<div>Товар: ${escapeHtml(item.product_title)}</div>` : ``}
-                </div>
                 <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
-                ${item.buyer_id ? `<div class="card-actions compact-actions"><button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль автора</button></div>` : ``}
+                <div class="history-meta"><div>${formatDate(item.created_at)}</div></div>
             </div></div>
         `).join("")}</div>`;
     } catch (error) {
@@ -2293,7 +2369,6 @@ if (typeof closeProductModal === "function") window.closeProductModal = closePro
 if (typeof closeProductModalOnBackdrop === "function") window.closeProductModalOnBackdrop = closeProductModalOnBackdrop;
 if (typeof openProductModal === "function") window.openProductModal = openProductModal;
 if (typeof deleteProduct === "function") window.deleteProduct = deleteProduct;
-if (typeof restoreMyProduct === "function") window.restoreMyProduct = restoreMyProduct;
 if (typeof addToCart === "function") window.addToCart = addToCart;
 if (typeof removeFromCart === "function") window.removeFromCart = removeFromCart;
 if (typeof contactSeller === "function") window.contactSeller = contactSeller;
@@ -2331,3 +2406,5 @@ if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = 
 
 initApp();
 
+
+if (typeof changeLanguage === "function") window.changeLanguage = changeLanguage;
