@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "265";
+const FRONTEND_VERSION = "266";
 
 let tg = null;
 let telegramUser = null;
@@ -76,7 +76,10 @@ const I18N = {
         authorProfile: "Профіль автора",
         archivedState: "В архіві",
         restoreBtn: "Повернути в каталог",
-        ratingReviews: "відгуків"
+        ratingReviews: "відгуків",
+        authLangTitle: "Мова інтерфейсу",
+        superadmin: "Суперадмін",
+        protectedAdmin: "Захищений акаунт"
     },
     ru: {
         authLoginTitle: "Войдите или зарегистрируйтесь",
@@ -131,7 +134,10 @@ const I18N = {
         authorProfile: "Профиль автора",
         archivedState: "В архиве",
         restoreBtn: "Вернуть в каталог",
-        ratingReviews: "отзывов"
+        ratingReviews: "отзывов",
+        authLangTitle: "Язык интерфейса",
+        superadmin: "Суперадмин",
+        protectedAdmin: "Защищённый аккаунт"
     },
     en: {
         authLoginTitle: "Sign in or register",
@@ -186,7 +192,10 @@ const I18N = {
         authorProfile: "Author profile",
         archivedState: "Archived",
         restoreBtn: "Return to catalog",
-        ratingReviews: "reviews"
+        ratingReviews: "reviews",
+        authLangTitle: "Interface language",
+        superadmin: "Superadmin",
+        protectedAdmin: "Protected account"
     }
 };
 
@@ -237,6 +246,9 @@ function applyLanguageTexts() {
     if (langSelect) langSelect.value = currentLanguage;
     const authLangSelect = $('auth-language-select');
     if (authLangSelect) authLangSelect.value = currentLanguage;
+    const authLangTitle = document.querySelector('.auth-lang-title');
+    if (authLangTitle) authLangTitle.textContent = t('authLangTitle');
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === currentLanguage));
 
     const setText = (sel, value) => { const el = document.querySelector(sel); if (el) el.textContent = value; };
     setText('.topbar-mini', t('appMini'));
@@ -253,6 +265,16 @@ function applyLanguageTexts() {
     setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
     const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
     setText('#tab-profile > h2', t('profileTitle')); setText('#profile-edit-wrap h3', t('profileSettings'));
+    const createLabels = document.querySelectorAll('#tab-create label');
+    if (createLabels[0]) createLabels[0].textContent = currentLanguage === 'en' ? 'Product title' : currentLanguage === 'ru' ? 'Название товара' : 'Назва товару';
+    if (createLabels[1]) createLabels[1].textContent = currentLanguage === 'en' ? 'Description' : currentLanguage === 'ru' ? 'Описание' : 'Опис';
+    if (createLabels[2]) createLabels[2].textContent = currentLanguage === 'en' ? 'Price' : currentLanguage === 'ru' ? 'Цена' : 'Ціна';
+    if (createLabels[3]) createLabels[3].textContent = currentLanguage === 'en' ? 'Category' : currentLanguage === 'ru' ? 'Категория' : 'Категорія';
+    if (createLabels[4]) createLabels[4].textContent = currentLanguage === 'en' ? 'Condition' : currentLanguage === 'ru' ? 'Состояние' : 'Стан товару';
+    if (createLabels[5]) createLabels[5].textContent = currentLanguage === 'en' ? 'City' : currentLanguage === 'ru' ? 'Город' : 'Місто';
+    if (createLabels[6]) createLabels[6].textContent = currentLanguage === 'en' ? 'Product photos (multiple allowed)' : currentLanguage === 'ru' ? 'Фото товара (можно несколько)' : 'Фото товару (можна кілька)';
+    const submitBtn = $('submit-product-btn'); if (submitBtn) submitBtn.textContent = currentLanguage === 'en' ? 'Create listing' : currentLanguage === 'ru' ? 'Создать объявление' : 'Створити оголошення';
+    const editHint = $('edit-photos-hint'); if (editHint) editHint.textContent = currentLanguage === 'en' ? 'If you choose new photos, old ones will be replaced.' : currentLanguage === 'ru' ? 'Если выберете новые фото, старые будут заменены.' : 'Якщо вибереш нові фото, старі буде замінено.';
     const statusLabel = document.querySelectorAll('.profile-mini-label')[1]; if (statusLabel) statusLabel.textContent = t('status');
     refreshTelegramLoginUi();
 }
@@ -2094,14 +2116,14 @@ async function loadAdminUsers() {
                 <h3 class="card-title">@${escapeHtml(item.username || "")}</h3>
                 <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}</p>
                 <div class="request-meta">
-                    <div>Активні: ${Number(item.active_products || 0)}</div>
-                    <div>Продані: ${Number(item.sold_products || 0)}</div>
-                    <div>Статус: ${item.is_banned ? "Заблокований" : "Активний"}</div>
+                    <div>${currentLanguage === 'en' ? 'Active' : currentLanguage === 'ru' ? 'Активные' : 'Активні'}: ${Number(item.active_products || 0)}</div>
+                    <div>${currentLanguage === 'en' ? 'Sold' : currentLanguage === 'ru' ? 'Проданные' : 'Продані'}: ${Number(item.sold_products || 0)}</div>
+                    <div>${currentLanguage === 'en' ? 'Status' : currentLanguage === 'ru' ? 'Статус' : 'Статус'}: ${item.is_superadmin ? t('superadmin') : item.is_banned ? (currentLanguage === 'en' ? 'Blocked' : currentLanguage === 'ru' ? 'Заблокирован' : 'Заблокований') : (currentLanguage === 'en' ? 'Active' : currentLanguage === 'ru' ? 'Активный' : 'Активний')}</div>
                 </div>
                 <div class="card-actions inline-actions admin-grid-3">
-                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
-                    ${item.is_banned ? `<button class="approve-btn" onclick="adminUnbanUser(${Number(item.id)})">Розбан</button>` : `<button class="reject-btn" onclick="adminBanUser(${Number(item.id)})">Бан</button>`}
-                    ${item.is_admin ? `<button class="remove-btn" onclick="adminRemoveAdmin(${Number(item.id)})">Зняти адмін</button>` : `<button class="buy-btn" onclick="adminMakeAdmin(${Number(item.id)})">Дати адмін</button>`}
+                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">${currentLanguage === 'en' ? 'Profile' : currentLanguage === 'ru' ? 'Профиль' : 'Профіль'}</button>
+                    ${item.is_superadmin ? `<button class="secondary-btn" disabled>${escapeHtml(t('protectedAdmin'))}</button>` : item.is_banned ? `<button class="approve-btn" onclick="adminUnbanUser(${Number(item.id)})">${currentLanguage === 'en' ? 'Unban' : currentLanguage === 'ru' ? 'Разбан' : 'Розбан'}</button>` : `<button class="reject-btn" onclick="adminBanUser(${Number(item.id)})">${currentLanguage === 'en' ? 'Ban' : currentLanguage === 'ru' ? 'Бан' : 'Бан'}</button>`}
+                    ${item.is_superadmin ? `<button class="secondary-btn" disabled>${escapeHtml(t('superadmin'))}</button>` : item.is_admin ? `<button class="remove-btn" onclick="adminRemoveAdmin(${Number(item.id)})">${currentLanguage === 'en' ? 'Remove admin' : currentLanguage === 'ru' ? 'Снять админа' : 'Зняти адмін'}</button>` : `<button class="buy-btn" onclick="adminMakeAdmin(${Number(item.id)})">${currentLanguage === 'en' ? 'Make admin' : currentLanguage === 'ru' ? 'Дать админа' : 'Дати адмін'}</button>`}
                 </div>
             </div></div>
         `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
@@ -2460,7 +2482,7 @@ async function openUserProfile(userId) {
                             <div class="seller-badges">
                                 <span class="seller-badge accent">${escapeHtml(profile.seller_status || getSellerBadgeText(profile.sold_products, profile.rating_count))}</span>
                                 ${profile.rating_count > 0 ? `<span class="seller-badge">⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))} відгуків</span>` : ``}
-                                ${profile.is_admin ? `<span class="seller-badge">Адміністратор</span>` : ``}
+                                ${profile.is_superadmin ? `<span class="seller-badge">${escapeHtml(t('superadmin'))}</span>` : (profile.is_admin ? `<span class="seller-badge">${currentLanguage === 'en' ? 'Administrator' : currentLanguage === 'ru' ? 'Администратор' : 'Адміністратор'}</span>` : ``)}
                             </div>
                             <div class="seller-registered">З нами з ${formatDate(profile.registered_at) || "—"}</div>
                         </div>
