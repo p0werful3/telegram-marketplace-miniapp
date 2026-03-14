@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=264">
+    <link rel="stylesheet" href="style.css?v=265">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -17,27 +17,35 @@
                     <div class="auth-brand-mini">Mini App маркетплейс</div>
                 </div>
             </div>
-            <p class="subtitle">Увійдіть або зареєструйтеся</p>
+            <p class="subtitle auth-title-line">Увійдіть або зареєструйтеся</p>
+
+            <div class="auth-lang-row">
+                <select id="auth-language-select" class="auth-language-select" onchange="changeLanguage(this.value)">
+                    <option value="uk">Українська</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
 
             <div class="auth-tabs">
-                <button class="auth-tab active" onclick="switchAuthTab('login', this)">Вхід</button>
-                <button class="auth-tab" onclick="switchAuthTab('register', this)">Реєстрація</button>
+                <button id="auth-tab-login" class="auth-tab active" onclick="switchAuthTab('login', this)">Вхід</button>
+                <button id="auth-tab-register" class="auth-tab" onclick="switchAuthTab('register', this)">Реєстрація</button>
             </div>
 
             <div id="auth-login" class="auth-panel active">
                 <input id="login-username" type="text" placeholder="Username">
                 <input id="login-password" type="password" placeholder="Password">
-                <button class="primary-btn" onclick="loginUser()">Увійти</button>
+                <button id="login-submit-btn" class="primary-btn" onclick="loginUser()">Увійти</button>
             </div>
 
             <div id="auth-register" class="auth-panel">
                 <input id="register-username" type="text" placeholder="Username">
                 <input id="register-fullname" type="text" placeholder="Ім'я">
                 <input id="register-password" type="password" placeholder="Password">
-                <button class="primary-btn" onclick="registerNewUser()">Зареєструватися</button>
+                <button id="register-submit-btn" class="primary-btn" onclick="registerNewUser()">Зареєструватися</button>
             </div>
 
-            <div class="divider"><span>або</span></div>
+            <div id="auth-divider" class="divider"><span id="auth-divider-text">або</span></div>
 
             <div id="tg-login-wrap">
                 <button id="tg-login-btn" class="secondary-btn full-btn tg-login-btn" onclick="loginWithTelegram()">Увійти через Telegram</button>
@@ -47,8 +55,8 @@
             <label class="remember-card">
                 <input id="remember-me" type="checkbox">
                 <span class="remember-text">
-                    <strong>Запам’ятати акаунт</strong>
-                    <small>Зберегти вхід на цьому пристрої</small>
+                    <strong id="remember-title">Запам’ятати акаунт</strong>
+                    <small id="remember-subtitle">Зберегти вхід на цьому пристрої</small>
                 </span>
             </label>
         </div>
