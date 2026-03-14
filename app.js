@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "264";
+const FRONTEND_VERSION = "265";
 
 let tg = null;
 let telegramUser = null;
@@ -25,9 +25,37 @@ let currentLanguage = localStorage.getItem(APP_LANG_KEY) || "uk";
 const I18N = {
     uk: {
         authLoginTitle: "Увійдіть або зареєструйтеся",
+        authLoginTab: "Вхід",
+        authRegisterTab: "Реєстрація",
+        loginBtn: "Увійти",
+        registerBtn: "Зареєструватися",
+        authDivider: "або",
+        rememberTitle: "Запам’ятати акаунт",
+        rememberSubtitle: "Зберегти вхід на цьому пристрої",
+        usernamePlaceholder: "Username",
+        passwordPlaceholder: "Password",
+        fullNamePlaceholder: "Ім'я",
         tgLogin: "Увійти через Telegram",
         tgHintReady: "Швидкий вхід через ваш Telegram акаунт",
         tgHintUnavailable: "Кнопку Telegram тимчасово приховано — використайте звичайний вхід",
+        appMini: "Маркетплейс у Telegram",
+        catalogTitle: "Каталог товарів",
+        refresh: "Оновити",
+        catalogTab: "Каталог",
+        favoritesTab: "Обране",
+        searchPlaceholder: "Пошук товарів...",
+        filters: "Фільтри",
+        searchBtn: "Шукати",
+        myProductsTitle: "Мої оголошення",
+        activeTab: "Активні",
+        soldTab: "Продані",
+        archivedTab: "Архів",
+        createTitle: "Створити оголошення",
+        cancelEdit: "Скасувати редагування",
+        cartTitle: "Кошик",
+        buyAll: "Купити все",
+        profileTitle: "Профіль",
+        profileSettings: "Налаштування профілю",
         stats: "Статистика", hideStats: "Сховати статистику",
         purchases: "Історія покупок", hidePurchases: "Сховати історію покупок",
         reviews: "Мої відгуки",
@@ -35,13 +63,54 @@ const I18N = {
         ideas: "Ідеї та побажання", hideIdeas: "Сховати ідеї та побажання",
         logout: "Змінити акаунт / Вийти",
         navCatalog: "Каталог", navMine: "Мої", navCart: "Кошик", navProfile: "Профіль",
-        rating: "Рейтинг"
+        rating: "Рейтинг",
+        status: "Статус",
+        tgOnly: "Працює лише всередині Telegram Mini App",
+        loading: "Завантаження...",
+        noReviews: "У вас поки немає відгуків",
+        noSellerReviews: "Відгуків поки немає",
+        noComment: "Без коментаря",
+        buyer: "Покупець",
+        dealAmount: "Сума угоди",
+        item: "Оголошення",
+        authorProfile: "Профіль автора",
+        archivedState: "В архіві",
+        restoreBtn: "Повернути в каталог",
+        ratingReviews: "відгуків"
     },
     ru: {
         authLoginTitle: "Войдите или зарегистрируйтесь",
+        authLoginTab: "Вход",
+        authRegisterTab: "Регистрация",
+        loginBtn: "Войти",
+        registerBtn: "Зарегистрироваться",
+        authDivider: "или",
+        rememberTitle: "Запомнить аккаунт",
+        rememberSubtitle: "Сохранить вход на этом устройстве",
+        usernamePlaceholder: "Username",
+        passwordPlaceholder: "Password",
+        fullNamePlaceholder: "Имя",
         tgLogin: "Войти через Telegram",
         tgHintReady: "Быстрый вход через ваш Telegram аккаунт",
         tgHintUnavailable: "Кнопка Telegram временно скрыта — используйте обычный вход",
+        appMini: "Маркетплейс в Telegram",
+        catalogTitle: "Каталог товаров",
+        refresh: "Обновить",
+        catalogTab: "Каталог",
+        favoritesTab: "Избранное",
+        searchPlaceholder: "Поиск товаров...",
+        filters: "Фильтры",
+        searchBtn: "Искать",
+        myProductsTitle: "Мои объявления",
+        activeTab: "Активные",
+        soldTab: "Проданные",
+        archivedTab: "Архив",
+        createTitle: "Создать объявление",
+        cancelEdit: "Отменить редактирование",
+        cartTitle: "Корзина",
+        buyAll: "Купить всё",
+        profileTitle: "Профиль",
+        profileSettings: "Настройки профиля",
         stats: "Статистика", hideStats: "Скрыть статистику",
         purchases: "История покупок", hidePurchases: "Скрыть историю покупок",
         reviews: "Мои отзывы",
@@ -49,13 +118,54 @@ const I18N = {
         ideas: "Идеи и пожелания", hideIdeas: "Скрыть идеи и пожелания",
         logout: "Сменить аккаунт / Выйти",
         navCatalog: "Каталог", navMine: "Мои", navCart: "Корзина", navProfile: "Профиль",
-        rating: "Рейтинг"
+        rating: "Рейтинг",
+        status: "Статус",
+        tgOnly: "Работает только внутри Telegram Mini App",
+        loading: "Загрузка...",
+        noReviews: "У вас пока нет отзывов",
+        noSellerReviews: "Отзывов пока нет",
+        noComment: "Без комментария",
+        buyer: "Покупатель",
+        dealAmount: "Сумма сделки",
+        item: "Объявление",
+        authorProfile: "Профиль автора",
+        archivedState: "В архиве",
+        restoreBtn: "Вернуть в каталог",
+        ratingReviews: "отзывов"
     },
     en: {
         authLoginTitle: "Sign in or register",
+        authLoginTab: "Sign in",
+        authRegisterTab: "Register",
+        loginBtn: "Sign in",
+        registerBtn: "Create account",
+        authDivider: "or",
+        rememberTitle: "Remember account",
+        rememberSubtitle: "Keep me signed in on this device",
+        usernamePlaceholder: "Username",
+        passwordPlaceholder: "Password",
+        fullNamePlaceholder: "Full name",
         tgLogin: "Sign in with Telegram",
         tgHintReady: "Fast sign-in with your Telegram account",
         tgHintUnavailable: "Telegram button is temporarily hidden — use regular sign in",
+        appMini: "Marketplace in Telegram",
+        catalogTitle: "Product catalog",
+        refresh: "Refresh",
+        catalogTab: "Catalog",
+        favoritesTab: "Favorites",
+        searchPlaceholder: "Search products...",
+        filters: "Filters",
+        searchBtn: "Search",
+        myProductsTitle: "My listings",
+        activeTab: "Active",
+        soldTab: "Sold",
+        archivedTab: "Archive",
+        createTitle: "Create listing",
+        cancelEdit: "Cancel editing",
+        cartTitle: "Cart",
+        buyAll: "Buy all",
+        profileTitle: "Profile",
+        profileSettings: "Profile settings",
         stats: "Statistics", hideStats: "Hide statistics",
         purchases: "Purchase history", hidePurchases: "Hide purchase history",
         reviews: "My reviews",
@@ -63,7 +173,20 @@ const I18N = {
         ideas: "Ideas & suggestions", hideIdeas: "Hide ideas & suggestions",
         logout: "Switch account / Log out",
         navCatalog: "Catalog", navMine: "Mine", navCart: "Cart", navProfile: "Profile",
-        rating: "Rating"
+        rating: "Rating",
+        status: "Status",
+        tgOnly: "Works only inside Telegram Mini App",
+        loading: "Loading...",
+        noReviews: "No reviews yet",
+        noSellerReviews: "No reviews yet",
+        noComment: "No comment",
+        buyer: "Buyer",
+        dealAmount: "Deal amount",
+        item: "Listing",
+        authorProfile: "Author profile",
+        archivedState: "Archived",
+        restoreBtn: "Return to catalog",
+        ratingReviews: "reviews"
     }
 };
 
@@ -81,6 +204,18 @@ function setProfileMenuButton(btnId, icon, label, isOpen = false) {
 function applyLanguageTexts() {
     const authTitle = document.querySelector('.auth-title-line');
     if (authTitle) authTitle.textContent = t('authLoginTitle');
+    if ($('auth-tab-login')) $('auth-tab-login').textContent = t('authLoginTab');
+    if ($('auth-tab-register')) $('auth-tab-register').textContent = t('authRegisterTab');
+    if ($('login-submit-btn')) $('login-submit-btn').textContent = t('loginBtn');
+    if ($('register-submit-btn')) $('register-submit-btn').textContent = t('registerBtn');
+    if ($('auth-divider-text')) $('auth-divider-text').textContent = t('authDivider');
+    if ($('remember-title')) $('remember-title').textContent = t('rememberTitle');
+    if ($('remember-subtitle')) $('remember-subtitle').textContent = t('rememberSubtitle');
+    if ($('login-username')) $('login-username').placeholder = t('usernamePlaceholder');
+    if ($('login-password')) $('login-password').placeholder = t('passwordPlaceholder');
+    if ($('register-username')) $('register-username').placeholder = t('usernamePlaceholder');
+    if ($('register-fullname')) $('register-fullname').placeholder = t('fullNamePlaceholder');
+    if ($('register-password')) $('register-password').placeholder = t('passwordPlaceholder');
     const tgBtn = $('tg-login-btn');
     if (tgBtn) tgBtn.textContent = t('tgLogin');
     const ratingLabel = document.querySelector('.profile-mini-label');
@@ -100,7 +235,28 @@ function applyLanguageTexts() {
     });
     const langSelect = $('language-select');
     if (langSelect) langSelect.value = currentLanguage;
+    const authLangSelect = $('auth-language-select');
+    if (authLangSelect) authLangSelect.value = currentLanguage;
+
+    const setText = (sel, value) => { const el = document.querySelector(sel); if (el) el.textContent = value; };
+    setText('.topbar-mini', t('appMini'));
+    setText('#tab-catalog .section-header h2', t('catalogTitle'));
+    setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
+    setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
+    const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
+    const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
+    const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
+    setText('#tab-my-products .section-header h2', t('myProductsTitle'));
+    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('soldTab'); if (mpBtns[2]) mpBtns[2].textContent = t('archivedTab');
+    setText('#tab-create .section-header h2', t('createTitle'));
+    const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
+    setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
+    const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
+    setText('#tab-profile > h2', t('profileTitle')); setText('#profile-edit-wrap h3', t('profileSettings'));
+    const statusLabel = document.querySelectorAll('.profile-mini-label')[1]; if (statusLabel) statusLabel.textContent = t('status');
+    refreshTelegramLoginUi();
 }
+
 
 function changeLanguage(lang) {
     currentLanguage = ['uk','ru','en'].includes(lang) ? lang : 'uk';
@@ -262,6 +418,7 @@ function refreshTelegramLoginUi(forceHide = false) {
     const tgButton = $("tg-login-btn");
     const hint = $("tg-login-hint");
     const wrap = $("tg-login-wrap");
+    const divider = $("auth-divider");
     if (!tgButton && !hint) return;
 
     const currentTgUser = getTelegramUserFromEnvironment();
@@ -270,7 +427,9 @@ function refreshTelegramLoginUi(forceHide = false) {
     const hasUsableTelegramData = Boolean(initData || currentTgUser?.id || currentTgUser?.username);
     const hasTelegramEnv = Boolean(hasTelegramShell || hasUsableTelegramData);
 
-    if (wrap) wrap.classList.toggle('hidden', forceHide || (hasTelegramShell && !hasUsableTelegramData));
+    const shouldHideWrap = forceHide || (hasTelegramShell && !hasUsableTelegramData);
+    if (wrap) wrap.classList.toggle('hidden', shouldHideWrap);
+    if (divider) divider.classList.toggle('hidden', shouldHideWrap);
 
     if (tgButton) {
         tgButton.textContent = t('tgLogin');
@@ -284,7 +443,7 @@ function refreshTelegramLoginUi(forceHide = false) {
             ? t('tgHintUnavailable')
             : hasTelegramEnv
                 ? t('tgHintReady')
-                : "Працює лише всередині Telegram Mini App";
+                : t('tgOnly');
     }
 }
 
@@ -504,28 +663,50 @@ async function loadMyReviews() {
     const list = $("my-reviews-list");
     if (!list || !currentUser?.id) return;
 
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
 
     try {
         const items = await safeFetch(`${API_BASE}/users/${currentUser.id}/reviews`);
         if (!Array.isArray(items) || !items.length) {
-            list.innerHTML = `<div class="empty-card">У вас поки немає відгуків</div>`;
+            list.innerHTML = `<div class="empty-card">${escapeHtml(t('noReviews'))}</div>`;
             return;
         }
 
-        list.innerHTML = `<div class="cards">${items.map(item => `
-            <div class="card"><div class="card-body">
+        list.innerHTML = `<div class="cards">${items.map(item => renderReviewCard(item, true)).join("")}</div>`;
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити відгуки")}</div>`;
+    }
+}
+
+function renderReviewCard(item, showProfileButton = true) {
+    const buyerName = item.buyer_full_name || item.buyer_username || t('buyer');
+    const productThumb = item.product_image_url
+        ? `<img src="${escapeHtml(item.product_image_url)}" alt="review-product">`
+        : `<div class="review-thumb-placeholder">🛍</div>`;
+    const profileBtn = showProfileButton && item.buyer_id
+        ? `<button class="secondary-btn section-btn" onclick="openUserProfile(${Number(item.buyer_id)})">${escapeHtml(t('authorProfile'))}</button>`
+        : '';
+    const amountText = item.deal_amount != null ? formatPrice(item.deal_amount, item.currency) : '—';
+    return `
+        <div class="card review-card">
+            <div class="card-body">
                 <div class="review-topline">
                     <div class="review-stars">⭐ ${Number(item.rating || 0)}/5</div>
                     <div class="review-date">${formatDate(item.created_at) || "—"}</div>
                 </div>
-                <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
-                <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
-            </div></div>
-        `).join("")}</div>`;
-    } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити відгуки")}</div>`;
-    }
+                <h4 class="card-title">${escapeHtml(buyerName)}</h4>
+                <p class="card-description">${escapeHtml(item.comment || t('noComment'))}</p>
+                <div class="review-deal-box">
+                    <div class="review-deal-thumb">${productThumb}</div>
+                    <div class="review-deal-info">
+                        <div><strong>${escapeHtml(t('dealAmount'))}:</strong> ${escapeHtml(amountText)}</div>
+                        <div><strong>${escapeHtml(t('item'))}:</strong> ${escapeHtml(item.product_title || '—')}</div>
+                    </div>
+                </div>
+                <div class="card-actions compact-actions">${profileBtn}</div>
+            </div>
+        </div>
+    `;
 }
 
 async function showApp() {
@@ -1290,7 +1471,7 @@ function renderMyProductCard(product, view) {
     } else if (view === "sold") {
         actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
-        actionButton = `<button class="archive-btn" disabled>В архіві</button>`;
+        actionButton = `<div class="card-actions inline-actions"><button class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button class="approve-btn" onclick="event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
     }
 
     return `
@@ -1311,6 +1492,19 @@ function renderMyProductCard(product, view) {
             </div>
         </div>
     `;
+}
+
+async function restoreArchivedProduct(productId) {
+    if (!currentUser?.id) return;
+    try {
+        await safeFetch(`${API_BASE}/products/${productId}/restore?user_id=${currentUser.id}`, { method: "POST" });
+        showAlert(currentLanguage === 'en' ? 'Listing returned to catalog' : currentLanguage === 'ru' ? 'Объявление возвращено в каталог' : 'Оголошення повернуто в каталог');
+        await loadMyProducts();
+        await loadProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || 'Не вдалося повернути оголошення');
+    }
 }
 
 async function loadProducts() {
@@ -2298,21 +2492,14 @@ async function openUserProfile(userId) {
 async function loadSellerReviews(userId) {
     const wrap = $("seller-reviews-wrap");
     if (!wrap) return;
-    wrap.innerHTML = `<div class="empty-card">Завантаження відгуків...</div>`;
+    wrap.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const items = await safeFetch(`${API_BASE}/users/${userId}/reviews`);
         if (!Array.isArray(items) || !items.length) {
-            wrap.innerHTML = `<div class="empty-card">Відгуків поки немає</div>`;
+            wrap.innerHTML = `<div class="empty-card">${escapeHtml(t('noSellerReviews'))}</div>`;
             return;
         }
-        wrap.innerHTML = `<div class="cards">${items.map(item => `
-            <div class="card"><div class="card-body">
-                <div class="status-pill approved">${Number(item.rating)}/5</div>
-                <h4 class="card-title">${escapeHtml(item.buyer_full_name || item.buyer_username || 'Покупець')}</h4>
-                <p class="card-description">${escapeHtml(item.comment || 'Без коментаря')}</p>
-                <div class="history-meta"><div>${formatDate(item.created_at)}</div></div>
-            </div></div>
-        `).join("")}</div>`;
+        wrap.innerHTML = `<div class="cards">${items.map(item => renderReviewCard(item, false)).join("")}</div>`;
     } catch (error) {
         wrap.innerHTML = `<div class="empty-card">Не вдалося завантажити відгуки</div>`;
     }
