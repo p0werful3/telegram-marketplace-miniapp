@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=265">
+    <link rel="stylesheet" href="style.css?v=266">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -19,8 +19,14 @@
             </div>
             <p class="subtitle auth-title-line">Увійдіть або зареєструйтеся</p>
 
-            <div class="auth-lang-row">
-                <select id="auth-language-select" class="auth-language-select" onchange="changeLanguage(this.value)">
+            <div class="auth-lang-row auth-lang-row-wide">
+                <div class="auth-lang-title">Мова / Language</div>
+                <div id="auth-language-switcher" class="lang-switcher auth-lang-switcher">
+                    <button type="button" class="lang-btn" data-lang="uk" onclick="changeLanguage('uk')">Українська</button>
+                    <button type="button" class="lang-btn" data-lang="ru" onclick="changeLanguage('ru')">Русский</button>
+                    <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">English</button>
+                </div>
+                <select id="auth-language-select" class="auth-language-select hidden" onchange="changeLanguage(this.value)">
                     <option value="uk">Українська</option>
                     <option value="ru">Русский</option>
                     <option value="en">English</option>
@@ -398,6 +404,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=265"></script>
+    <script src="app.js?v=266"></script>
 </body>
 </html>
