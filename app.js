@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "212";
+const FRONTEND_VERSION = "213";
 
 let tg = null;
 let telegramUser = null;
@@ -15,6 +15,33 @@ let currentModalImages = [];
 let filtersOpen = false;
 let editingProductId = null;
 let editingExistingImages = [];
+
+const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
+const TG_CACHE_USER_KEY = "marketplace_tg_user";
+
+function cacheTelegramState(user, initData) {
+    try {
+        if (user && typeof user === "object") localStorage.setItem(TG_CACHE_USER_KEY, JSON.stringify(user));
+        if (initData) localStorage.setItem(TG_CACHE_INIT_KEY, String(initData));
+    } catch {}
+}
+
+function getCachedTelegramUser() {
+    try {
+        const raw = localStorage.getItem(TG_CACHE_USER_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function getCachedTelegramInitData() {
+    try {
+        return localStorage.getItem(TG_CACHE_INIT_KEY) || null;
+    } catch {
+        return null;
+    }
+}
 
 function $(id) {
     return document.getElementById(id);
@@ -105,19 +132,40 @@ function getTelegramInitDataFromLocation() {
     } catch (error) {
         console.error("Telegram location initData parse error:", error);
     }
-    return null;
+
+    try {
+        const initFromWebView = window.Telegram?.WebView?.initParams?.tgWebAppData
+            || window.Telegram?.WebView?.initParams?.tgWebAppInitData
+            || window.Telegram?.WebApp?.initData
+            || window.parent?.Telegram?.WebApp?.initData;
+        if (initFromWebView) return initFromWebView;
+    } catch (error) {
+        console.error("Telegram WebView initData parse error:", error);
+    }
+
+    return getCachedTelegramInitData();
 }
 
 function getTelegramUserFromEnvironment() {
     return telegramUser
         || tg?.initDataUnsafe?.user
+        || window.Telegram?.WebApp?.initDataUnsafe?.user
+        || window.parent?.Telegram?.WebApp?.initDataUnsafe?.user
         || parseTelegramUserFromInitData(tg?.initData)
+        || parseTelegramUserFromInitData(window.Telegram?.WebApp?.initData)
+        || parseTelegramUserFromInitData(window.parent?.Telegram?.WebApp?.initData)
         || parseTelegramUserFromInitData(getTelegramInitDataFromLocation())
+        || getCachedTelegramUser()
         || null;
 }
 
 function getTelegramInitData() {
-    return tg?.initData || getTelegramInitDataFromLocation() || null;
+    return tg?.initData
+        || window.Telegram?.WebApp?.initData
+        || window.parent?.Telegram?.WebApp?.initData
+        || getTelegramInitDataFromLocation()
+        || getCachedTelegramInitData()
+        || null;
 }
 
 function refreshTelegramLoginUi() {
@@ -164,12 +212,16 @@ function initTelegramWebApp() {
             tg.ready?.();
             tg.expand?.();
             telegramUser = tg.initDataUnsafe?.user
+                || window.Telegram?.WebApp?.initDataUnsafe?.user
                 || parseTelegramUserFromInitData(tg.initData)
+                || parseTelegramUserFromInitData(window.Telegram?.WebApp?.initData)
                 || parseTelegramUserFromInitData(getTelegramInitDataFromLocation())
                 || telegramUser
                 || null;
+            cacheTelegramState(telegramUser, tg.initData || window.Telegram?.WebApp?.initData || getTelegramInitDataFromLocation());
         } else {
-            telegramUser = parseTelegramUserFromInitData(getTelegramInitDataFromLocation()) || telegramUser || null;
+            telegramUser = parseTelegramUserFromInitData(getTelegramInitDataFromLocation()) || getCachedTelegramUser() || telegramUser || null;
+            cacheTelegramState(telegramUser, getTelegramInitDataFromLocation());
         }
     } catch (error) {
         console.error("Telegram init error:", error);
@@ -853,7 +905,7 @@ async function wakeApi() {
 
 function setupAuthScreen() {
     initTelegramWebApp();
-    [250, 700, 1400].forEach(delay => setTimeout(() => {
+    [200, 500, 1000, 1800, 2600].forEach(delay => setTimeout(() => {
         initTelegramWebApp();
         refreshTelegramLoginUi();
     }, delay));
@@ -960,20 +1012,33 @@ async function loginWithTelegram() {
 
     let parsedUser = getTelegramUserFromEnvironment();
     let initData = getTelegramInitData();
-    let telegramId = parsedUser?.id || tg?.initDataUnsafe?.user?.id || null;
-    const hasTelegramShell = Boolean(window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || tg);
+    let telegramId = parsedUser?.id
+        || tg?.initDataUnsafe?.user?.id
+        || window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+        || null;
+    const hasTelegramShell = Boolean(window.Telegram?.WebApp || window.parent?.Telegram?.WebApp || window.Telegram?.WebView || tg);
 
-    if (!telegramId && !initData && hasTelegramShell) {
-        await new Promise(resolve => setTimeout(resolve, 450));
-        initTelegramWebApp();
-        parsedUser = getTelegramUserFromEnvironment();
-        initData = getTelegramInitData();
-        telegramId = parsedUser?.id || tg?.initDataUnsafe?.user?.id || null;
+    if ((!telegramId && !initData) || !parsedUser) {
+        for (const delay of [350, 800, 1400]) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            initTelegramWebApp();
+            parsedUser = getTelegramUserFromEnvironment();
+            initData = getTelegramInitData();
+            telegramId = parsedUser?.id
+                || tg?.initDataUnsafe?.user?.id
+                || window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+                || null;
+            if (telegramId || initData || parsedUser?.username) break;
+        }
     }
 
-    const canTryAuth = Boolean(telegramId || initData || parsedUser?.username || parsedUser?.first_name || hasTelegramShell);
+    cacheTelegramState(parsedUser, initData);
+
+    const canTryAuth = Boolean(telegramId || initData || parsedUser?.username || parsedUser?.first_name);
     if (!canTryAuth) {
-        showAlert("Відкрийте застосунок саме через кнопку бота в Telegram Mini App");
+        showAlert(hasTelegramShell
+            ? "Не вдалося отримати Telegram ID. Закрийте Mini App і відкрийте його знову кнопкою бота."
+            : "Відкрийте застосунок саме через кнопку бота в Telegram Mini App");
         return;
     }
 
@@ -1003,6 +1068,22 @@ async function loginWithTelegram() {
     }
 }
 
+
+
+function contactSeller(username) {
+    const clean = String(username || "").replace(/^@+/, "").trim();
+    if (!clean) {
+        showAlert("Не вдалося знайти продавця");
+        return;
+    }
+    const link = `https://t.me/${clean}`;
+    try {
+        if (tg?.openTelegramLink) tg.openTelegramLink(link);
+        else window.open(link, "_blank");
+    } catch {
+        window.open(link, "_blank");
+    }
+}
 
 function renderCardTags(product) {
     const tags = [
@@ -1516,6 +1597,7 @@ async function loadCart() {
                     ${item.seller_username ? `<div class="compact-desc cart-seller-line">Продавець: @${escapeHtml(item.seller_username)}</div>` : ""}
                     <div class="card-actions compact-actions cart-card-actions">
                         <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
+                        ${item.seller_username ? `<button class="message-btn" onclick="contactSeller('${escapeHtml(item.seller_username)}')">Написати</button>` : ""}
                         <button class="remove-btn" onclick="removeFromCart(${Number(item.cart_item_id)})">Видалити</button>
                     </div>
                 </div>
@@ -2172,6 +2254,7 @@ if (typeof openProductModal === "function") window.openProductModal = openProduc
 if (typeof deleteProduct === "function") window.deleteProduct = deleteProduct;
 if (typeof addToCart === "function") window.addToCart = addToCart;
 if (typeof removeFromCart === "function") window.removeFromCart = removeFromCart;
+if (typeof contactSeller === "function") window.contactSeller = contactSeller;
 if (typeof buyProduct === "function") window.buyProduct = buyProduct;
 if (typeof buyAllFromCart === "function") window.buyAllFromCart = buyAllFromCart;
 if (typeof toggleFavorite === "function") window.toggleFavorite = toggleFavorite;
