@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=268">
+    <link rel="stylesheet" href="style.css?v=266">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -141,23 +141,17 @@
 
             <section id="tab-my-products" class="tab-section">
                 <div class="section-header">
-                    <h2>Мої оголошення</h2>
+                    <h2>Мої оголошення <span id="my-products-notify-count" class="notify-badge-inline">0</span></h2>
                     <button class="secondary-btn section-btn" onclick="loadMyProducts()">Оновити</button>
                 </div>
 
                 <div class="subtabs">
                     <button id="my-products-active-btn" class="subtab-btn active" onclick="switchMyProductsView('active')">Активні</button>
-                    <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')">Запити та статус угоди <span id="my-products-request-badge" class="tab-badge hidden">0</span></button>
-                    <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Продані</button>
+                    <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Запити та угоди</button>
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
                 </div>
 
-                <div id="purchase-requests-wrap" class="hidden">
-                    <div class="requests-header">Запити на покупку</div>
-                    <div id="purchase-requests-list" class="cards requests-list"></div>
-                </div>
-
-                <div id="my-products-list" class="cards"></div>
+                                <div id="my-products-list" class="cards"></div>
             </section>
 
             <section id="tab-create" class="tab-section">
