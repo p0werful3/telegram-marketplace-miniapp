@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "266";
+const FRONTEND_VERSION = "267";
 
 let tg = null;
 let telegramUser = null;
@@ -15,6 +15,8 @@ let currentModalImages = [];
 let filtersOpen = false;
 let editingProductId = null;
 let editingExistingImages = [];
+let notificationRefreshTimer = null;
+let lastUnreadNotifications = 0;
 
 const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
@@ -256,6 +258,7 @@ function applyLanguageTexts() {
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
     setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
+    const sellerSearchInput = $('seller-search-input'); if (sellerSearchInput) sellerSearchInput.placeholder = currentLanguage === 'en' ? 'Find seller by @username' : currentLanguage === 'ru' ? 'Найти продавца по @username' : 'Знайти продавця по @username';
     const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
     const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
@@ -586,6 +589,10 @@ function logout() {
     localStorage.removeItem("marketplace_user");
     sessionStorage.removeItem("marketplace_user");
     currentUser = null;
+    if (notificationRefreshTimer) {
+        clearInterval(notificationRefreshTimer);
+        notificationRefreshTimer = null;
+    }
 
     $("app-screen")?.classList.add("hidden");
     $("auth-screen")?.classList.remove("hidden");
@@ -754,6 +761,11 @@ async function showApp() {
 
     loadProducts();
     loadStats();
+    loadNotifications(true);
+    if (notificationRefreshTimer) clearInterval(notificationRefreshTimer);
+    notificationRefreshTimer = setInterval(() => {
+        if (currentUser?.id) loadNotifications(false);
+    }, 15000);
 }
 
 function switchAuthTab(tabName, btn) {
@@ -788,6 +800,7 @@ function switchTab(tabName, btn = null) {
         applyLanguageTexts();
         detectAdminAccess();
         loadStats();
+        loadNotifications(true);
     }
 }
 
@@ -827,6 +840,18 @@ async function loadStats() {
         if (purchasesEl) purchasesEl.textContent = data.purchase_history ?? 0;
         const purchasePendingEl = $("stat-purchase-pending");
         if (purchasePendingEl) purchasePendingEl.textContent = data.purchase_pending ?? 0;
+        const profileBadge = $("profile-notification-badge");
+        if (profileBadge) {
+            const unread = Number(data.unread_notifications ?? 0);
+            profileBadge.textContent = unread > 99 ? '99+' : String(unread);
+            profileBadge.classList.toggle('hidden', unread <= 0);
+        }
+        const requestsBadge = $("my-products-request-badge");
+        if (requestsBadge) {
+            const pending = Number(data.pending_requests ?? 0);
+            requestsBadge.textContent = pending > 99 ? '99+' : String(pending);
+            requestsBadge.classList.toggle('hidden', pending <= 0);
+        }
         currentUser = { ...currentUser, sold_products: data.sold_products ?? 0 };
         saveSession(currentUser);
         fillProfile();
@@ -838,6 +863,7 @@ async function loadStats() {
 function orderStatusLabel(status) {
     if (status === "approved") return "Підтверджено";
     if (status === "rejected") return "Відхилено";
+    if (status === "completed") return "Завершено";
     if (status === "cancelled") return "Скасовано";
     return "Очікує підтвердження";
 }
@@ -902,6 +928,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button class="ghost-warning-btn" onclick="cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
+                        ${item.can_complete ? `<button class="approve-btn" onclick="completeOrder(${Number(item.order_id)})">Завершити угоду</button>` : ""}
                         ${item.can_review ? `<button class="approve-btn" onclick="openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
@@ -1405,6 +1432,16 @@ function contactSeller(username) {
     }
 }
 
+function getConditionTagClass(condition) {
+    if (String(condition || '').trim() === 'Б/У') return 'tag-condition-used';
+    if (String(condition || '').trim() === 'Новий') return 'tag-condition-new';
+    return '';
+}
+
+function conditionTag(condition) {
+    return `<span class="tag ${getConditionTagClass(condition)}">${escapeHtml(condition || 'Новий')}</span>`;
+}
+
 function renderCardTags(product) {
     const tags = [
         product.category || "Без категорії",
@@ -1417,7 +1454,7 @@ function renderCardTags(product) {
 
     return `
         <div class="card-tags">
-            ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+            ${tags.map(tag => `<span class="tag ${tag === (product.condition || "Новий") ? getConditionTagClass(tag) : ""}">${escapeHtml(tag)}</span>`).join("")}
         </div>
     `;
 }
@@ -1467,7 +1504,7 @@ function renderCatalogCard(product) {
                 </div>
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "Без міста")}</span>
-                    <span class="tag">${escapeHtml(product.condition || "Новий")}</span>
+                    ${conditionTag(product.condition || "Новий")}
                     <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
@@ -1506,7 +1543,7 @@ function renderMyProductCard(product, view) {
                 </div>
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "")}</span>
-                    <span class="tag">${escapeHtml(product.condition || "")}</span>
+                    ${conditionTag(product.condition || "Новий")}
                     <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
@@ -1553,6 +1590,7 @@ async function loadProducts() {
         const cityValue = $("city-filter")?.value || "Усі";
         const conditionValue = $("condition-filter")?.value || "Усі";
         const sortValue = $("sort-filter")?.value || "newest";
+        const sellerSearchValue = $("seller-search-input")?.value.trim() || "";
         const priceMinValue = $("price-min-filter")?.value.trim() || "";
         const priceMaxValue = $("price-max-filter")?.value.trim() || "";
 
@@ -1561,6 +1599,7 @@ async function loadProducts() {
         if (categoryValue !== "Усі") params.append("category", categoryValue);
         if (cityValue !== "Усі") params.append("city", cityValue);
         if (conditionValue !== "Усі") params.append("condition", conditionValue);
+        if (sellerSearchValue) params.append("seller_username", sellerSearchValue.replace(/^@+/, ''));
         if (priceMinValue) params.append("price_min", priceMinValue);
         if (priceMaxValue) params.append("price_max", priceMaxValue);
         params.append("sort", sortValue);
@@ -1781,11 +1820,19 @@ async function loadPurchaseRequests() {
         return;
     }
     try {
-        const requests = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=pending`);
+        const requests = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=all`);
         if (!Array.isArray(requests) || !requests.length) {
             wrap.classList.add("hidden");
             list.innerHTML = "";
+            const badge = $("my-products-request-badge");
+            if (badge) badge.classList.add("hidden");
             return;
+        }
+        const pendingCount = requests.filter(item => item.status === "pending").length;
+        const badge = $("my-products-request-badge");
+        if (badge) {
+            badge.textContent = pendingCount > 99 ? '99+' : String(pendingCount);
+            badge.classList.toggle('hidden', pendingCount <= 0);
         }
         wrap.classList.remove("hidden");
         list.innerHTML = requests.map(item => `
@@ -1796,10 +1843,10 @@ async function loadPurchaseRequests() {
                     <div class="request-meta">
                         <div>Покупець: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
                         ${item.buyer_full_name ? `<div>Ім'я: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
+                        <div>Статус: <span class="status-pill ${escapeHtml(item.status || 'pending')}">${orderStatusLabel(item.status)}</span></div>
                     </div>
                     <div class="card-actions inline-actions">
-                        <button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Так</button>
-                        <button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Ні</button>
+                        ${item.status === 'pending' ? `<button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Так</button><button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Ні</button>` : `<button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль покупця</button>`}
                     </div>
                 </div>
             </div>
@@ -2535,6 +2582,95 @@ function closeUserProfileOnBackdrop(event) {
     if (event.target?.id === "user-profile-modal") closeUserProfileModal();
 }
 
+async function completeOrder(orderId) {
+    if (!currentUser || isLoading) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/orders/${orderId}/complete?buyer_id=${currentUser.id}`, { method: "POST" });
+        showAlert("Угоду завершено");
+        await loadPurchaseHistory();
+        await loadStats();
+        await loadNotifications(true);
+    } catch (error) {
+        showAlert(error.message || "Не вдалося завершити угоду");
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function loadNotifications(markAsSeen = false) {
+    if (!currentUser?.id) return;
+    const list = $("notifications-list");
+    try {
+        const data = await safeFetch(`${API_BASE}/notifications/${currentUser.id}`);
+        const items = Array.isArray(data.items) ? data.items : [];
+        const unread = Number(data.unread_count || 0);
+        lastUnreadNotifications = unread;
+
+        const badge = $("profile-notification-badge");
+        if (badge) {
+            badge.textContent = unread > 99 ? '99+' : String(unread);
+            badge.classList.toggle('hidden', unread <= 0);
+        }
+
+        if (list) {
+            if (!items.length) {
+                list.innerHTML = `<div class="empty-card">Сповіщень поки немає</div>`;
+            } else {
+                list.innerHTML = items.map(item => `
+                    <div class="notification-card ${item.is_read ? '' : 'notification-unread'}">
+                        <div class="notification-top">
+                            <strong>${escapeHtml(item.title || 'Сповіщення')}</strong>
+                            <span class="soft-tag">${escapeHtml(formatDate(item.created_at) || '')}</span>
+                        </div>
+                        <div class="notification-text">${escapeHtml(item.message || '')}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        if (markAsSeen && unread > 0) {
+            await safeFetch(`${API_BASE}/notifications/${currentUser.id}/read-all`, { method: 'POST' });
+            if (badge) badge.classList.add('hidden');
+        }
+    } catch (error) {
+        if (list && !list.innerHTML) list.innerHTML = `<div class="empty-card">Не вдалося завантажити сповіщення</div>`;
+    }
+}
+
+async function searchSellers() {
+    const query = $("seller-search-input")?.value.trim() || '';
+    const list = $("seller-search-results");
+    if (!list) return;
+    if (query.replace(/^@+/, '').length < 2) {
+        list.innerHTML = `<div class="empty-card">Введи мінімум 2 символи username</div>`;
+        return;
+    }
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
+    try {
+        const items = await safeFetch(`${API_BASE}/users/search?q=${encodeURIComponent(query)}`);
+        if (!Array.isArray(items) || !items.length) {
+            list.innerHTML = `<div class="empty-card">Продавця не знайдено</div>`;
+            return;
+        }
+        list.innerHTML = items.map(item => `
+            <div class="seller-search-card">
+                <div>
+                    <div class="seller-search-name">${escapeHtml(item.full_name || item.username || 'Користувач')}</div>
+                    <div class="seller-search-username">@${escapeHtml(item.username || '')}</div>
+                    <div class="seller-search-meta">⭐ ${escapeHtml(String(item.rating || 0))} · ${escapeHtml(String(item.active_products || 0))} активних</div>
+                </div>
+                <div class="card-actions inline-actions">
+                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
+                    ${item.telegram_link ? `<a class="contact-btn contact-link" href="${escapeHtml(item.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати</a>` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || 'Помилка пошуку')}</div>`;
+    }
+}
+
 async function initApp() {
     setupAuthScreen();
 
@@ -2612,6 +2748,9 @@ if (typeof closeUserProfileModal === "function") window.closeUserProfileModal = 
 if (typeof closeUserProfileOnBackdrop === "function") window.closeUserProfileOnBackdrop = closeUserProfileOnBackdrop;
 if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
+if (typeof completeOrder === "function") window.completeOrder = completeOrder;
+if (typeof loadNotifications === "function") window.loadNotifications = loadNotifications;
+if (typeof searchSellers === "function") window.searchSellers = searchSellers;
 
 initApp();
 
