@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=266">
+    <link rel="stylesheet" href="style.css?v=267">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -98,6 +98,13 @@
                 </div>
 
                 <div id="catalog-filters-wrap" class="filters-panel hidden">
+                    <div class="seller-search-panel">
+                        <div class="seller-search-row">
+                            <input id="seller-search-input" type="text" placeholder="Знайти продавця по @username">
+                            <button class="secondary-btn section-btn" onclick="searchSellers()">Знайти продавця</button>
+                        </div>
+                        <div id="seller-search-results" class="seller-search-results"></div>
+                    </div>
                     <div class="search-bar search-bar-advanced">
                         <select id="category-filter" onchange="loadProducts()">
                             <option value="Усі">Усі категорії</option>
@@ -152,7 +159,7 @@
                 </div>
 
                 <div id="purchase-requests-wrap" class="hidden">
-                    <div class="requests-header">Запити на покупку</div>
+                    <div class="requests-header">Запити та статуси угод</div>
                     <div id="purchase-requests-list" class="cards requests-list"></div>
                 </div>
 
@@ -267,6 +274,14 @@
                         <strong id="profile-status-value">Новий продавець</strong>
                         <small id="profile-register-date">—</small>
                     </div>
+                </div>
+
+                <div class="profile-card">
+                    <div class="section-header profile-section-header">
+                        <h3>Сповіщення</h3>
+                        <button class="secondary-btn section-btn" onclick="loadNotifications(true)">Оновити</button>
+                    </div>
+                    <div id="notifications-list" class="notifications-list"></div>
                 </div>
 
                 <div class="profile-card"><button id="stats-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleStatsPanel()"><span class="profile-menu-icon">📊</span><span>Статистика</span><span class="profile-menu-arrow">›</span></button>
@@ -404,6 +419,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=266"></script>
+    <script src="app.js?v=267"></script>
 </body>
 </html>
