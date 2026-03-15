@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "267";
+const FRONTEND_VERSION = "266";
 
 let tg = null;
 let telegramUser = null;
@@ -15,8 +15,6 @@ let currentModalImages = [];
 let filtersOpen = false;
 let editingProductId = null;
 let editingExistingImages = [];
-let notificationRefreshTimer = null;
-let lastUnreadNotifications = 0;
 
 const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
@@ -258,7 +256,6 @@ function applyLanguageTexts() {
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
     setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
-    const sellerSearchInput = $('seller-search-input'); if (sellerSearchInput) sellerSearchInput.placeholder = currentLanguage === 'en' ? 'Find seller by @username' : currentLanguage === 'ru' ? 'Найти продавца по @username' : 'Знайти продавця по @username';
     const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
     const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
@@ -589,10 +586,6 @@ function logout() {
     localStorage.removeItem("marketplace_user");
     sessionStorage.removeItem("marketplace_user");
     currentUser = null;
-    if (notificationRefreshTimer) {
-        clearInterval(notificationRefreshTimer);
-        notificationRefreshTimer = null;
-    }
 
     $("app-screen")?.classList.add("hidden");
     $("auth-screen")?.classList.remove("hidden");
@@ -761,11 +754,6 @@ async function showApp() {
 
     loadProducts();
     loadStats();
-    loadNotifications(true);
-    if (notificationRefreshTimer) clearInterval(notificationRefreshTimer);
-    notificationRefreshTimer = setInterval(() => {
-        if (currentUser?.id) loadNotifications(false);
-    }, 15000);
 }
 
 function switchAuthTab(tabName, btn) {
@@ -800,7 +788,6 @@ function switchTab(tabName, btn = null) {
         applyLanguageTexts();
         detectAdminAccess();
         loadStats();
-        loadNotifications(true);
     }
 }
 
@@ -819,6 +806,7 @@ function switchCatalogView(view) {
 function switchMyProductsView(view) {
     myProductsView = view;
     $("my-products-active-btn")?.classList.toggle("active", view === "active");
+    $("my-products-requests-btn")?.classList.toggle("active", view === "requests");
     $("my-products-sold-btn")?.classList.toggle("active", view === "sold");
     $("my-products-archived-btn")?.classList.toggle("active", view === "archived");
     loadMyProducts();
@@ -840,18 +828,6 @@ async function loadStats() {
         if (purchasesEl) purchasesEl.textContent = data.purchase_history ?? 0;
         const purchasePendingEl = $("stat-purchase-pending");
         if (purchasePendingEl) purchasePendingEl.textContent = data.purchase_pending ?? 0;
-        const profileBadge = $("profile-notification-badge");
-        if (profileBadge) {
-            const unread = Number(data.unread_notifications ?? 0);
-            profileBadge.textContent = unread > 99 ? '99+' : String(unread);
-            profileBadge.classList.toggle('hidden', unread <= 0);
-        }
-        const requestsBadge = $("my-products-request-badge");
-        if (requestsBadge) {
-            const pending = Number(data.pending_requests ?? 0);
-            requestsBadge.textContent = pending > 99 ? '99+' : String(pending);
-            requestsBadge.classList.toggle('hidden', pending <= 0);
-        }
         currentUser = { ...currentUser, sold_products: data.sold_products ?? 0 };
         saveSession(currentUser);
         fillProfile();
@@ -863,7 +839,6 @@ async function loadStats() {
 function orderStatusLabel(status) {
     if (status === "approved") return "Підтверджено";
     if (status === "rejected") return "Відхилено";
-    if (status === "completed") return "Завершено";
     if (status === "cancelled") return "Скасовано";
     return "Очікує підтвердження";
 }
@@ -928,7 +903,6 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button class="ghost-warning-btn" onclick="cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_complete ? `<button class="approve-btn" onclick="completeOrder(${Number(item.order_id)})">Завершити угоду</button>` : ""}
                         ${item.can_review ? `<button class="approve-btn" onclick="openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
@@ -1432,16 +1406,6 @@ function contactSeller(username) {
     }
 }
 
-function getConditionTagClass(condition) {
-    if (String(condition || '').trim() === 'Б/У') return 'tag-condition-used';
-    if (String(condition || '').trim() === 'Новий') return 'tag-condition-new';
-    return '';
-}
-
-function conditionTag(condition) {
-    return `<span class="tag ${getConditionTagClass(condition)}">${escapeHtml(condition || 'Новий')}</span>`;
-}
-
 function renderCardTags(product) {
     const tags = [
         product.category || "Без категорії",
@@ -1454,7 +1418,7 @@ function renderCardTags(product) {
 
     return `
         <div class="card-tags">
-            ${tags.map(tag => `<span class="tag ${tag === (product.condition || "Новий") ? getConditionTagClass(tag) : ""}">${escapeHtml(tag)}</span>`).join("")}
+            ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
         </div>
     `;
 }
@@ -1504,12 +1468,15 @@ function renderCatalogCard(product) {
                 </div>
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "Без міста")}</span>
-                    ${conditionTag(product.condition || "Новий")}
+                    <span class="tag">${escapeHtml(product.condition || "Новий")}</span>
                     <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
-                <div class="card-actions compact-actions">
+                <div class="card-actions compact-actions wrap-actions">
                     ${product.seller_username ? `<button class="seller-link-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль</button>` : ""}
+                    ${product.seller_username ? `<button class="secondary-btn mini-btn" onclick="event.stopPropagation(); filterBySeller('${product.seller_username}')">Усі товари</button>` : ""}
+                    ${!isOwnProduct && product.seller_telegram_link ? `<a class="contact-btn contact-link mini-btn" onclick="event.stopPropagation();" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer">Написати</a>` : ""}
+                    <button class="secondary-btn mini-btn" onclick="event.stopPropagation(); shareProduct(${Number(product.id)})">📤 Поділитися</button>
                     ${isOwnProduct ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button class="buy-btn" onclick="event.stopPropagation(); addToCart(${Number(product.id)})">У кошик</button>`}
                 </div>
             </div>
@@ -1543,7 +1510,7 @@ function renderMyProductCard(product, view) {
                 </div>
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "")}</span>
-                    ${conditionTag(product.condition || "Новий")}
+                    <span class="tag">${escapeHtml(product.condition || "")}</span>
                     <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
@@ -1590,7 +1557,6 @@ async function loadProducts() {
         const cityValue = $("city-filter")?.value || "Усі";
         const conditionValue = $("condition-filter")?.value || "Усі";
         const sortValue = $("sort-filter")?.value || "newest";
-        const sellerSearchValue = $("seller-search-input")?.value.trim() || "";
         const priceMinValue = $("price-min-filter")?.value.trim() || "";
         const priceMaxValue = $("price-max-filter")?.value.trim() || "";
 
@@ -1599,7 +1565,6 @@ async function loadProducts() {
         if (categoryValue !== "Усі") params.append("category", categoryValue);
         if (cityValue !== "Усі") params.append("city", cityValue);
         if (conditionValue !== "Усі") params.append("condition", conditionValue);
-        if (sellerSearchValue) params.append("seller_username", sellerSearchValue.replace(/^@+/, ''));
         if (priceMinValue) params.append("price_min", priceMinValue);
         if (priceMaxValue) params.append("price_max", priceMaxValue);
         params.append("sort", sortValue);
@@ -1699,9 +1664,12 @@ async function openProductModal(productId) {
                     <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
                     ${product.seller_username ? `<button class="seller-link-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
-                    <div class="card-actions compact-actions">
+                    ${product.seller_username ? `<button class="secondary-btn full-btn" onclick="event.stopPropagation(); filterBySeller('${product.seller_username}')">Усі оголошення продавця</button>` : ""}
+                    <div class="card-actions compact-actions wrap-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
+                        ${!isOwnProduct && product.seller_username ? `<button class="secondary-btn mini-btn" onclick="event.stopPropagation(); filterBySeller('${product.seller_username}')">Усі товари продавця</button>` : ""}
+                        <button class="secondary-btn mini-btn" onclick="event.stopPropagation(); shareProduct(${Number(product.id)})">📤 Поділитися</button>
                         ${reportButton}
                     </div>
                 </div>
@@ -1784,6 +1752,12 @@ async function loadMyProducts() {
     const list = $("my-products-list");
     if (!list || !currentUser) return;
 
+    if (myProductsView === "requests") {
+        list.innerHTML = "";
+        await loadPurchaseRequests(true);
+        return;
+    }
+
     list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
@@ -1795,7 +1769,7 @@ async function loadMyProducts() {
         const products = await safeFetch(url);
 
         if (!Array.isArray(products) || products.length === 0) {
-            await loadPurchaseRequests();
+            await loadPurchaseRequests(false);
             list.innerHTML =
                 myProductsView === "active"
                     ? `<div class="empty-card">У вас поки немає активних оголошень</div>`
@@ -1806,24 +1780,25 @@ async function loadMyProducts() {
         }
 
         list.innerHTML = products.map(product => renderMyProductCard(product, myProductsView)).join("");
-        await loadPurchaseRequests();
+        await loadPurchaseRequests(false);
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
     }
 }
 
-async function loadPurchaseRequests() {
+async function loadPurchaseRequests(forceShow = false) {
     const wrap = $("purchase-requests-wrap");
     const list = $("purchase-requests-list");
-    if (!wrap || !list || !currentUser || myProductsView !== "active") {
+    const shouldShow = forceShow || myProductsView === "active" || myProductsView === "requests";
+    if (!wrap || !list || !currentUser || !shouldShow) {
         wrap?.classList.add("hidden");
         return;
     }
     try {
         const requests = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=all`);
         if (!Array.isArray(requests) || !requests.length) {
-            wrap.classList.add("hidden");
-            list.innerHTML = "";
+            wrap.classList.remove("hidden");
+            list.innerHTML = `<div class="empty-card">Запитів та оновлень по угодах поки немає</div>`;
             const badge = $("my-products-request-badge");
             if (badge) badge.classList.add("hidden");
             return;
@@ -1838,15 +1813,20 @@ async function loadPurchaseRequests() {
         list.innerHTML = requests.map(item => `
             <div class="card request-card">
                 <div class="card-body">
-                    <h3 class="card-title">${escapeHtml(item.product_title)}</h3>
+                    <div class="request-top-row">
+                        <h3 class="card-title">${escapeHtml(item.product_title)}</h3>
+                        <button class="secondary-btn mini-btn" onclick="shareProduct(${Number(item.product_id)})">📤 Поділитися</button>
+                    </div>
                     <p class="card-price">${formatPrice(item.offered_price, item.currency)}</p>
                     <div class="request-meta">
                         <div>Покупець: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
                         ${item.buyer_full_name ? `<div>Ім'я: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
                         <div>Статус: <span class="status-pill ${escapeHtml(item.status || 'pending')}">${orderStatusLabel(item.status)}</span></div>
+                        <div class="safe-deal-note">${item.status === 'approved' ? 'Безпечна угода: товар зарезервовано за покупцем до підтвердження завершення.' : item.status === 'completed' ? 'Безпечна угода завершена успішно.' : item.status === 'rejected' ? 'Угоду скасовано або відхилено.' : 'Очікує рішення продавця.'}</div>
                     </div>
-                    <div class="card-actions inline-actions">
-                        ${item.status === 'pending' ? `<button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Так</button><button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Ні</button>` : `<button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль покупця</button>`}
+                    <div class="card-actions inline-actions wrap-actions">
+                        ${item.status === 'pending' ? `<button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Підтвердити</button><button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Відхилити</button>` : `<button class="secondary-btn" onclick="openUserProfile(${Number(item.buyer_id)})">Профіль покупця</button>`}
+                        <button class="secondary-btn mini-btn" onclick="openProductById(${Number(item.product_id)})">Відкрити товар</button>
                     </div>
                 </div>
             </div>
@@ -2535,9 +2515,10 @@ async function openUserProfile(userId) {
                         </div>
                     </div>
 
-                    <div class="seller-stats-grid">
+                    <div class="seller-stats-grid seller-stats-grid-4">
                         <div class="seller-stat"><span class="stat-value">${profile.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
                         <div class="seller-stat"><span class="stat-value">${profile.sold_products ?? 0}</span><span class="stat-label">Продані</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.bought_products ?? 0}</span><span class="stat-label">Куплені</span></div>
                         <div class="seller-stat"><span class="stat-value">${profile.archived_products ?? 0}</span><span class="stat-label">Архів</span></div>
                     </div>
 
@@ -2546,15 +2527,48 @@ async function openUserProfile(userId) {
                             ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
                             : `<button class="own-product-btn" disabled>Telegram недоступний</button>`
                         }
+                        <button class="secondary-btn full-btn" onclick="filterBySeller('${profile.username || ''}')">Усі оголошення продавця</button>
                         <button class="secondary-btn full-btn" onclick="loadSellerReviews(${Number(profile.id)})">Відгуки</button>
                     </div>
 
+                    <div id="seller-products-wrap" class="seller-reviews-wrap"></div>
                     <div id="seller-reviews-wrap" class="seller-reviews-wrap"></div>
                 </div>
             </div>
         `;
+        await loadSellerProducts(profile.id);
     } catch (error) {
         body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити профіль")}</div>`;
+    }
+}
+
+async function loadSellerProducts(userId) {
+    const wrap = $("seller-products-wrap");
+    if (!wrap) return;
+    wrap.innerHTML = `<div class="empty-card">Завантаження оголошень...</div>`;
+    try {
+        const items = await safeFetch(`${API_BASE}/users/${userId}/public-products?include_sold=true`);
+        if (!Array.isArray(items) || !items.length) {
+            wrap.innerHTML = `<div class="empty-card">У продавця поки немає оголошень</div>`;
+            return;
+        }
+        wrap.innerHTML = `
+            <div class="seller-section-title">Оголошення продавця</div>
+            <div class="mini-seller-grid">
+                ${items.slice(0, 8).map(item => `
+                    <div class="mini-seller-card" onclick="openProductById(${Number(item.id)})">
+                        ${isValidUrl(item.image_url) ? `<img class="mini-seller-card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : `<div class="mini-seller-card-image placeholder">Фото</div>`}
+                        <div class="mini-seller-card-body">
+                            <div class="mini-seller-title">${escapeHtml(item.title)}</div>
+                            <div class="mini-seller-price">${formatPrice(item.price, item.currency)}</div>
+                            <div class="mini-seller-status ${escapeHtml(item.status || 'active')}">${item.status === 'sold' ? 'Продано' : 'Активно'}</div>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+        `;
+    } catch (error) {
+        wrap.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити оголошення")}</div>`;
     }
 }
 
@@ -2580,95 +2594,6 @@ function closeUserProfileModal() {
 
 function closeUserProfileOnBackdrop(event) {
     if (event.target?.id === "user-profile-modal") closeUserProfileModal();
-}
-
-async function completeOrder(orderId) {
-    if (!currentUser || isLoading) return;
-    try {
-        setLoading(true);
-        await safeFetch(`${API_BASE}/orders/${orderId}/complete?buyer_id=${currentUser.id}`, { method: "POST" });
-        showAlert("Угоду завершено");
-        await loadPurchaseHistory();
-        await loadStats();
-        await loadNotifications(true);
-    } catch (error) {
-        showAlert(error.message || "Не вдалося завершити угоду");
-    } finally {
-        setLoading(false);
-    }
-}
-
-async function loadNotifications(markAsSeen = false) {
-    if (!currentUser?.id) return;
-    const list = $("notifications-list");
-    try {
-        const data = await safeFetch(`${API_BASE}/notifications/${currentUser.id}`);
-        const items = Array.isArray(data.items) ? data.items : [];
-        const unread = Number(data.unread_count || 0);
-        lastUnreadNotifications = unread;
-
-        const badge = $("profile-notification-badge");
-        if (badge) {
-            badge.textContent = unread > 99 ? '99+' : String(unread);
-            badge.classList.toggle('hidden', unread <= 0);
-        }
-
-        if (list) {
-            if (!items.length) {
-                list.innerHTML = `<div class="empty-card">Сповіщень поки немає</div>`;
-            } else {
-                list.innerHTML = items.map(item => `
-                    <div class="notification-card ${item.is_read ? '' : 'notification-unread'}">
-                        <div class="notification-top">
-                            <strong>${escapeHtml(item.title || 'Сповіщення')}</strong>
-                            <span class="soft-tag">${escapeHtml(formatDate(item.created_at) || '')}</span>
-                        </div>
-                        <div class="notification-text">${escapeHtml(item.message || '')}</div>
-                    </div>
-                `).join('');
-            }
-        }
-
-        if (markAsSeen && unread > 0) {
-            await safeFetch(`${API_BASE}/notifications/${currentUser.id}/read-all`, { method: 'POST' });
-            if (badge) badge.classList.add('hidden');
-        }
-    } catch (error) {
-        if (list && !list.innerHTML) list.innerHTML = `<div class="empty-card">Не вдалося завантажити сповіщення</div>`;
-    }
-}
-
-async function searchSellers() {
-    const query = $("seller-search-input")?.value.trim() || '';
-    const list = $("seller-search-results");
-    if (!list) return;
-    if (query.replace(/^@+/, '').length < 2) {
-        list.innerHTML = `<div class="empty-card">Введи мінімум 2 символи username</div>`;
-        return;
-    }
-    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
-    try {
-        const items = await safeFetch(`${API_BASE}/users/search?q=${encodeURIComponent(query)}`);
-        if (!Array.isArray(items) || !items.length) {
-            list.innerHTML = `<div class="empty-card">Продавця не знайдено</div>`;
-            return;
-        }
-        list.innerHTML = items.map(item => `
-            <div class="seller-search-card">
-                <div>
-                    <div class="seller-search-name">${escapeHtml(item.full_name || item.username || 'Користувач')}</div>
-                    <div class="seller-search-username">@${escapeHtml(item.username || '')}</div>
-                    <div class="seller-search-meta">⭐ ${escapeHtml(String(item.rating || 0))} · ${escapeHtml(String(item.active_products || 0))} активних</div>
-                </div>
-                <div class="card-actions inline-actions">
-                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">Профіль</button>
-                    ${item.telegram_link ? `<a class="contact-btn contact-link" href="${escapeHtml(item.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати</a>` : ''}
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || 'Помилка пошуку')}</div>`;
-    }
 }
 
 async function initApp() {
@@ -2748,11 +2673,14 @@ if (typeof closeUserProfileModal === "function") window.closeUserProfileModal = 
 if (typeof closeUserProfileOnBackdrop === "function") window.closeUserProfileOnBackdrop = closeUserProfileOnBackdrop;
 if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
-if (typeof completeOrder === "function") window.completeOrder = completeOrder;
-if (typeof loadNotifications === "function") window.loadNotifications = loadNotifications;
-if (typeof searchSellers === "function") window.searchSellers = searchSellers;
 
 initApp();
 
 
 if (typeof changeLanguage === "function") window.changeLanguage = changeLanguage;
+
+if (typeof shareProduct === "function") window.shareProduct = shareProduct;
+
+if (typeof filterBySeller === "function") window.filterBySeller = filterBySeller;
+
+if (typeof openProductById === "function") window.openProductById = openProductById;
