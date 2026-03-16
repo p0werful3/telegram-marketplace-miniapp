@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "272";
+const FRONTEND_VERSION = "280";
 
 let tg = null;
 let telegramUser = null;
@@ -49,7 +49,6 @@ const I18N = {
         searchBtn: "Шукати",
         myProductsTitle: "Мої оголошення",
         activeTab: "Активні",
-        requestsTab: "Запити на продаж",
         soldTab: "Продані",
         archivedTab: "Архів",
         createTitle: "Створити оголошення",
@@ -108,7 +107,6 @@ const I18N = {
         searchBtn: "Искать",
         myProductsTitle: "Мои объявления",
         activeTab: "Активные",
-        requestsTab: "Запросы на продажу",
         soldTab: "Проданные",
         archivedTab: "Архив",
         createTitle: "Создать объявление",
@@ -167,7 +165,6 @@ const I18N = {
         searchBtn: "Search",
         myProductsTitle: "My listings",
         activeTab: "Active",
-        requestsTab: "Sale requests",
         soldTab: "Sold",
         archivedTab: "Archive",
         createTitle: "Create listing",
@@ -263,7 +260,7 @@ function applyLanguageTexts() {
     const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
     const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('requestsTab'); if (mpBtns[2]) mpBtns[2].textContent = t('soldTab'); if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
+    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('soldTab'); if (mpBtns[2]) mpBtns[2].textContent = t('archivedTab');
     setText('#tab-create .section-header h2', t('createTitle'));
     const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
     setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
@@ -352,6 +349,29 @@ function formatDate(value) {
     if (!value) return "";
     try {
         return new Date(value).toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch {
+        return "";
+    }
+}
+
+function formatRelativeDate(value) {
+    if (!value) return "";
+    try {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMinutes = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMinutes < 1) return "щойно";
+        if (diffMinutes < 60) return `${diffMinutes} хв тому`;
+        if (diffHours < 24) return `${diffHours} год тому`;
+        if (diffDays === 0) return "сьогодні";
+        if (diffDays === 1) return "вчора";
+        if (diffDays < 7) return `${diffDays} дн. тому`;
+        return formatDate(value);
     } catch {
         return "";
     }
@@ -1483,7 +1503,10 @@ function renderCatalogCard(product) {
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "Без міста")}</span>
                     <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "Новий")}</span>
-                    <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
+                </div>
+                <div class="product-stats-row">
+                    <span class="meta-chip">🕒 ${escapeHtml(formatRelativeDate(product.created_at) || formatDate(product.created_at) || "—")}</span>
+                    <span class="meta-chip">👁 ${Number(product.views_count || 0)} переглядів</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions">
@@ -1522,7 +1545,10 @@ function renderMyProductCard(product, view) {
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "")}</span>
                     <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "")}</span>
-                    <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
+                </div>
+                <div class="product-stats-row">
+                    <span class="meta-chip">🕒 ${escapeHtml(formatRelativeDate(product.created_at) || formatDate(product.created_at) || "—")}</span>
+                    <span class="meta-chip">👁 ${Number(product.views_count || 0)} переглядів</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions">${actionButton}</div>
@@ -1673,6 +1699,10 @@ async function openProductModal(productId) {
                     ${renderCardTags(product)}
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
                     <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
+                    <div class="modal-meta-strip">
+                        <span class="meta-chip">🕒 ${escapeHtml(formatRelativeDate(product.created_at) || formatDate(product.created_at) || "—")}</span>
+                        <span class="meta-chip">👁 ${Number(product.views_count || 0)} переглядів</span>
+                    </div>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
                     ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                     <div class="card-actions compact-actions">
@@ -2484,11 +2514,10 @@ async function searchSeller() {
 
 function updateNotificationsBadge(count) {
     notificationsUnread = Number(count || 0);
-    const badges = [$("notifications-badge"), $("nav-notifications-badge")].filter(Boolean);
-    badges.forEach((badge) => {
-        badge.textContent = String(notificationsUnread);
-        badge.classList.toggle("hidden", notificationsUnread <= 0);
-    });
+    const badge = $("notifications-badge");
+    if (!badge) return;
+    badge.textContent = String(notificationsUnread);
+    badge.classList.toggle("hidden", notificationsUnread <= 0);
 }
 
 async function loadNotifications(markAsRead = false) {
