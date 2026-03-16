@@ -14,6 +14,7 @@ let currentModalImageIndex = 0;
 let currentModalImages = [];
 let filtersOpen = false;
 let notificationsUnread = 0;
+let dashboardRefreshTimer = null;
 let editingProductId = null;
 let editingExistingImages = [];
 
@@ -354,6 +355,25 @@ function formatDate(value) {
         return new Date(value).toLocaleDateString("uk-UA", { day: "2-digit", month: "2-digit", year: "numeric" });
     } catch {
         return "";
+    }
+}
+
+function formatRelativeTime(value) {
+    if (!value) return "";
+    try {
+        const date = new Date(value);
+        const diffMs = Date.now() - date.getTime();
+        const diffMin = Math.max(0, Math.floor(diffMs / 60000));
+        if (diffMin < 1) return "щойно";
+        if (diffMin < 60) return `${diffMin} хв тому`;
+        const diffHours = Math.floor(diffMin / 60);
+        if (diffHours < 24) return `${diffHours} год тому`;
+        const diffDays = Math.floor(diffHours / 24);
+        if (diffDays === 1) return "вчора";
+        if (diffDays < 30) return `${diffDays} дн. тому`;
+        return formatDate(value);
+    } catch {
+        return formatDate(value);
     }
 }
 
@@ -1469,9 +1489,11 @@ function renderFavoriteButton(product) {
 
 function renderCatalogCard(product) {
     const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
+    const views = Number(product.views_count || 0);
+    const relativeTime = formatRelativeTime(product.created_at);
 
     return `
-        <div class="card card-clickable compact-list-card" onclick="openProductModal(${Number(product.id)})">
+        <div class="card card-clickable compact-list-card card-enter" onclick="openProductModal(${Number(product.id)})">
             <div class="compact-thumb-wrap">
                 ${renderImageBlock(product)}
                 ${renderFavoriteButton(product)}
@@ -1484,10 +1506,15 @@ function renderCatalogCard(product) {
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "Без міста")}</span>
                     <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "Новий")}</span>
-                    <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
+                    <span class="tag soft-tag">${escapeHtml(relativeTime || formatDate(product.created_at) || "")}</span>
+                </div>
+                <div class="compact-secondary-row">
+                    <span class="muted-meta">👁 ${views}</span>
+                    ${product.seller_rating ? `<span class="muted-meta">⭐ ${escapeHtml(String(product.seller_rating))}</span>` : ``}
+                    ${product.seller_username ? `<span class="muted-meta">@${escapeHtml(product.seller_username)}</span>` : ``}
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
-                <div class="card-actions compact-actions">
+                <div class="card-actions compact-actions compact-actions-grid">
                     ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                     ${isOwnProduct ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
                 </div>
@@ -1513,7 +1540,7 @@ function renderMyProductCard(product, view) {
     }
 
     return `
-        <div class="card card-clickable compact-list-card" onclick="openProductModal(${Number(product.id)})">
+        <div class="card card-clickable compact-list-card card-enter" onclick="openProductModal(${Number(product.id)})">
             <div class="compact-thumb-wrap">${renderImageBlock(product)}</div>
             <div class="card-body compact-card-body">
                 <div class="compact-card-top">
@@ -1523,7 +1550,7 @@ function renderMyProductCard(product, view) {
                 <div class="compact-meta-row">
                     <span class="tag">${escapeHtml(product.city || "")}</span>
                     <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "")}</span>
-                    <span class="tag soft-tag">${formatDate(product.created_at) || ""}</span>
+                    <span class="tag soft-tag">${formatRelativeTime(product.created_at) || formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions">${actionButton}</div>
@@ -1689,12 +1716,17 @@ async function openProductModal(productId) {
 
     modal.classList.remove("hidden");
     const modalContent = modal.querySelector(".modal-content");
-    if (modalContent) { modalContent.classList.remove("modal-animate-in"); requestAnimationFrame(() => modalContent.classList.add("modal-animate-in")); }
+    if (modalContent) {
+        modalContent.classList.remove("modal-animate-in");
+        requestAnimationFrame(() => modalContent.classList.add("modal-animate-in"));
+    }
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
         const product = await safeFetch(`${API_BASE}/products/${productId}?current_user_id=${currentUser ? currentUser.id : ""}`);
         const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
+        const views = Number(product.views_count || 0);
+        const relativeTime = formatRelativeTime(product.created_at) || formatDate(product.created_at);
 
         const contactButton = product.seller_telegram_link
             ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
@@ -1715,9 +1747,14 @@ async function openProductModal(productId) {
                     ${renderCardTags(product)}
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
                     <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
+                    <div class="modal-inline-meta">
+                        <span class="tag soft-tag">👁 ${views} переглядів</span>
+                        <span class="tag soft-tag">🕒 ${escapeHtml(relativeTime || '—')}</span>
+                        ${product.seller_rating ? `<span class="tag soft-tag">⭐ ${escapeHtml(String(product.seller_rating))}</span>` : ``}
+                    </div>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
-                    <div class="card-actions compact-actions">
+                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn seller-profile-btn-modal" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
+                    <div class="card-actions compact-actions compact-actions-grid details-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
                         ${reportButton}
@@ -1814,6 +1851,7 @@ async function loadMyProducts() {
                 safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=pending`),
                 safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`)
             ]);
+            updatePendingRequestsBadge(Array.isArray(requests) ? requests.length : 0);
             if (wrap) wrap.classList.remove("hidden");
             if (requestsList) {
                 requestsList.innerHTML = Array.isArray(requests) && requests.length ? requests.map(item => `
@@ -2530,8 +2568,9 @@ async function searchSeller() {
 function applyBadgeValue(elementId, count) {
     const badge = $(elementId);
     if (!badge) return;
-    badge.textContent = notificationsUnread > 99 ? '99+' : String(notificationsUnread);
-    badge.classList.toggle('hidden', notificationsUnread <= 0);
+    const value = Number(count || 0);
+    badge.textContent = value > 99 ? '99+' : String(value);
+    badge.classList.toggle('hidden', value <= 0);
 }
 
 function updateNotificationsBadge(count) {
@@ -2542,10 +2581,8 @@ function updateNotificationsBadge(count) {
 
 function updatePendingRequestsBadge(count) {
     const value = Number(count || 0);
-    const badge = $('nav-my-badge');
-    if (!badge) return;
-    badge.textContent = value > 99 ? '99+' : String(value);
-    badge.classList.toggle('hidden', value <= 0);
+    applyBadgeValue('nav-my-badge', value);
+    applyBadgeValue('my-products-requests-badge', value);
 }
 
 async function loadNotifications(markAsRead = false) {
