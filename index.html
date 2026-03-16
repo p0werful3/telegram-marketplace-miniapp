@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=272">
+    <link rel="stylesheet" href="style.css?v=273">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -91,19 +91,15 @@
                     <button id="catalog-favorites-btn" class="subtab-btn" onclick="switchCatalogView('favorites')">Обране</button>
                 </div>
 
-                <div class="catalog-search-stack">
-                    <div class="catalog-search-block">
-                        <label class="search-block-label">Пошук товарів</label>
-                        <input id="search-input" type="text" placeholder="Пошук товарів...">
+                <div class="catalog-toolbar catalog-toolbar-stacked">
+                    <label class="toolbar-label">Пошук товарів</label>
+                    <input id="search-input" type="text" placeholder="Пошук товарів...">
+                    <label class="toolbar-label seller-search-label">🔎 Пошук продавця</label>
+                    <div class="seller-search-row">
+                        <input id="seller-search-input" type="text" placeholder="@username">
+                        <button class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
                     </div>
-                    <div class="catalog-search-block">
-                        <label class="search-block-label">🔎 Пошук продавця</label>
-                        <div class="seller-search-row">
-                            <input id="seller-search-input" type="text" placeholder="@username">
-                            <button class="secondary-btn section-btn" onclick="searchSeller()">Знайти</button>
-                        </div>
-                    </div>
-                    <button id="filters-toggle-btn" class="secondary-btn section-btn full-btn" onclick="toggleFilters()">Фільтри ▼</button>
+                    <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри ▼</button>
                 </div>
 
                 <div id="catalog-filters-wrap" class="filters-panel hidden">
@@ -300,7 +296,7 @@
                     </div>
                 </div>
 
-                <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення</span><span id="notifications-badge" class="badge-counter hidden">0</span><span class="profile-menu-arrow">›</span></button>
+                <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення</span><span id="notifications-badge" class="notification-count hidden">0</span><span class="profile-menu-arrow">›</span></button>
                     <div id="notifications-wrap" class="hidden" style="margin-top:14px;">
                         <div id="notifications-list" class="cards"></div>
                     </div>
@@ -420,6 +416,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=272"></script>
+    <script src="app.js?v=273"></script>
 </body>
 </html>
