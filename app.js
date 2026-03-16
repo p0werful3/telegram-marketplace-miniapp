@@ -49,6 +49,7 @@ const I18N = {
         searchBtn: "Шукати",
         myProductsTitle: "Мої оголошення",
         activeTab: "Активні",
+        requestsTab: "Запити на продаж",
         soldTab: "Продані",
         archivedTab: "Архів",
         createTitle: "Створити оголошення",
@@ -107,6 +108,7 @@ const I18N = {
         searchBtn: "Искать",
         myProductsTitle: "Мои объявления",
         activeTab: "Активные",
+        requestsTab: "Запросы на продажу",
         soldTab: "Проданные",
         archivedTab: "Архив",
         createTitle: "Создать объявление",
@@ -165,6 +167,7 @@ const I18N = {
         searchBtn: "Search",
         myProductsTitle: "My listings",
         activeTab: "Active",
+        requestsTab: "Sale requests",
         soldTab: "Sold",
         archivedTab: "Archive",
         createTitle: "Create listing",
@@ -260,7 +263,7 @@ function applyLanguageTexts() {
     const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
     const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('soldTab'); if (mpBtns[2]) mpBtns[2].textContent = t('archivedTab');
+    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('requestsTab'); if (mpBtns[2]) mpBtns[2].textContent = t('soldTab'); if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
     setText('#tab-create .section-header h2', t('createTitle'));
     const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
     setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
