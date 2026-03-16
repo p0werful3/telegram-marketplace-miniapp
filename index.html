@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=270">
+    <link rel="stylesheet" href="style.css?v=271">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -91,22 +91,19 @@
                     <button id="catalog-favorites-btn" class="subtab-btn" onclick="switchCatalogView('favorites')">Обране</button>
                 </div>
 
-                <div class="catalog-toolbar catalog-toolbar-stack">
-                    <div class="toolbar-block">
-                        <label class="toolbar-label">Пошук товарів</label>
-                        <div class="toolbar-inline">
-                            <input id="search-input" type="text" placeholder="Пошук товарів..." onkeydown="handleCatalogSearchKey(event)">
-                            <button class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
+                <div class="catalog-search-stack">
+                    <div class="catalog-search-block">
+                        <label class="search-block-label">Пошук товарів</label>
+                        <input id="search-input" type="text" placeholder="Пошук товарів...">
+                    </div>
+                    <div class="catalog-search-block">
+                        <label class="search-block-label">🔎 Пошук продавця</label>
+                        <div class="seller-search-row">
+                            <input id="seller-search-input" type="text" placeholder="@username">
+                            <button class="secondary-btn section-btn" onclick="searchSeller()">Знайти</button>
                         </div>
                     </div>
-                    <div class="toolbar-block seller-search-block">
-                        <label class="toolbar-label">🔎 Пошук продавця</label>
-                        <div class="toolbar-inline seller-search-inline">
-                            <input id="seller-search-input" type="text" placeholder="@username" onkeydown="handleSellerSearchKey(event)">
-                            <button class="secondary-btn section-btn" onclick="searchSellerProfile()">Знайти</button>
-                        </div>
-                    </div>
-                    <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри ▼</button>
+                    <button id="filters-toggle-btn" class="secondary-btn section-btn full-btn" onclick="toggleFilters()">Фільтри ▼</button>
                 </div>
 
                 <div id="catalog-filters-wrap" class="filters-panel hidden">
@@ -153,17 +150,23 @@
 
             <section id="tab-my-products" class="tab-section">
                 <div class="section-header">
-                    <h2>Мої оголошення <span id="my-products-notify-count" class="notify-badge-inline">0</span></h2>
+                    <h2>Мої оголошення</h2>
                     <button class="secondary-btn section-btn" onclick="loadMyProducts()">Оновити</button>
                 </div>
 
                 <div class="subtabs">
                     <button id="my-products-active-btn" class="subtab-btn active" onclick="switchMyProductsView('active')">Активні</button>
-                    <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Запити та угоди</button>
+                    <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')">Запити на продаж</button>
+                    <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Продані</button>
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
                 </div>
 
-                                <div id="my-products-list" class="cards"></div>
+                <div id="purchase-requests-wrap" class="hidden">
+                    <div class="requests-header">Запити на покупку</div>
+                    <div id="purchase-requests-list" class="cards requests-list"></div>
+                </div>
+
+                <div id="my-products-list" class="cards"></div>
             </section>
 
             <section id="tab-create" class="tab-section">
@@ -297,7 +300,7 @@
                     </div>
                 </div>
 
-                <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення <span id="profile-notify-count" class="notify-badge-inline">0</span></span><span class="profile-menu-arrow">›</span></button>
+                <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення</span><span id="notifications-badge" class="badge-counter hidden">0</span><span class="profile-menu-arrow">›</span></button>
                     <div id="notifications-wrap" class="hidden" style="margin-top:14px;">
                         <div id="notifications-list" class="cards"></div>
                     </div>
@@ -417,6 +420,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=270"></script>
+    <script src="app.js?v=271"></script>
 </body>
 </html>
