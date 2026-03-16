@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "266";
+const FRONTEND_VERSION = "271";
 
 let tg = null;
 let telegramUser = null;
@@ -201,6 +201,14 @@ const I18N = {
 
 function t(key) {
     return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
+}
+
+
+function getConditionTagClass(condition) {
+    const value = String(condition || '').trim().toLowerCase();
+    if (value === 'б/у' || value === 'бу' || value === 'used') return 'tag-condition-used';
+    if (value === 'новий' || value === 'новое' || value === 'new') return 'tag-condition-new';
+    return 'tag-condition-default';
 }
 
 function setProfileMenuButton(btnId, icon, label, isOpen = false) {
@@ -748,6 +756,8 @@ async function showApp() {
     toggleFilters(false);
     switchTab("catalog");
 
+    await refreshCurrentUserFromApi();
+    await autoBindTelegramAccount();
     await refreshCurrentUserFromApi();
     fillProfile();
     await detectAdminAccess();
@@ -2465,6 +2475,48 @@ async function loadAdminLogs() {
             </div></div>`).join("") : `<div class="empty-card">Логи порожні</div>`;
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+    }
+}
+
+function updateNotificationsBadge(count = 0) {
+    const badge = $("notifications-badge");
+    const value = Number(count || 0);
+    if (!badge) return;
+    badge.textContent = String(value);
+    badge.classList.toggle("hidden", value <= 0);
+}
+
+async function autoBindTelegramAccount() {
+    if (!currentUser?.id) return false;
+    if (currentUser?.telegram_id && !String(currentUser.telegram_id).startsWith("fallback_")) return true;
+
+    initTelegramWebApp();
+    let parsedUser = getTelegramUserFromEnvironment();
+    let initData = getTelegramInitData();
+    let telegramId = parsedUser?.id
+        || tg?.initDataUnsafe?.user?.id
+        || window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+        || null;
+
+    if (!telegramId && !initData && !parsedUser?.username) return false;
+
+    try {
+        const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/telegram-bind`, {
+            method: "POST",
+            body: JSON.stringify({
+                telegram_id: telegramId ? String(telegramId) : null,
+                username: parsedUser?.username || null,
+                full_name: `${parsedUser?.first_name || ""} ${parsedUser?.last_name || ""}`.trim() || null,
+                init_data: initData || null
+            })
+        });
+        currentUser = data;
+        saveSession(currentUser);
+        fillProfile();
+        return true;
+    } catch (error) {
+        console.error("Telegram bind error:", error);
+        return false;
     }
 }
 
