@@ -843,28 +843,57 @@ function switchMyProductsView(view) {
     loadMyProducts();
 }
 
+function applyStatsData(data = {}) {
+    $("stat-active").textContent = data.active_products ?? 0;
+    $("stat-sold").textContent = data.sold_products ?? 0;
+    $("stat-archived").textContent = data.archived_products ?? 0;
+    $("stat-favorites").textContent = data.favorites ?? 0;
+    $("stat-cart").textContent = data.cart_items ?? 0;
+    const pendingEl = $("stat-pending");
+    if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
+    const purchasesEl = $("stat-purchases");
+    if (purchasesEl) purchasesEl.textContent = data.purchase_history ?? 0;
+    const purchasePendingEl = $("stat-purchase-pending");
+    if (purchasePendingEl) purchasePendingEl.textContent = data.purchase_pending ?? 0;
+    updateNotificationsBadge(data.unread_notifications ?? notificationsUnread);
+    currentUser = { ...currentUser, sold_products: data.sold_products ?? 0 };
+    saveSession(currentUser);
+    fillProfile();
+}
+
 async function loadStats() {
     if (!currentUser) return;
 
     try {
         const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/stats`);
-        $("stat-active").textContent = data.active_products ?? 0;
-        $("stat-sold").textContent = data.sold_products ?? 0;
-        $("stat-archived").textContent = data.archived_products ?? 0;
-        $("stat-favorites").textContent = data.favorites ?? 0;
-        $("stat-cart").textContent = data.cart_items ?? 0;
-        const pendingEl = $("stat-pending");
-        if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
-        const purchasesEl = $("stat-purchases");
-        if (purchasesEl) purchasesEl.textContent = data.purchase_history ?? 0;
-        const purchasePendingEl = $("stat-purchase-pending");
-        if (purchasePendingEl) purchasePendingEl.textContent = data.purchase_pending ?? 0;
-        updateNotificationsBadge(data.unread_notifications ?? notificationsUnread);
-        currentUser = { ...currentUser, sold_products: data.sold_products ?? 0 };
-        saveSession(currentUser);
-        fillProfile();
+        applyStatsData(data || {});
     } catch (error) {
         console.error("Load stats error:", error);
+        try {
+            const [active, sold, archived, favorites, cart, requests, purchases, notifications] = await Promise.all([
+                safeFetch(`${API_BASE}/users/${currentUser.id}/products`).catch(() => []),
+                safeFetch(`${API_BASE}/users/${currentUser.id}/products/sold`).catch(() => []),
+                safeFetch(`${API_BASE}/users/${currentUser.id}/products/archived`).catch(() => []),
+                safeFetch(`${API_BASE}/favorites/${currentUser.id}`).catch(() => []),
+                safeFetch(`${API_BASE}/cart/${currentUser.id}`).catch(() => ({ items: [] })),
+                safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=pending`).catch(() => []),
+                safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`).catch(() => []),
+                safeFetch(`${API_BASE}/users/${currentUser.id}/notifications`).catch(() => ({ unread_count: 0 }))
+            ]);
+            applyStatsData({
+                active_products: Array.isArray(active) ? active.length : 0,
+                sold_products: Array.isArray(sold) ? sold.length : 0,
+                archived_products: Array.isArray(archived) ? archived.length : 0,
+                favorites: Array.isArray(favorites) ? favorites.length : 0,
+                cart_items: Array.isArray(cart?.items) ? cart.items.length : 0,
+                pending_requests: Array.isArray(requests) ? requests.length : 0,
+                purchase_history: Array.isArray(purchases) ? purchases.length : 0,
+                purchase_pending: Array.isArray(purchases) ? purchases.filter(item => item?.status === 'pending').length : 0,
+                unread_notifications: Number(notifications?.unread_count || 0)
+            });
+        } catch (fallbackError) {
+            console.error("Load stats fallback error:", fallbackError);
+        }
     }
 }
 
@@ -1824,7 +1853,8 @@ async function loadMyProducts() {
 }
 
 async function loadPurchaseRequests() {
-    return;
+    if (myProductsView !== "requests") return;
+    await loadMyProducts();
 }
 
 async function handlePurchaseRequest(orderId, approve) {
@@ -1837,11 +1867,11 @@ async function handlePurchaseRequest(orderId, approve) {
         });
         showAlert(approve ? "Покупку підтверджено" : "Запит відхилено");
         closeProductModal();
-        await loadPurchaseRequests();
         await loadMyProducts();
         await loadProducts();
         await loadCart();
         await loadStats();
+        await loadNotifications(false);
     } catch (error) {
         showAlert(error.message || "Не вдалося обробити запит");
     } finally {
@@ -1974,6 +2004,7 @@ async function buyAllFromCart() {
         await loadProducts();
         await loadMyProducts();
         await loadStats();
+        await loadNotifications(false);
     } catch (error) {
         showAlert(error.message || "Не вдалося купити всі товари");
     } finally {
@@ -2003,6 +2034,7 @@ async function buyProduct(productId) {
         loadProducts();
         loadMyProducts();
         loadStats();
+        loadNotifications(false);
     } catch (error) {
         showAlert(error.message || "Помилка покупки");
     } finally {
