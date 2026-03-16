@@ -837,6 +837,7 @@ async function loadStats() {
         $("stat-cart").textContent = data.cart_items ?? 0;
         const pendingEl = $("stat-pending");
         if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
+        updatePendingRequestsBadge(data.pending_requests ?? 0);
         const purchasesEl = $("stat-purchases");
         if (purchasesEl) purchasesEl.textContent = data.purchase_history ?? 0;
         const purchasePendingEl = $("stat-purchase-pending");
@@ -1687,6 +1688,8 @@ async function openProductModal(productId) {
     if (!modal || !body) return;
 
     modal.classList.remove("hidden");
+    const modalContent = modal.querySelector(".modal-content");
+    if (modalContent) { modalContent.classList.remove("modal-animate-in"); requestAnimationFrame(() => modalContent.classList.add("modal-animate-in")); }
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
@@ -1728,7 +1731,10 @@ async function openProductModal(productId) {
 }
 
 function closeProductModal() {
-    $("product-modal")?.classList.add("hidden");
+    const modal = $("product-modal");
+    const modalContent = modal?.querySelector(".modal-content");
+    if (modalContent) modalContent.classList.remove("modal-animate-in");
+    modal?.classList.add("hidden");
 }
 
 function closeProductModalOnBackdrop(event) {
@@ -2521,12 +2527,25 @@ async function searchSeller() {
     }
 }
 
+function applyBadgeValue(elementId, count) {
+    const badge = $(elementId);
+    if (!badge) return;
+    badge.textContent = notificationsUnread > 99 ? '99+' : String(notificationsUnread);
+    badge.classList.toggle('hidden', notificationsUnread <= 0);
+}
+
 function updateNotificationsBadge(count) {
     notificationsUnread = Number(count || 0);
-    const badge = $("notifications-badge");
+    applyBadgeValue('notifications-badge', notificationsUnread);
+    applyBadgeValue('nav-profile-badge', notificationsUnread);
+}
+
+function updatePendingRequestsBadge(count) {
+    const value = Number(count || 0);
+    const badge = $('nav-my-badge');
     if (!badge) return;
-    badge.textContent = String(notificationsUnread);
-    badge.classList.toggle("hidden", notificationsUnread <= 0);
+    badge.textContent = value > 99 ? '99+' : String(value);
+    badge.classList.toggle('hidden', value <= 0);
 }
 
 async function loadNotifications(markAsRead = false) {
@@ -2538,14 +2557,29 @@ async function loadNotifications(markAsRead = false) {
         const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/notifications`);
         updateNotificationsBadge(data.unread_count || 0);
         const items = Array.isArray(data.items) ? data.items : [];
-        list.innerHTML = items.length ? items.map(item => `
-            <div class="card"><div class="card-body">
-                <div class="status-pill ${item.is_read ? 'approved' : 'pending'}">${item.is_read ? 'Прочитано' : 'Нове'}</div>
-                <h3 class="card-title">${escapeHtml(item.title || 'Повідомлення')}</h3>
-                <p class="card-description">${escapeHtml(item.message || '')}</p>
-                <div class="history-meta"><div>${formatDate(item.created_at) || '—'}</div></div>
-            </div></div>
-        `).join("") : `<div class="empty-card">Повідомлень поки немає</div>`;
+        list.innerHTML = items.length ? items.map(item => {
+            const actionBtn = item.related_product_id
+                ? `<button class="secondary-btn section-btn" onclick="openProductModal(${Number(item.related_product_id)})">Відкрити товар</button>`
+                : `<button class="secondary-btn section-btn" onclick="switchTab('catalog')">До каталогу</button>`;
+            return `
+                <div class="card notification-card ${item.is_read ? 'is-read' : 'is-unread'}">
+                    <div class="card-body">
+                        <div class="notification-head">
+                            <div class="notification-icon">${item.type === 'order' ? '📦' : '🔔'}</div>
+                            <div class="notification-meta">
+                                <div class="notification-title-row">
+                                    <h3 class="card-title">${escapeHtml(item.title || 'Повідомлення')}</h3>
+                                    <span class="status-pill ${item.is_read ? 'approved' : 'pending'}">${item.is_read ? 'Прочитано' : 'Нове'}</span>
+                                </div>
+                                <div class="notification-date">${formatDate(item.created_at) || '—'}</div>
+                            </div>
+                        </div>
+                        <p class="card-description notification-text">${escapeHtml(item.message || '')}</p>
+                        <div class="card-actions compact-actions notification-actions">${actionBtn}</div>
+                    </div>
+                </div>
+            `;
+        }).join("") : `<div class="empty-card">Повідомлень поки немає</div>`;
         if (markAsRead && (data.unread_count || 0) > 0) {
             await safeFetch(`${API_BASE}/users/${currentUser.id}/notifications/read-all`, { method: 'POST' });
             updateNotificationsBadge(0);
@@ -2570,6 +2604,8 @@ async function openUserProfile(userId) {
     if (!modal || !body) return;
 
     modal.classList.remove("hidden");
+    const modalContent = modal.querySelector(".modal-content");
+    if (modalContent) { modalContent.classList.remove("modal-animate-in"); requestAnimationFrame(() => modalContent.classList.add("modal-animate-in")); }
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
