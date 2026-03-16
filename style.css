@@ -1306,141 +1306,18 @@ body{background:radial-gradient(circle at top, #0a2b66 0%, var(--bg-1) 44%, #020
     font-size: 15px;
 }
 
-.tag-condition-used {
-    background: rgba(234, 179, 8, 0.18);
-    color: #fde68a;
-    border: 1px solid rgba(234,179,8,0.35);
-}
 
-.tag-condition-new {
-    background: rgba(34, 197, 94, 0.18);
-    color: #86efac;
-    border: 1px solid rgba(34,197,94,0.35);
+.tag-condition-used{background:rgba(255,199,0,.18) !important;color:#ffd95c !important;border:1px solid rgba(255,199,0,.42) !important;}
+.tag-condition-new{background:rgba(34,197,94,.18) !important;color:#8df0ae !important;border:1px solid rgba(34,197,94,.36) !important;}
+.in-cart-btn{background:linear-gradient(135deg,#4f8cff,#6ca7ff) !important;color:#fff !important;}
+.compact-list-card{align-items:stretch !important;}
+.compact-thumb-wrap,.compact-image-wrap{display:flex;align-items:stretch;justify-content:center;background:rgba(255,255,255,.03);}
+.compact-thumb-wrap .card-image,.compact-image-wrap .card-image{display:block;width:100% !important;height:100% !important;min-height:138px;max-height:148px;object-fit:cover;object-position:center center;border-radius:0 !important;}
+@media (max-width:640px){
+  .compact-thumb-wrap .card-image,.compact-image-wrap .card-image{min-height:138px;max-height:138px;}
 }
-
-.tag-status-sold {
-    background: rgba(59,130,246,0.18);
-    color: #93c5fd;
-}
-
-.tag-status-archived {
-    background: rgba(148,163,184,0.18);
-    color: #cbd5e1;
-}
-
-.notify-badge-inline {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 26px;
-    height: 26px;
-    padding: 0 8px;
-    margin-left: 8px;
-    border-radius: 999px;
-    background: #2563eb;
-    color: #fff;
-    font-size: 13px;
-    vertical-align: middle;
-}
-
-.my-deals-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 18px;
-}
-
-.request-card .status-pill.completed,
-.status-pill.completed,
-.status-pill.done {
-    background: rgba(59,130,246,0.18);
-    color: #93c5fd;
-}
-
-
-.catalog-toolbar-stack {
-    grid-template-columns: 1fr;
-    gap: 12px;
-}
-.toolbar-block {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.toolbar-label {
-    font-weight: 700;
-    color: #eef4ff;
-    font-size: 14px;
-}
-.toolbar-inline {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-}
-.seller-search-inline .section-btn,
-.toolbar-inline .section-btn {
-    min-width: 120px;
-}
-.seller-search-block input::placeholder {
-    color: rgba(255,255,255,0.55);
-}
-.seller-profile-btn {
-    min-width: 140px;
-}
-.full-width-btn {
-    width: 100%;
-    margin-bottom: 12px;
-}
-.modal-actions-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-.in-cart-btn {
-    background: linear-gradient(90deg, rgba(249,115,22,0.95), rgba(251,191,36,0.95)) !important;
-    color: #1f2937 !important;
-    font-weight: 800;
-}
-.seller-public-listings-block {
-    margin-top: 18px;
-}
-.seller-products-list {
-    display: grid;
-    gap: 10px;
-    margin-top: 12px;
-}
-.seller-mini-product {
-    width: 100%;
-    border: 1px solid rgba(123,170,255,.18);
-    border-radius: 16px;
-    background: rgba(255,255,255,.05);
-    color: #fff;
-    padding: 14px;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.seller-mini-product-title {
-    font-weight: 700;
-    font-size: 15px;
-}
-.seller-mini-product-meta {
-    color: #dce7ff;
-    font-size: 13px;
-}
-.notification-card .card-description {
-    margin-bottom: 10px;
-}
-@media (max-width: 640px) {
-    .toolbar-inline,
-    .modal-actions-grid {
-        grid-template-columns: 1fr;
-    }
-    .toolbar-inline .section-btn,
-    .seller-search-inline .section-btn {
-        min-width: 0;
-        width: 100%;
-    }
-}
+.seller-products-block{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);}
+.seller-products-title{font-weight:800;margin-bottom:10px;}
+.seller-products-list{display:flex;flex-direction:column;gap:8px;}
+.seller-product-chip{width:100%;text-align:left;border:none;border-radius:14px;padding:12px 14px;background:rgba(91,151,255,.14);color:#eaf1ff;font-weight:700;}
+.empty-inline-text{color:#9db0d6;font-size:14px;}
