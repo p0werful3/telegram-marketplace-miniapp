@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=280">
+    <link rel="stylesheet" href="style.css?v=281">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -379,6 +379,16 @@
         <div class="modal-content"><button class="modal-close" onclick="closeProductModal()">×</button><div id="product-modal-body"></div></div>
     </div>
 
+    <div id="image-viewer-modal" class="image-viewer-modal hidden" onclick="closeImageViewerOnBackdrop(event)">
+        <button class="image-viewer-close" onclick="closeImageViewer()">×</button>
+        <button class="image-viewer-nav image-viewer-prev" onclick="event.stopPropagation(); changeViewerImage(-1)">‹</button>
+        <div class="image-viewer-stage">
+            <img id="image-viewer-img" class="image-viewer-img" src="" alt="preview">
+            <div id="image-viewer-counter" class="image-viewer-counter">1 / 1</div>
+        </div>
+        <button class="image-viewer-nav image-viewer-next" onclick="event.stopPropagation(); changeViewerImage(1)">›</button>
+    </div>
+
     <div id="user-profile-modal" class="modal hidden" onclick="closeUserProfileOnBackdrop(event)">
         <div class="modal-content"><button class="modal-close" onclick="closeUserProfileModal()">×</button><div id="user-profile-modal-body"></div></div>
     </div>
@@ -416,6 +426,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=280"></script>
+    <script src="app.js?v=281"></script>
 </body>
 </html>
