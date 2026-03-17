@@ -1,4 +1,3 @@
-// FINAL COMPACT CATALOG 307
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
@@ -2875,46 +2874,52 @@ async function openUserProfile(userId) {
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
 
     try {
-        const profile = await safeFetch(`${API_BASE}/users/${userId}/public-profile`);
+        const profile = await safeFetch(`${API_BASE}/users/${userId}/public-profile?current_user_id=${currentUser ? currentUser.id : ""}`);
 
         const avatar = profile.avatar_url
             ? `<img class="user-profile-avatar-img" src="${escapeHtml(profile.avatar_url)}" alt="${escapeHtml(profile.username || "user")}">`
             : `<div class="user-profile-avatar-fallback">${escapeHtml((profile.full_name || profile.username || "U").charAt(0).toUpperCase())}</div>`;
 
+        const listingsHtml = Array.isArray(profile.listings) && profile.listings.length
+            ? profile.listings.map(item => renderCatalogCard(item)).join('')
+            : `<div class="empty-card">Активних оголошень немає</div>`;
+
         body.innerHTML = `
-            <div class="seller-profile-shell">
-                <div class="seller-cover"></div>
-                <div class="seller-profile-card">
-                    <div class="seller-profile-top">
-                        <div class="user-profile-avatar seller-avatar-large">${avatar}</div>
-                        <div class="seller-profile-main">
-                            <h3 class="user-profile-name">${escapeHtml(profile.full_name || "Без імені")}</h3>
+            <div class="seller-profile-shell seller-profile-shell-compact">
+                <div class="seller-cover seller-cover-compact"></div>
+                <div class="seller-profile-card seller-profile-card-compact">
+                    <div class="seller-profile-top seller-profile-top-compact">
+                        <div class="user-profile-avatar seller-avatar-large seller-avatar-medium">${avatar}</div>
+                        <div class="seller-profile-main seller-profile-main-compact">
+                            <h3 class="user-profile-name seller-name-compact">${escapeHtml(profile.full_name || "Без імені")}</h3>
                             <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
-                            <div class="seller-badges">
+                            <div class="seller-badges seller-badges-compact">
                                 <span class="seller-badge accent">${escapeHtml(profile.seller_status || getSellerBadgeText(profile.sold_products, profile.rating_count))}</span>
-                                ${profile.rating_count > 0 ? `<span class="seller-badge">⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))} відгуків</span>` : ``}
+                                ${profile.rating_count > 0 ? `<span class="seller-badge">⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))}</span>` : ``}
                                 ${profile.is_superadmin ? `<span class="seller-badge">${escapeHtml(t('superadmin'))}</span>` : (profile.is_admin ? `<span class="seller-badge">${currentLanguage === 'en' ? 'Administrator' : currentLanguage === 'ru' ? 'Администратор' : 'Адміністратор'}</span>` : ``)}
                             </div>
                             <div class="seller-registered">З нами з ${formatDate(profile.registered_at) || "—"}</div>
                         </div>
                     </div>
 
-                    <div class="seller-stats-grid">
+                    <div class="seller-stats-grid seller-stats-grid-compact">
                         <div class="seller-stat"><span class="stat-value">${profile.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
                         <div class="seller-stat"><span class="stat-value">${profile.sold_products ?? 0}</span><span class="stat-label">Продані</span></div>
                         <div class="seller-stat"><span class="stat-value">${profile.bought_products ?? 0}</span><span class="stat-label">Куплені</span></div>
                         <div class="seller-stat"><span class="stat-value">${profile.archived_products ?? 0}</span><span class="stat-label">Архів</span></div>
                     </div>
 
-                    <div class="card-actions seller-action-stack">
+                    <div class="card-actions seller-action-stack seller-action-stack-compact">
                         ${profile.telegram_link
-                            ? `<a class="contact-btn contact-link" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
-                            : `<button class="own-product-btn" disabled>Telegram недоступний</button>`
+                            ? `<a class="contact-btn contact-link compact-cta-btn" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
+                            : `<button class="own-product-btn compact-cta-btn" disabled>Telegram недоступний</button>`
                         }
-                        <button class="secondary-btn full-btn" onclick="loadSellerReviews(${Number(profile.id)})">Відгуки</button>
+                        <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'reviews')">Відгуки</button>
+                        <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'listings')">Усі оголошення продавця</button>
                     </div>
 
-                    <div class="seller-listings-wrap"><div class="requests-header">Усі оголошення продавця</div><div class="cards seller-listings-grid">${Array.isArray(profile.listings) && profile.listings.length ? profile.listings.map(item => renderCatalogCard(item)).join('') : `<div class="empty-card">Активних оголошень немає</div>`}</div></div><div id="seller-reviews-wrap" class="seller-reviews-wrap"></div>
+                    <div id="seller-reviews-wrap" class="seller-section-wrap seller-reviews-wrap hidden"></div>
+                    <div id="seller-listings-wrap" class="seller-section-wrap seller-listings-wrap hidden"><div class="cards seller-listings-grid compact-seller-listings">${listingsHtml}</div></div>
                 </div>
             </div>
         `;
@@ -2931,11 +2936,35 @@ async function loadSellerReviews(userId) {
         const items = await safeFetch(`${API_BASE}/users/${userId}/reviews`);
         if (!Array.isArray(items) || !items.length) {
             wrap.innerHTML = `<div class="empty-card">${escapeHtml(t('noSellerReviews'))}</div>`;
+            wrap.dataset.loaded = "1";
             return;
         }
-        wrap.innerHTML = `<div class="cards">${items.map(item => renderReviewCard(item, false)).join("")}</div>`;
+        wrap.innerHTML = `<div class="cards seller-reviews-list compact-reviews-list">${items.map(item => renderReviewCard(item, false)).join("")}</div>`;
+        wrap.dataset.loaded = "1";
     } catch (error) {
         wrap.innerHTML = `<div class="empty-card">Не вдалося завантажити відгуки</div>`;
+    }
+}
+
+async function toggleSellerSection(userId, section) {
+    const reviewsWrap = $("seller-reviews-wrap");
+    const listingsWrap = $("seller-listings-wrap");
+    if (!reviewsWrap || !listingsWrap) return;
+
+    if (section === "reviews") {
+        const opening = reviewsWrap.classList.contains("hidden");
+        listingsWrap.classList.add("hidden");
+        reviewsWrap.classList.toggle("hidden", !opening);
+        if (opening && !reviewsWrap.dataset.loaded) {
+            await loadSellerReviews(userId);
+        }
+        return;
+    }
+
+    if (section === "listings") {
+        const opening = listingsWrap.classList.contains("hidden");
+        reviewsWrap.classList.add("hidden");
+        listingsWrap.classList.toggle("hidden", !opening);
     }
 }
 
@@ -3022,6 +3051,8 @@ if (typeof updateReportStatus === "function") window.updateReportStatus = update
 if (typeof adminDeleteProduct === "function") window.adminDeleteProduct = adminDeleteProduct;
 if (typeof openUserProfile === "function") window.openUserProfile = openUserProfile;
 if (typeof loadSellerReviews === "function") window.loadSellerReviews = loadSellerReviews;
+if (typeof toggleSellerSection === "function") window.toggleSellerSection = toggleSellerSection;
+if (typeof toggleSellerSection === "function") window.toggleSellerSection = toggleSellerSection;
 if (typeof closeUserProfileModal === "function") window.closeUserProfileModal = closeUserProfileModal;
 if (typeof closeUserProfileOnBackdrop === "function") window.closeUserProfileOnBackdrop = closeUserProfileOnBackdrop;
 if (typeof setModalImage === "function") window.setModalImage = setModalImage;
