@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "290";
+const FRONTEND_VERSION = "301";
 
 let tg = null;
 let telegramUser = null;
@@ -288,6 +288,8 @@ function applyLanguageTexts() {
 function changeLanguage(lang) {
     currentLanguage = ['uk','ru','en'].includes(lang) ? lang : 'uk';
     try { localStorage.setItem(APP_LANG_KEY, currentLanguage); } catch {}
+    const nativeLangSelect = $("auth-language-select");
+    if (nativeLangSelect) nativeLangSelect.value = currentLanguage;
     applyLanguageTexts();
 }
 
@@ -318,6 +320,42 @@ function getCachedTelegramInitData() {
 
 function $(id) {
     return document.getElementById(id);
+}
+
+
+function setInputValue(id, value = "") {
+    const element = $(id);
+    if (element) element.value = value;
+    return element;
+}
+
+function clearInputValue(id) {
+    const element = $(id);
+    if (element) element.value = "";
+    return element;
+}
+
+function openProductFilePicker() {
+    const input = $("product-files");
+    if (!input) {
+        showAlert("Не знайдено поле для вибору фото");
+        return;
+    }
+
+    try {
+        if (typeof input.showPicker === "function") {
+            input.showPicker();
+            return;
+        }
+    } catch (error) {
+        console.warn("showPicker error:", error);
+    }
+
+    try {
+        input.click();
+    } catch (error) {
+        console.warn("file input click error:", error);
+    }
 }
 
 function escapeHtml(value) {
@@ -1161,13 +1199,13 @@ async function startEditProduct(productId) {
         $("submit-product-btn").textContent = "Зберегти зміни";
         $("cancel-edit-btn")?.classList.remove("hidden");
         $("edit-photos-hint")?.classList.remove("hidden");
-        $("product-title").value = product.title || "";
-        $("product-description").value = product.description || "";
-        $("product-price").value = product.price || "";
-        $("product-currency").value = product.currency || "USD";
-        $("product-category").value = product.category || "";
-        $("product-condition").value = product.condition || "";
-        $("product-city").value = product.city || "";
+        setInputValue("product-title", product.title || "");
+        setInputValue("product-description", product.description || "");
+        setInputValue("product-price", product.price || "");
+        setInputValue("product-currency", product.currency || "USD");
+        setInputValue("product-category", product.category || "");
+        setInputValue("product-condition", product.condition || "");
+        setInputValue("product-city", product.city || "");
         syncCreateFormSelections();
         updateCategorySummary();
         toggleCategoryPicker(false);
@@ -1357,6 +1395,8 @@ async function wakeApi() {
 
 function setupAuthScreen() {
     initTelegramWebApp();
+    const nativeLangSelect = $("auth-language-select");
+    if (nativeLangSelect) nativeLangSelect.value = currentLanguage;
     applyLanguageTexts();
     [200, 500, 1000, 1800, 2600].forEach(delay => setTimeout(() => {
         initTelegramWebApp();
@@ -2492,8 +2532,8 @@ async function submitIdea() {
             method: "POST",
             body: JSON.stringify({ user_id: currentUser.id, title, message })
         });
-        $("idea-title").value = "";
-        $("idea-message").value = "";
+        clearInputValue("idea-title");
+        clearInputValue("idea-message");
         showAlert("Ідею надіслано");
         if (currentUser.is_admin) await loadAdminSummary();
     } catch (error) {
@@ -2506,10 +2546,10 @@ async function submitIdea() {
 function openReportModal(productId, title = "") {
     const modal = $("report-modal");
     if (!modal) return;
-    $("report-product-id").value = String(productId || "");
+    setInputValue("report-product-id", String(productId || ""));
     $("report-title").textContent = title ? `Скарга на: ${title}` : "Скарга на оголошення";
-    $("report-reason").value = "Шахрайство";
-    $("report-comment").value = "";
+    setInputValue("report-reason", "Шахрайство");
+    clearInputValue("report-comment");
     $("report-custom-reason-wrap")?.classList.add("hidden");
     modal.classList.remove("hidden");
 }
@@ -2926,6 +2966,11 @@ if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
 if (typeof toggleCategoryPicker === "function") window.toggleCategoryPicker = toggleCategoryPicker;
 if (typeof updateAvatarFileLabel === "function") window.updateAvatarFileLabel = updateAvatarFileLabel;
+
+
+window.addEventListener("error", (event) => {
+    console.error("Global app error:", event?.error || event?.message || event);
+});
 
 initApp();
 
