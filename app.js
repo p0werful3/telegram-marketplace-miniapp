@@ -329,6 +329,11 @@ function escapeHtml(value) {
         .replace(/'/g, "&#039;");
 }
 
+function escapeJs(value) {
+    return JSON.stringify(String(value ?? "")).slice(1, -1).replace(/'/g, "\'");
+}
+
+
 function isValidUrl(value) {
     if (!value) return false;
     try {
@@ -777,6 +782,7 @@ async function showApp() {
     if ($("admin-panel-body")) $("admin-panel-body").classList.add("hidden");
     applyLanguageTexts();
 
+    initCreateFormUi();
     resetCreateForm();
     toggleFilters(false);
     switchTab("catalog");
@@ -1005,6 +1011,75 @@ async function submitReview() {
     }
 }
 
+
+
+function initCreateFormUi() {
+    const categorySelect = $("product-category");
+    const conditionSelect = $("product-condition");
+    const categoryWrap = $("category-chip-group");
+    const conditionWrap = $("condition-chip-group");
+
+    if (categorySelect && categoryWrap && !categoryWrap.dataset.ready) {
+        const options = Array.from(categorySelect.options)
+            .map(option => option.value)
+            .filter(Boolean);
+        categoryWrap.innerHTML = options.map(value => `
+            <button type="button" class="choice-chip" data-value="${escapeHtml(value)}">${escapeHtml(value)}</button>
+        `).join("");
+        categoryWrap.querySelectorAll('.choice-chip').forEach(chip => {
+            chip.addEventListener('click', () => setProductCategory(chip.dataset.value || ''));
+        });
+        categoryWrap.dataset.ready = "1";
+    }
+
+    if (conditionSelect && conditionWrap && !conditionWrap.dataset.ready) {
+        const options = Array.from(conditionSelect.options)
+            .map(option => option.value)
+            .filter(Boolean);
+        conditionWrap.innerHTML = options.map(value => `
+            <button type="button" class="segment-chip" data-value="${escapeHtml(value)}">${escapeHtml(value)}</button>
+        `).join("");
+        conditionWrap.querySelectorAll('.segment-chip').forEach(chip => {
+            chip.addEventListener('click', () => setProductCondition(chip.dataset.value || ''));
+        });
+        conditionWrap.dataset.ready = "1";
+    }
+
+    syncCreateFormSelections();
+}
+
+function syncCreateFormSelections() {
+    const selectedCategory = $("product-category")?.value || "";
+    const selectedCondition = $("product-condition")?.value || "";
+
+    document.querySelectorAll('#category-chip-group .choice-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.value === selectedCategory);
+    });
+    document.querySelectorAll('#condition-chip-group .segment-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.value === selectedCondition);
+    });
+}
+
+function setProductCategory(value) {
+    const select = $("product-category");
+    if (!select) return;
+    select.value = value || "";
+    syncCreateFormSelections();
+}
+
+function setProductCondition(value) {
+    const select = $("product-condition");
+    if (!select) return;
+    select.value = value || "";
+    syncCreateFormSelections();
+}
+
+function setQuickCity(city) {
+    const input = $("product-city");
+    if (!input) return;
+    input.value = city || "";
+}
+
 function resetCreateForm() {
     editingProductId = null;
     editingExistingImages = [];
@@ -1019,6 +1094,7 @@ function resetCreateForm() {
     $("product-category").value = "";
     $("product-condition").value = "";
     $("product-city").value = "";
+    syncCreateFormSelections();
     $("product-files").value = "";
     $("image-preview-grid").innerHTML = "";
     $("image-preview-wrap").classList.add("hidden");
@@ -1063,6 +1139,7 @@ async function startEditProduct(productId) {
         $("product-category").value = product.category || "";
         $("product-condition").value = product.condition || "";
         $("product-city").value = product.city || "";
+        syncCreateFormSelections();
         $("product-files").value = "";
         renderPreviewUrls(editingExistingImages);
         $("image-status").textContent = editingExistingImages.length ? `Зараз фото: ${editingExistingImages.length}` : "Фото не вибрано";
@@ -2803,6 +2880,9 @@ if (typeof changeLanguage === "function") window.changeLanguage = changeLanguage
 
 if (typeof searchSeller === "function") window.searchSeller = searchSeller;
 if (typeof toggleNotificationsPanel === "function") window.toggleNotificationsPanel = toggleNotificationsPanel;
+if (typeof setProductCategory === "function") window.setProductCategory = setProductCategory;
+if (typeof setProductCondition === "function") window.setProductCondition = setProductCondition;
+if (typeof setQuickCity === "function") window.setQuickCity = setQuickCity;
 
 
 if (typeof openImageViewer === "function") window.openImageViewer = openImageViewer;
