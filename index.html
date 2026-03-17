@@ -15,7 +15,7 @@
     <div id="auth-screen" class="auth-screen">
         <div class="auth-card">
             <div class="auth-brand auth-brand-fancy">
-                <div class="auth-brand-badge">🛍</div>
+                <div class="auth-brand-badge">🛒</div>
                 <div class="auth-brand-text">
                     <h1>Telegram Marketplace</h1>
                     <div class="auth-brand-mini">Mini App маркетплейс</div>
@@ -109,13 +109,7 @@
                 <div id="catalog-filters-wrap" class="filters-panel hidden">
                     <div class="search-bar search-bar-advanced">
                         <select id="category-filter" onchange="loadProducts()">
-                            <option value="Усі">Усі категорії</option>
-                            <option>Смартфони</option><option>Ноутбуки</option><option>Навушники</option>
-                            <option>Ігрові приставки</option><option>Планшети</option><option>Аксесуари</option>
-                            <option>Будматеріали</option><option>Тварини</option><option>Нерухомість</option>
-                            <option>Дім та сад</option><option>Меблі</option><option>Одяг</option>
-                            <option>Автотовари</option><option>Спорт</option><option>Книги</option>
-                            <option>Інше</option>
+                            <option value="Усі">Усі категорії</option><option>Смартфони</option><option>Ноутбуки</option><option>Навушники</option><option>Ігрові приставки</option><option>Планшети</option><option>Смарт-годинники</option><option>Телевізори</option><option>Фото / відео</option><option>ПК комплектуючі</option><option>Монітори</option><option>Аксесуари</option><option>Будматеріали</option><option>Інструменти</option><option>Тварини</option><option>Нерухомість</option><option>Дім та сад</option><option>Меблі</option><option>Посуд</option><option>Одяг</option><option>Взуття</option><option>Дитячі товари</option><option>Краса і здоровʼя</option><option>Автотовари</option><option>Авто</option><option>Мото</option><option>Велосипеди</option><option>Спорт</option><option>Книги</option><option>Хобі</option><option>Музичні інструменти</option><option>Робота</option><option>Послуги</option><option>Колекції</option><option>Подарунки</option><option>Інше</option>
                         </select>
 
                         <select id="city-filter" onchange="loadProducts()">
@@ -221,12 +215,15 @@
                                 <label>Категорія</label>
                                 <select id="product-category" class="hidden-native-select">
                                     <option value="">Оберіть категорію</option>
-                                    <option>Смартфони</option><option>Ноутбуки</option><option>Навушники</option><option>Ігрові приставки</option>
-                                    <option>Планшети</option><option>Аксесуари</option><option>Будматеріали</option><option>Тварини</option>
-                                    <option>Нерухомість</option><option>Дім та сад</option><option>Меблі</option><option>Одяг</option>
-                                    <option>Автотовари</option><option>Спорт</option><option>Книги</option><option>Інше</option>
+                                    <option>Смартфони</option><option>Ноутбуки</option><option>Навушники</option><option>Ігрові приставки</option><option>Планшети</option><option>Смарт-годинники</option><option>Телевізори</option><option>Фото / відео</option><option>ПК комплектуючі</option><option>Монітори</option><option>Аксесуари</option><option>Будматеріали</option><option>Інструменти</option><option>Тварини</option><option>Нерухомість</option><option>Дім та сад</option><option>Меблі</option><option>Посуд</option><option>Одяг</option><option>Взуття</option><option>Дитячі товари</option><option>Краса і здоровʼя</option><option>Автотовари</option><option>Авто</option><option>Мото</option><option>Велосипеди</option><option>Спорт</option><option>Книги</option><option>Хобі</option><option>Музичні інструменти</option><option>Робота</option><option>Послуги</option><option>Колекції</option><option>Подарунки</option><option>Інше</option>
                                 </select>
-                                <div id="category-chip-group" class="chip-select-grid"></div>
+                                <button type="button" id="category-toggle-btn" class="category-toggle-btn" onclick="toggleCategoryPicker()">
+                                    <span id="category-selected-label">Оберіть категорію</span>
+                                    <span id="category-toggle-arrow" class="category-toggle-arrow">▼</span>
+                                </button>
+                                <div id="category-chip-wrap" class="category-chip-wrap hidden">
+                                    <div id="category-chip-group" class="chip-select-grid"></div>
+                                </div>
                             </div>
 
                             <div class="listing-field">
@@ -306,17 +303,37 @@
                     <button id="profile-edit-toggle-btn" class="icon-circle-btn" onclick="toggleProfileEdit()" title="Налаштування">⚙</button>
                 </div>
 
-                <div id="profile-edit-wrap" class="profile-card hidden">
-                    <h3 class="profile-subtitle">Налаштування профілю</h3>
-                    <label>Username (без @)</label>
-                    <input id="profile-edit-username" type="text" placeholder="username (без @)">
-                    <label>Ім'я</label>
-                    <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
-                    <label>Аватарка</label>
-                    <input id="profile-avatar-file" type="file" accept="image/*">
-                    <label>Новий пароль</label>
-                    <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
-                    <button class="primary-btn" onclick="saveProfile()">Зберегти зміни</button>
+                <div id="profile-edit-wrap" class="profile-card hidden profile-edit-card">
+                    <div class="profile-edit-header-row">
+                        <div>
+                            <h3 class="profile-subtitle">Налаштування профілю</h3>
+                            <p class="profile-edit-desc">Онови основні дані профілю. Зміни збережуться одразу після натискання кнопки.</p>
+                        </div>
+                        <div class="profile-edit-badge">Профіль</div>
+                    </div>
+                    <div class="profile-edit-grid">
+                        <div class="profile-edit-field">
+                            <label>Username (без @)</label>
+                            <input id="profile-edit-username" type="text" placeholder="username (без @)">
+                        </div>
+                        <div class="profile-edit-field">
+                            <label>Ім'я</label>
+                            <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
+                        </div>
+                        <div class="profile-edit-field profile-edit-field-full">
+                            <label>Аватарка</label>
+                            <label for="profile-avatar-file" class="file-picker-card">
+                                <input id="profile-avatar-file" type="file" accept="image/*" onchange="updateAvatarFileLabel(event)">
+                                <span class="file-picker-btn">Вибрати фото</span>
+                                <span id="profile-avatar-file-name" class="file-picker-name">Файл не вибрано</span>
+                            </label>
+                        </div>
+                        <div class="profile-edit-field profile-edit-field-full">
+                            <label>Новий пароль</label>
+                            <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
+                        </div>
+                    </div>
+                    <button class="primary-btn profile-save-btn" onclick="saveProfile()">Зберегти зміни</button>
                 </div>
 
                 <div class="profile-overview-grid">
@@ -483,6 +500,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=285"></script>
+    <script src="app.js?v=286"></script>
 </body>
 </html>
