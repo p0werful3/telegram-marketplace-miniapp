@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "272";
+const FRONTEND_VERSION = "290";
 
 let tg = null;
 let telegramUser = null;
@@ -1110,24 +1110,24 @@ function updateAvatarFileLabel(event) {
 function resetCreateForm() {
     editingProductId = null;
     editingExistingImages = [];
-    $("create-form-title").textContent = "Створити оголошення";
-    $("submit-product-btn").textContent = "Створити оголошення";
+    if ($("create-form-title")) $("create-form-title").textContent = "Створити оголошення";
+    if ($("submit-product-btn")) $("submit-product-btn").textContent = "Створити оголошення";
     $("cancel-edit-btn")?.classList.add("hidden");
     $("edit-photos-hint")?.classList.add("hidden");
-    $("product-title").value = "";
-    $("product-description").value = "";
-    $("product-price").value = "";
-    $("product-currency").value = "USD";
-    $("product-category").value = "";
-    $("product-condition").value = "";
-    $("product-city").value = "";
+    if ($("product-title")) $("product-title").value = "";
+    if ($("product-description")) $("product-description").value = "";
+    if ($("product-price")) $("product-price").value = "";
+    if ($("product-currency")) $("product-currency").value = "USD";
+    if ($("product-category")) $("product-category").value = "";
+    if ($("product-condition")) $("product-condition").value = "";
+    if ($("product-city")) $("product-city").value = "";
     syncCreateFormSelections();
     updateCategorySummary();
     toggleCategoryPicker(false);
-    $("product-files").value = "";
-    $("image-preview-grid").innerHTML = "";
-    $("image-preview-wrap").classList.add("hidden");
-    $("image-status").textContent = "Фото не вибрано";
+    if ($("product-files")) $("product-files").value = "";
+    if ($("image-preview-grid")) $("image-preview-grid").innerHTML = "";
+    $("image-preview-wrap")?.classList.add("hidden");
+    updateProductFileLabel([]);
 }
 
 function renderPreviewUrls(urls = []) {
@@ -1171,9 +1171,10 @@ async function startEditProduct(productId) {
         syncCreateFormSelections();
         updateCategorySummary();
         toggleCategoryPicker(false);
-        $("product-files").value = "";
+        if ($("product-files")) $("product-files").value = "";
         renderPreviewUrls(editingExistingImages);
-        $("image-status").textContent = editingExistingImages.length ? `Зараз фото: ${editingExistingImages.length}` : "Фото не вибрано";
+        updateProductFileLabel([]);
+        if ($("image-status")) $("image-status").textContent = editingExistingImages.length ? `Зараз фото: ${editingExistingImages.length}` : "Фото не вибрано";
         switchTab("create");
         window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
@@ -1187,34 +1188,34 @@ function cancelEditProduct() {
 }
 
 function handleImagePreview(event) {
-    const files = Array.from(event?.target?.files || []);
+    const input = event?.target || $("product-files");
+    const files = Array.from(input?.files || []);
     const wrap = $("image-preview-wrap");
     const grid = $("image-preview-grid");
-    const status = $("image-status");
 
     if (!files.length) {
         wrap?.classList.add("hidden");
         if (grid) grid.innerHTML = "";
-        if (status) status.textContent = "Фото не вибрано";
+        updateProductFileLabel([]);
         return;
     }
 
     const invalid = files.find(file => !file.type.startsWith("image/"));
     if (invalid) {
         showAlert("Оберіть лише зображення");
-        event.target.value = "";
+        if (input) input.value = "";
         wrap?.classList.add("hidden");
         if (grid) grid.innerHTML = "";
-        if (status) status.textContent = "Фото не вибрано";
+        updateProductFileLabel([]);
         return;
     }
 
     if (files.length > 10) {
         showAlert("Можна вибрати максимум 10 фото");
-        event.target.value = "";
+        if (input) input.value = "";
         wrap?.classList.add("hidden");
         if (grid) grid.innerHTML = "";
-        if (status) status.textContent = "Фото не вибрано";
+        updateProductFileLabel([]);
         return;
     }
 
@@ -1226,10 +1227,7 @@ function handleImagePreview(event) {
     }
 
     wrap?.classList.remove("hidden");
-
-    if (status) {
-        status.textContent = `Вибрано фото: ${files.length}`;
-    }
+    updateProductFileLabel(files);
 }
 
 async function uploadImageToCloudinary(file) {
@@ -1381,6 +1379,16 @@ function setupAuthScreen() {
         localStorage.setItem("remember-me-choice", remember.checked ? "1" : "0");
     });
 
+    try {
+        const savedUsername = localStorage.getItem("marketplace_last_username") || "";
+        if (savedUsername) {
+            if ($("login-username") && !$("login-username").value) $("login-username").value = savedUsername;
+            if ($("register-username") && !$("register-username").value) $("register-username").value = savedUsername;
+        }
+    } catch (error) {
+        console.error("Restore username error:", error);
+    }
+
     refreshTelegramLoginUi();
     setTimeout(() => {
         const currentTgUser = getTelegramUserFromEnvironment();
@@ -1420,10 +1428,11 @@ async function registerNewUser() {
 
         currentUser = data;
         saveSession(data);
+        try { localStorage.setItem("marketplace_last_username", username); } catch {}
 
-        $("register-username").value = "";
-        $("register-fullname").value = "";
-        $("register-password").value = "";
+        if ($("register-username")) $("register-username").value = "";
+        if ($("register-fullname")) $("register-fullname").value = "";
+        if ($("register-password")) $("register-password").value = "";
 
         showAlert("Реєстрація успішна");
         await showApp();
@@ -1456,7 +1465,8 @@ async function loginUser() {
 
         currentUser = data;
         saveSession(data);
-        $("login-password").value = "";
+        try { localStorage.setItem("marketplace_last_username", username); } catch {}
+        if ($("login-password")) $("login-password").value = "";
 
         showAlert("Вхід успішний");
         await showApp();
@@ -1900,18 +1910,28 @@ async function createProduct() {
     const city = $("product-city")?.value;
     const files = $("product-files")?.files || [];
 
+    if (!title || !description || !Number.isFinite(price) || price <= 0 || !category || !condition || !city) {
+        showAlert("Заповни назву, опис, ціну, категорію, стан і місто");
+        return;
+    }
+
     try {
         setLoading(true);
 
         let imageUrls = editingExistingImages.slice();
         if (files.length) {
             imageUrls = [];
-            $("image-status").textContent = `Завантаження фото: 0/${files.length}`;
+            if ($("image-status")) $("image-status").textContent = `Завантаження фото: 0/${files.length}`;
             for (let i = 0; i < files.length; i += 1) {
                 const uploaded = await uploadImageToCloudinary(files[i]);
                 imageUrls.push(uploaded);
-                $("image-status").textContent = `Завантаження фото: ${i + 1}/${files.length}`;
+                if ($("image-status")) $("image-status").textContent = `Завантаження фото: ${i + 1}/${files.length}`;
             }
+        }
+
+        if (!imageUrls.length) {
+            showAlert("Додай хоча б одне фото товару");
+            return;
         }
 
         const payload = {
@@ -2865,6 +2885,7 @@ if (typeof saveProfile === "function") window.saveProfile = saveProfile;
 if (typeof createProduct === "function") window.createProduct = createProduct;
 if (typeof cancelEditProduct === "function") window.cancelEditProduct = cancelEditProduct;
 if (typeof handleImagePreview === "function") window.handleImagePreview = handleImagePreview;
+if (typeof openProductFilePicker === "function") window.openProductFilePicker = openProductFilePicker;
 if (typeof closeProductModal === "function") window.closeProductModal = closeProductModal;
 if (typeof closeProductModalOnBackdrop === "function") window.closeProductModalOnBackdrop = closeProductModalOnBackdrop;
 if (typeof openProductModal === "function") window.openProductModal = openProductModal;
