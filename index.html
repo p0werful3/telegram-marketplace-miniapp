@@ -9,12 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=301">
+    <link rel="stylesheet" href="style.css?v=290">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
-        <div class="auth-card auth-card-centered">
-            <div class="auth-brand auth-brand-fancy auth-brand-centered">
+        <div class="auth-card">
+            <div class="auth-brand auth-brand-fancy">
                 <div class="auth-brand-badge">🛍</div>
                 <div class="auth-brand-text">
                     <h1>Telegram Marketplace</h1>
@@ -37,18 +37,18 @@
                 </select>
             </div>
 
-            <div class="auth-tabs auth-tabs-centered">
+            <div class="auth-tabs">
                 <button id="auth-tab-login" class="auth-tab active" onclick="switchAuthTab('login', this)">Вхід</button>
                 <button id="auth-tab-register" class="auth-tab" onclick="switchAuthTab('register', this)">Реєстрація</button>
             </div>
 
-            <div id="auth-login" class="auth-panel active auth-panel-centered">
+            <div id="auth-login" class="auth-panel active">
                 <input id="login-username" type="text" placeholder="Username (без @)">
                 <input id="login-password" type="password" placeholder="Password">
                 <button id="login-submit-btn" class="primary-btn" onclick="loginUser()">Увійти</button>
             </div>
 
-            <div id="auth-register" class="auth-panel auth-panel-centered">
+            <div id="auth-register" class="auth-panel">
                 <input id="register-username" type="text" placeholder="Username (без @)">
                 <input id="register-fullname" type="text" placeholder="Ім'я">
                 <input id="register-password" type="password" placeholder="Password">
@@ -258,11 +258,11 @@
                         <div class="listing-section-title">Фото товару</div>
                         <div class="upload-panel">
                             <input id="product-files" class="real-file-input" type="file" accept="image/*" multiple onchange="handleImagePreview(event)">
-                            <label for="product-files" class="upload-dropzone upload-dropzone-button" onclick="openProductFilePicker()">
+                            <button type="button" class="upload-dropzone upload-dropzone-button" onclick="openProductFilePicker()">
                                 <div class="upload-dropzone-icon">＋</div>
                                 <div class="upload-dropzone-title">Додати фото товару</div>
                                 <div class="upload-dropzone-subtitle">До 10 фото. Перше фото буде головним у каталозі.</div>
-                            </label>
+                            </button>
                         </div>
                         <div id="image-preview-wrap" class="hidden image-preview-wrap"><div id="image-preview-grid" class="image-preview-grid"></div></div>
                         <p id="image-status" class="image-status">Фото не вибрано</p>
@@ -507,6 +507,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=301"></script>
+    <script src="app.js?v=290"></script>
 </body>
 </html>
