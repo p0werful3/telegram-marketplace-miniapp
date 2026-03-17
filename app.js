@@ -1,8 +1,9 @@
+// FINAL COMPACT CATALOG 307
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "306";
+const FRONTEND_VERSION = "304";
 
 let tg = null;
 let telegramUser = null;
