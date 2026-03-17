@@ -9,13 +9,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=286">
+    <link rel="stylesheet" href="style.css?v=288">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
         <div class="auth-card">
             <div class="auth-brand auth-brand-fancy">
-                <div class="auth-brand-badge">🛒</div>
+                <div class="auth-brand-badge">🛍</div>
                 <div class="auth-brand-text">
                     <h1>Telegram Marketplace</h1>
                     <div class="auth-brand-mini">Mini App маркетплейс</div>
@@ -423,10 +423,15 @@
                     </div>
                 </div>
 
-                <div class="profile-card">
-                    <div class="language-switch-row">
+                <div class="profile-card profile-language-card">
+                    <div class="language-switch-stack">
                         <div class="language-switch-label"><span class="profile-menu-icon">🌐</span><span>Мова / Language</span></div>
-                        <select id="language-select" onchange="changeLanguage(this.value)">
+                        <div id="profile-language-switcher" class="lang-switcher profile-lang-switcher">
+                            <button type="button" class="lang-btn" data-lang="uk" onclick="changeLanguage('uk')">Українська</button>
+                            <button type="button" class="lang-btn" data-lang="ru" onclick="changeLanguage('ru')">Русский</button>
+                            <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">English</button>
+                        </div>
+                        <select id="language-select" class="hidden" onchange="changeLanguage(this.value)">
                             <option value="uk">Українська</option>
                             <option value="ru">Русский</option>
                             <option value="en">English</option>
@@ -500,6 +505,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=286"></script>
+    <script src="app.js?v=285"></script>
 </body>
 </html>
