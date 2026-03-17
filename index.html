@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=289">
+    <link rel="stylesheet" href="style.css?v=290">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -256,12 +256,14 @@
 
                     <div class="listing-form-section listing-form-section-full">
                         <div class="listing-section-title">Фото товару</div>
-                        <label for="product-files" class="upload-dropzone">
-                            <input id="product-files" type="file" accept="image/*" multiple onchange="handleImagePreview(event)">
-                            <div class="upload-dropzone-icon">＋</div>
-                            <div class="upload-dropzone-title">Додати фото товару</div>
-                            <div class="upload-dropzone-subtitle">До 10 фото. Перше фото буде головним у каталозі.</div>
-                        </label>
+                        <div class="upload-panel">
+                            <input id="product-files" class="real-file-input" type="file" accept="image/*" multiple onchange="handleImagePreview(event)">
+                            <button type="button" class="upload-dropzone upload-dropzone-button" onclick="openProductFilePicker()">
+                                <div class="upload-dropzone-icon">＋</div>
+                                <div class="upload-dropzone-title">Додати фото товару</div>
+                                <div class="upload-dropzone-subtitle">До 10 фото. Перше фото буде головним у каталозі.</div>
+                            </button>
+                        </div>
                         <div id="image-preview-wrap" class="hidden image-preview-wrap"><div id="image-preview-grid" class="image-preview-grid"></div></div>
                         <p id="image-status" class="image-status">Фото не вибрано</p>
                         <p id="edit-photos-hint" class="image-status hidden">Якщо вибереш нові фото, старі буде замінено.</p>
@@ -505,6 +507,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=289"></script>
+    <script src="app.js?v=290"></script>
 </body>
 </html>
