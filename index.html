@@ -6,7 +6,10 @@
     <meta name="theme-color" content="#0b1220">
     <title>Telegram Marketplace</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css?v=285">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=286">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -172,52 +175,105 @@
                     <button id="cancel-edit-btn" class="secondary-btn section-btn hidden" onclick="cancelEditProduct()">Скасувати редагування</button>
                 </div>
 
-                <div class="form-card">
-                    <label>Назва товару</label>
-                    <input id="product-title" type="text" placeholder="Наприклад: iPhone 15">
-
-                    <label>Опис</label>
-                    <textarea id="product-description" placeholder="Опишіть товар"></textarea>
-
-                    <label>Ціна</label>
-                    <div class="price-row">
-                        <input id="product-price" type="number" placeholder="1000">
-                        <select id="product-currency">
-                            <option value="USD">USD</option><option value="UAH">UAH</option><option value="EUR">EUR</option>
-                        </select>
+                <div class="form-card listing-form-card">
+                    <div class="listing-form-hero">
+                        <div>
+                            <div class="listing-eyebrow">Швидке створення</div>
+                            <h3>Створи оголошення красиво і без зайвого</h3>
+                            <p>Заповни основну інформацію, вибери категорію та додай фото. Ми залишили тільки те, що реально важливо.</p>
+                        </div>
+                        <div class="listing-step-badges">
+                            <span class="listing-step-badge active">1. Основне</span>
+                            <span class="listing-step-badge">2. Деталі</span>
+                            <span class="listing-step-badge">3. Фото</span>
+                        </div>
                     </div>
 
-                    <label>Категорія</label>
-                    <select id="product-category">
-                        <option value="">Оберіть категорію</option>
-                        <option>Смартфони</option><option>Ноутбуки</option><option>Навушники</option><option>Ігрові приставки</option>
-                        <option>Планшети</option><option>Аксесуари</option><option>Будматеріали</option><option>Тварини</option>
-                        <option>Нерухомість</option><option>Дім та сад</option><option>Меблі</option><option>Одяг</option>
-                        <option>Автотовари</option><option>Спорт</option><option>Книги</option><option>Інше</option>
-                    </select>
+                    <div class="listing-form-grid">
+                        <div class="listing-form-section">
+                            <div class="listing-section-title">Основна інформація</div>
+                            <div class="listing-field">
+                                <label>Назва товару</label>
+                                <input id="product-title" type="text" placeholder="Наприклад: iPhone 15 Pro Max">
+                            </div>
 
-                    <label>Стан товару</label>
-                    <select id="product-condition">
-                        <option value="">Оберіть стан</option><option>Новий</option><option>Б/У</option>
-                    </select>
+                            <div class="listing-field">
+                                <label>Опис</label>
+                                <textarea id="product-description" placeholder="Коротко опишіть стан, комплект, особливості та що важливо для покупця"></textarea>
+                                <div class="field-hint">Найкраще працюють короткі, чесні та зрозумілі описи.</div>
+                            </div>
 
-                    <label>Місто</label>
-                    <select id="product-city">
-                        <option value="">Оберіть місто</option>
-                        <option>Київ</option><option>Одеса</option><option>Дніпро</option><option>Львів</option><option>Харків</option>
-                        <option>Прага</option><option>Берлін</option><option>Рим</option><option>Варшава</option><option>Відень</option>
-                        <option>Париж</option><option>Мадрид</option><option>Лондон</option><option>Амстердам</option><option>Брюссель</option>
-                        <option>Будапешт</option><option>Братислава</option><option>Вільнюс</option><option>Рига</option><option>Таллінн</option>
-                        <option>Інше</option>
-                    </select>
+                            <div class="listing-field">
+                                <label>Ціна</label>
+                                <div class="price-row">
+                                    <input id="product-price" type="number" placeholder="1000">
+                                    <select id="product-currency">
+                                        <option value="USD">USD</option><option value="UAH">UAH</option><option value="EUR">EUR</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 
-                    <label>Фото товару (можна кілька)</label>
-                    <input id="product-files" type="file" accept="image/*" multiple onchange="handleImagePreview(event)">
-                    <div id="image-preview-wrap" class="hidden image-preview-wrap"><div id="image-preview-grid" class="image-preview-grid"></div></div>
-                    <p id="image-status" class="image-status">Фото не вибрано</p>
-                    <p id="edit-photos-hint" class="image-status hidden">Якщо вибереш нові фото, старі буде замінено.</p>
+                        <div class="listing-form-section">
+                            <div class="listing-section-title">Категорія та параметри</div>
 
-                    <button id="submit-product-btn" class="primary-btn" onclick="createProduct()">Створити оголошення</button>
+                            <div class="listing-field">
+                                <label>Категорія</label>
+                                <select id="product-category" class="hidden-native-select">
+                                    <option value="">Оберіть категорію</option>
+                                    <option>Смартфони</option><option>Ноутбуки</option><option>Навушники</option><option>Ігрові приставки</option>
+                                    <option>Планшети</option><option>Аксесуари</option><option>Будматеріали</option><option>Тварини</option>
+                                    <option>Нерухомість</option><option>Дім та сад</option><option>Меблі</option><option>Одяг</option>
+                                    <option>Автотовари</option><option>Спорт</option><option>Книги</option><option>Інше</option>
+                                </select>
+                                <div id="category-chip-group" class="chip-select-grid"></div>
+                            </div>
+
+                            <div class="listing-field">
+                                <label>Стан товару</label>
+                                <select id="product-condition" class="hidden-native-select">
+                                    <option value="">Оберіть стан</option><option>Новий</option><option>Б/У</option>
+                                </select>
+                                <div id="condition-chip-group" class="segment-chip-group"></div>
+                            </div>
+
+                            <div class="listing-field">
+                                <label>Місто</label>
+                                <input id="product-city" type="text" list="city-options" placeholder="Почни вводити місто або вибери зі списку">
+                                <datalist id="city-options">
+                                    <option value="Київ"><option value="Одеса"><option value="Дніпро"><option value="Львів"><option value="Харків">
+                                    <option value="Прага"><option value="Берлін"><option value="Рим"><option value="Варшава"><option value="Відень">
+                                    <option value="Париж"><option value="Мадрид"><option value="Лондон"><option value="Амстердам"><option value="Брюссель">
+                                    <option value="Будапешт"><option value="Братислава"><option value="Вільнюс"><option value="Рига"><option value="Таллінн"><option value="Інше">
+                                </datalist>
+                                <div class="city-suggestion-row">
+                                    <button type="button" class="mini-chip" onclick="setQuickCity('Київ')">Київ</button>
+                                    <button type="button" class="mini-chip" onclick="setQuickCity('Львів')">Львів</button>
+                                    <button type="button" class="mini-chip" onclick="setQuickCity('Прага')">Прага</button>
+                                    <button type="button" class="mini-chip" onclick="setQuickCity('Варшава')">Варшава</button>
+                                    <button type="button" class="mini-chip" onclick="setQuickCity('Берлін')">Берлін</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="listing-form-section listing-form-section-full">
+                        <div class="listing-section-title">Фото товару</div>
+                        <label for="product-files" class="upload-dropzone">
+                            <input id="product-files" type="file" accept="image/*" multiple onchange="handleImagePreview(event)">
+                            <div class="upload-dropzone-icon">＋</div>
+                            <div class="upload-dropzone-title">Додати фото товару</div>
+                            <div class="upload-dropzone-subtitle">До 10 фото. Перше фото буде головним у каталозі.</div>
+                        </label>
+                        <div id="image-preview-wrap" class="hidden image-preview-wrap"><div id="image-preview-grid" class="image-preview-grid"></div></div>
+                        <p id="image-status" class="image-status">Фото не вибрано</p>
+                        <p id="edit-photos-hint" class="image-status hidden">Якщо вибереш нові фото, старі буде замінено.</p>
+                    </div>
+
+                    <div class="listing-submit-bar">
+                        <div class="listing-submit-note">Перед публікацією перевір назву, ціну та головне фото.</div>
+                        <button id="submit-product-btn" class="primary-btn listing-submit-btn" onclick="createProduct()">Створити оголошення</button>
+                    </div>
                 </div>
             </section>
 
