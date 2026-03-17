@@ -785,6 +785,7 @@ async function showApp() {
     initCreateFormUi();
     resetCreateForm();
     toggleFilters(false);
+    setActiveNavButton("catalog");
     switchTab("catalog");
 
     await refreshCurrentUserFromApi();
@@ -1045,6 +1046,7 @@ function initCreateFormUi() {
         conditionWrap.dataset.ready = "1";
     }
 
+    updateCategorySummary();
     syncCreateFormSelections();
 }
 
@@ -1058,6 +1060,7 @@ function syncCreateFormSelections() {
     document.querySelectorAll('#condition-chip-group .segment-chip').forEach(chip => {
         chip.classList.toggle('active', chip.dataset.value === selectedCondition);
     });
+    updateCategorySummary();
 }
 
 function setProductCategory(value) {
@@ -1065,6 +1068,7 @@ function setProductCategory(value) {
     if (!select) return;
     select.value = value || "";
     syncCreateFormSelections();
+    if (value) toggleCategoryPicker(false);
 }
 
 function setProductCondition(value) {
@@ -1078,6 +1082,29 @@ function setQuickCity(city) {
     const input = $("product-city");
     if (!input) return;
     input.value = city || "";
+}
+
+function toggleCategoryPicker(forceOpen = null) {
+    const wrap = $("category-chip-wrap");
+    const arrow = $("category-toggle-arrow");
+    const btn = $("category-toggle-btn");
+    if (!wrap) return;
+    const shouldOpen = forceOpen === null ? wrap.classList.contains("hidden") : Boolean(forceOpen);
+    wrap.classList.toggle("hidden", !shouldOpen);
+    btn?.classList.toggle("active", shouldOpen);
+    if (arrow) arrow.textContent = shouldOpen ? "▲" : "▼";
+}
+
+function updateCategorySummary() {
+    const value = $("product-category")?.value || "";
+    const label = $("category-selected-label");
+    if (label) label.textContent = value || "Оберіть категорію";
+}
+
+function updateAvatarFileLabel(event) {
+    const file = event?.target?.files?.[0] || null;
+    const label = $("profile-avatar-file-name");
+    if (label) label.textContent = file ? file.name : "Файл не вибрано";
 }
 
 function resetCreateForm() {
@@ -1095,6 +1122,8 @@ function resetCreateForm() {
     $("product-condition").value = "";
     $("product-city").value = "";
     syncCreateFormSelections();
+    updateCategorySummary();
+    toggleCategoryPicker(false);
     $("product-files").value = "";
     $("image-preview-grid").innerHTML = "";
     $("image-preview-wrap").classList.add("hidden");
@@ -1140,6 +1169,8 @@ async function startEditProduct(productId) {
         $("product-condition").value = product.condition || "";
         $("product-city").value = product.city || "";
         syncCreateFormSelections();
+        updateCategorySummary();
+        toggleCategoryPicker(false);
         $("product-files").value = "";
         renderPreviewUrls(editingExistingImages);
         $("image-status").textContent = editingExistingImages.length ? `Зараз фото: ${editingExistingImages.length}` : "Фото не вибрано";
@@ -2872,6 +2903,8 @@ if (typeof closeUserProfileModal === "function") window.closeUserProfileModal = 
 if (typeof closeUserProfileOnBackdrop === "function") window.closeUserProfileOnBackdrop = closeUserProfileOnBackdrop;
 if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
+if (typeof toggleCategoryPicker === "function") window.toggleCategoryPicker = toggleCategoryPicker;
+if (typeof updateAvatarFileLabel === "function") window.updateAvatarFileLabel = updateAvatarFileLabel;
 
 initApp();
 
