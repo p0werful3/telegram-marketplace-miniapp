@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "290";
+const FRONTEND_VERSION = "304";
 
 let tg = null;
 let telegramUser = null;
@@ -17,6 +17,7 @@ let notificationsUnread = 0;
 let dashboardRefreshTimer = null;
 let editingProductId = null;
 let editingExistingImages = [];
+let selectedProductFiles = [];
 
 const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
@@ -1122,20 +1123,20 @@ function updateProductFileLabel(files = []) {
 
     if (status) {
         status.textContent = list.length
-            ? `Завантаження фото: ${list.length}/${list.length}`
-            : "Фото не вибрано";
+            ? `Обрано фото: ${list.length}/10. Перше фото буде обкладинкою.`
+            : "Фото не вибрано. Можна додати до 10 фото.";
     }
 
     if (title) {
         title.textContent = list.length
-            ? `Обрано фото: ${list.length}`
+            ? `Додано фото: ${list.length}/10`
             : "Додати фото товару";
     }
 
     if (subtitle) {
         subtitle.textContent = list.length
-            ? "Можна додати ще фото або одразу публікувати оголошення."
-            : "До 10 фото. Перше фото буде головним у каталозі.";
+            ? "Можна додавати фото по одному або кілька одразу. Перше фото стане головним у каталозі."
+            : "До 10 фото. Можна додавати по одному. Перше фото буде головним у каталозі.";
     }
 
     if (!list.length) {
@@ -1143,9 +1144,46 @@ function updateProductFileLabel(files = []) {
     }
 }
 
+function renderSelectedProductFiles() {
+    const wrap = $("image-preview-wrap");
+    const grid = $("image-preview-grid");
+    if (!wrap || !grid) return;
+
+    if (!selectedProductFiles.length) {
+        grid.innerHTML = "";
+        wrap.classList.add("hidden");
+        updateProductFileLabel([]);
+        return;
+    }
+
+    wrap.classList.remove("hidden");
+    grid.innerHTML = selectedProductFiles.map((file, index) => {
+        const objectUrl = URL.createObjectURL(file);
+        return `
+            <div class="preview-item ${index === 0 ? 'preview-item-cover' : ''}">
+                <img class="preview-thumb" src="${objectUrl}" alt="preview-${index}">
+                ${index === 0 ? '<div class="preview-cover-badge">Обкладинка</div>' : ''}
+                <button type="button" class="preview-remove-btn" onclick="removeProductPhoto(${index})">×</button>
+            </div>
+        `;
+    }).join("");
+
+    updateProductFileLabel(selectedProductFiles);
+}
+
+function removeProductPhoto(index) {
+    if (!Array.isArray(selectedProductFiles) || index < 0 || index >= selectedProductFiles.length) return;
+    selectedProductFiles.splice(index, 1);
+    if (!selectedProductFiles.length && $("product-files")) {
+        $("product-files").value = "";
+    }
+    renderSelectedProductFiles();
+}
+
 function resetCreateForm() {
     editingProductId = null;
     editingExistingImages = [];
+    selectedProductFiles = [];
     if ($("create-form-title")) $("create-form-title").textContent = "Створити оголошення";
     if ($("submit-product-btn")) $("submit-product-btn").textContent = "Створити оголошення";
     $("cancel-edit-btn")?.classList.add("hidden");
@@ -1177,8 +1215,9 @@ function renderPreviewUrls(urls = []) {
     }
     wrap.classList.remove("hidden");
     grid.innerHTML = urls.map((url, index) => `
-        <div class="preview-item">
+        <div class="preview-item ${index === 0 ? 'preview-item-cover' : ''}">
             <img class="preview-thumb" src="${escapeHtml(url)}" alt="preview-${index}">
+            ${index === 0 ? '<div class="preview-cover-badge">Обкладинка</div>' : ''}
         </div>
     `).join("");
 }
@@ -1193,6 +1232,7 @@ async function startEditProduct(productId) {
         }
         editingProductId = product.id;
         editingExistingImages = Array.isArray(product.image_urls) ? product.image_urls.slice() : [];
+        selectedProductFiles = [];
         $("create-form-title").textContent = "Редагувати оголошення";
         $("submit-product-btn").textContent = "Зберегти зміни";
         $("cancel-edit-btn")?.classList.remove("hidden");
@@ -1225,45 +1265,39 @@ function cancelEditProduct() {
 
 function handleImagePreview(event) {
     const input = event?.target || $("product-files");
-    const files = Array.from(input?.files || []);
-    const wrap = $("image-preview-wrap");
-    const grid = $("image-preview-grid");
+    const newFiles = Array.from(input?.files || []);
 
-    if (!files.length) {
-        wrap?.classList.add("hidden");
-        if (grid) grid.innerHTML = "";
-        updateProductFileLabel([]);
+    if (!newFiles.length) {
+        updateProductFileLabel(selectedProductFiles);
         return;
     }
 
-    const invalid = files.find(file => !file.type.startsWith("image/"));
+    const invalid = newFiles.find(file => !file.type.startsWith("image/"));
     if (invalid) {
         showAlert("Оберіть лише зображення");
         if (input) input.value = "";
-        wrap?.classList.add("hidden");
-        if (grid) grid.innerHTML = "";
-        updateProductFileLabel([]);
         return;
     }
 
-    if (files.length > 10) {
-        showAlert("Можна вибрати максимум 10 фото");
+    if (editingExistingImages.length && !selectedProductFiles.length) {
+        editingExistingImages = [];
+    }
+
+    const merged = selectedProductFiles.slice();
+    for (const file of newFiles) {
+        const exists = merged.some(item => item.name === file.name && item.size === file.size && item.lastModified === file.lastModified);
+        if (!exists) merged.push(file);
+    }
+
+    if (merged.length > 10) {
+        showAlert("Можна додати максимум 10 фото");
         if (input) input.value = "";
-        wrap?.classList.add("hidden");
-        if (grid) grid.innerHTML = "";
-        updateProductFileLabel([]);
         return;
     }
 
-    if (grid) {
-        grid.innerHTML = files.map(file => {
-            const objectUrl = URL.createObjectURL(file);
-            return `<img class="preview-thumb" src="${objectUrl}" alt="preview">`;
-        }).join("");
-    }
-
-    wrap?.classList.remove("hidden");
-    updateProductFileLabel(files);
+    selectedProductFiles = merged;
+    if (input) input.value = "";
+    renderSelectedProductFiles();
 }
 
 async function uploadImageToCloudinary(file) {
@@ -1633,6 +1667,7 @@ function renderFavoriteButton(product) {
     return `
         <button
             class="favorite-btn ${product.is_favorite ? "active" : ""}"
+            data-favorite-id="${Number(product.id)}"
             onclick="event.stopPropagation(); toggleFavorite(${Number(product.id)}, ${product.is_favorite ? "true" : "false"})"
             title="Обране"
         >
@@ -1645,30 +1680,31 @@ function renderCatalogCard(product) {
     const isOwnProduct = currentUser && Number(product.seller_id) === Number(currentUser.id);
     const views = Number(product.views_count || 0);
     const relativeTime = formatRelativeTime(product.created_at);
+    const sellerRating = product.seller_rating ? Number(product.seller_rating).toFixed(1).replace(/\.0$/, '') : '';
 
     return `
-        <div class="card card-clickable compact-list-card card-enter" onclick="openProductModal(${Number(product.id)})">
-            <div class="compact-thumb-wrap">
+        <div class="card card-clickable compact-list-card catalog-product-card card-enter" onclick="openProductModal(${Number(product.id)})">
+            <div class="compact-thumb-wrap catalog-thumb-wrap">
                 ${renderImageBlock(product)}
                 ${renderFavoriteButton(product)}
             </div>
-            <div class="card-body compact-card-body">
-                <div class="compact-card-top">
+            <div class="card-body compact-card-body catalog-card-body">
+                <div class="compact-card-top catalog-card-top">
                     <h3 class="card-title compact-title">${escapeHtml(product.title)}</h3>
                     <p class="card-price compact-price">${formatPrice(product.price, product.currency)}</p>
                 </div>
-                <div class="compact-meta-row">
+                <div class="compact-meta-row catalog-meta-row">
                     <span class="tag">${escapeHtml(product.city || "Без міста")}</span>
                     <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "Новий")}</span>
                     <span class="tag soft-tag">${escapeHtml(relativeTime || formatDate(product.created_at) || "")}</span>
                 </div>
-                <div class="compact-secondary-row">
+                <div class="compact-secondary-row catalog-secondary-row">
                     <span class="muted-meta">👁 ${views}</span>
-                    ${product.seller_rating ? `<span class="muted-meta">⭐ ${escapeHtml(String(product.seller_rating))}</span>` : ``}
+                    ${sellerRating ? `<span class="muted-meta">⭐ ${escapeHtml(String(sellerRating))}</span>` : ``}
                     ${product.seller_username ? `<span class="muted-meta">@${escapeHtml(product.seller_username)}</span>` : ``}
                 </div>
-                <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
-                <div class="card-actions compact-actions compact-actions-grid">
+                <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
+                <div class="card-actions compact-actions compact-actions-grid catalog-actions-row">
                     ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                     ${isOwnProduct ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
                 </div>
@@ -1682,7 +1718,7 @@ function renderMyProductCard(product, view) {
 
     if (view === "active") {
         actionButton = `
-            <div class="card-actions inline-actions">
+            <div class="card-actions inline-actions catalog-actions-row">
                 <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
                 <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
             </div>
@@ -1690,23 +1726,23 @@ function renderMyProductCard(product, view) {
     } else if (view === "sold") {
         actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
-        actionButton = `<div class="card-actions inline-actions"><button class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button class="approve-btn" onclick="event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
+        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button class="approve-btn" onclick="event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
     }
 
     return `
-        <div class="card card-clickable compact-list-card card-enter" onclick="openProductModal(${Number(product.id)})">
-            <div class="compact-thumb-wrap">${renderImageBlock(product)}</div>
-            <div class="card-body compact-card-body">
-                <div class="compact-card-top">
+        <div class="card card-clickable compact-list-card catalog-product-card card-enter" onclick="openProductModal(${Number(product.id)})">
+            <div class="compact-thumb-wrap catalog-thumb-wrap">${renderImageBlock(product)}</div>
+            <div class="card-body compact-card-body catalog-card-body">
+                <div class="compact-card-top catalog-card-top">
                     <h3 class="card-title compact-title">${escapeHtml(product.title)}</h3>
                     <p class="card-price compact-price">${formatPrice(product.price, product.currency)}</p>
                 </div>
-                <div class="compact-meta-row">
+                <div class="compact-meta-row catalog-meta-row">
                     <span class="tag">${escapeHtml(product.city || "")}</span>
                     <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "")}</span>
                     <span class="tag soft-tag">${formatRelativeTime(product.created_at) || formatDate(product.created_at) || ""}</span>
                 </div>
-                <p class="card-description compact-desc">${escapeHtml(product.description || "")}</p>
+                <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions">${actionButton}</div>
             </div>
         </div>
@@ -1726,11 +1762,34 @@ async function restoreArchivedProduct(productId) {
     }
 }
 
+
+function renderCatalogSkeleton(count = 4) {
+    return Array.from({ length: count }, (_, index) => `
+        <div class="card compact-list-card catalog-product-card catalog-skeleton-card" aria-hidden="true">
+            <div class="compact-thumb-wrap catalog-thumb-wrap skeleton-thumb shimmer"></div>
+            <div class="card-body compact-card-body catalog-card-body">
+                <div class="skeleton-line shimmer skeleton-title"></div>
+                <div class="skeleton-chip-row">
+                    <span class="skeleton-chip shimmer"></span>
+                    <span class="skeleton-chip shimmer"></span>
+                    <span class="skeleton-chip shimmer"></span>
+                </div>
+                <div class="skeleton-line shimmer"></div>
+                <div class="skeleton-line shimmer skeleton-short"></div>
+                <div class="catalog-actions-row">
+                    <span class="skeleton-btn shimmer"></span>
+                    <span class="skeleton-btn shimmer"></span>
+                </div>
+            </div>
+        </div>
+    `).join("");
+}
+
 async function loadProducts() {
     const productsList = $("products-list");
     if (!productsList || !currentUser) return;
 
-    productsList.innerHTML = `<div class="empty-card">Завантаження товарів...</div>`;
+    productsList.innerHTML = renderCatalogSkeleton();
 
     try {
         if (catalogView === "favorites") {
@@ -1944,7 +2003,7 @@ async function createProduct() {
     const category = $("product-category")?.value;
     const condition = $("product-condition")?.value;
     const city = $("product-city")?.value;
-    const files = $("product-files")?.files || [];
+    const files = selectedProductFiles.slice();
 
     if (!title || !description || !Number.isFinite(price) || price <= 0 || !category || !condition || !city) {
         showAlert("Заповни назву, опис, ціну, категорію, стан і місто");
@@ -2255,6 +2314,11 @@ async function buyProduct(productId) {
 
 async function toggleFavorite(productId, isFavoriteNow) {
     if (!currentUser || isLoading) return;
+
+    document.querySelectorAll(`[data-favorite-id="${productId}"]`).forEach(btn => {
+        btn.classList.add("favorite-pop");
+        setTimeout(() => btn.classList.remove("favorite-pop"), 420);
+    });
 
     try {
         setLoading(true);
@@ -2922,6 +2986,7 @@ if (typeof createProduct === "function") window.createProduct = createProduct;
 if (typeof cancelEditProduct === "function") window.cancelEditProduct = cancelEditProduct;
 if (typeof handleImagePreview === "function") window.handleImagePreview = handleImagePreview;
 if (typeof openProductFilePicker === "function") window.openProductFilePicker = openProductFilePicker;
+if (typeof removeProductPhoto === "function") window.removeProductPhoto = removeProductPhoto;
 if (typeof closeProductModal === "function") window.closeProductModal = closeProductModal;
 if (typeof closeProductModalOnBackdrop === "function") window.closeProductModalOnBackdrop = closeProductModalOnBackdrop;
 if (typeof openProductModal === "function") window.openProductModal = openProductModal;
