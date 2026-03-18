@@ -97,11 +97,12 @@
 
                 <div class="catalog-toolbar catalog-toolbar-stacked">
                     <label class="toolbar-label">Пошук товарів</label>
-                    <input id="search-input" type="text" placeholder="Пошук товарів..."><button id="product-search-btn" class="secondary-btn section-btn" type="button">Шукати</button>
+                    <input id="search-input" type="text" placeholder="Пошук товарів...">
+                    <button type="button" class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
                     <label class="toolbar-label seller-search-label">🔎 Пошук продавця</label>
                     <div class="seller-search-row">
                         <input id="seller-search-input" type="text" placeholder="username (без @)">
-                        <button class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
+                        <button type="button" class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
                     </div>
                     <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри ▼</button>
                 </div>
@@ -153,6 +154,18 @@
                     <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')">Запити на продаж <span id="my-products-requests-badge" class="mini-badge hidden">0</span></button>
                     <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Продані</button>
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
+                </div>
+
+                <div class="catalog-toolbar catalog-toolbar-stacked my-products-toolbar">
+                    <label class="toolbar-label">Пошук у моїх оголошеннях</label>
+                    <input id="my-products-search-input" type="text" placeholder="Назва, покупець, місто...">
+                    <select id="my-products-sort-select" onchange="applyMyProductsFilters()">
+                        <option value="newest">Новіші</option>
+                        <option value="oldest">Старіші</option>
+                        <option value="price_asc">Дешевші</option>
+                        <option value="price_desc">Дорожчі</option>
+                    </select>
+                    <button type="button" class="secondary-btn section-btn" onclick="applyMyProductsFilters()">Застосувати</button>
                 </div>
 
                 <div id="purchase-requests-wrap" class="hidden">
@@ -474,25 +487,25 @@
         <div class="modal-content"><button class="modal-close" onclick="closeUserProfileModal()">×</button><div id="user-profile-modal-body"></div></div>
     </div>
 
-    <div id="review-modal" class="modal hidden">
-        <div class="modal-content small-modal" id="review-modal-content">
-            <button class="modal-close" id="review-close-btn" type="button">×</button>
+    <div id="review-modal" class="modal hidden" onclick="if(event.target.id==='review-modal') closeReviewModal(event)">
+        <div class="modal-content small-modal" onclick="event.stopPropagation()">
+            <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReviewModal(event)">×</button>
             <h3 class="modal-title">Залишити відгук</h3>
             <label>Оцінка</label>
             <select id="review-rating"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
             <label>Коментар</label>
             <textarea id="review-comment" placeholder="Коротко опишіть ваш досвід покупки"></textarea>
-            <button class="primary-btn" id="review-submit-btn" type="button">Зберегти відгук</button>
+            <button type="button" class="primary-btn" onclick="event.preventDefault(); event.stopPropagation(); submitReview()">Зберегти відгук</button>
         </div>
     </div>
 
-    <div id="report-modal" class="modal hidden">
-        <div class="modal-content small-modal" id="report-modal-content">
-            <button class="modal-close" id="report-close-btn" type="button">×</button>
+    <div id="report-modal" class="modal hidden" onclick="closeReportModalOnBackdrop(event)">
+        <div class="modal-content small-modal" onclick="event.stopPropagation()">
+            <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReportModal(event)">×</button>
             <h3 id="report-title" class="modal-title">Скарга на оголошення</h3>
             <input id="report-product-id" type="hidden">
             <label>Причина</label>
-            <select id="report-reason">
+            <select id="report-reason" onchange="handleReportReasonChange()">
                 <option>Шахрайство</option>
                 <option>Неправдивий опис</option>
                 <option>Заборонений товар</option>
@@ -503,10 +516,10 @@
                 <label id="report-comment-label">Коментар</label>
                 <textarea id="report-comment" placeholder="Додаткова інформація для адміністратора"></textarea>
             </div>
-            <button class="warning-btn" id="report-submit-btn" type="button">Надіслати скаргу</button>
+            <button type="button" class="warning-btn" onclick="event.preventDefault(); event.stopPropagation(); submitReport()">Надіслати скаргу</button>
         </div>
     </div>
 
-    <script src="app.js?v=316"></script>
+    <script src="app.js?v=317"></script>
 </body>
 </html>
