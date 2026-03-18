@@ -2863,3 +2863,13 @@ body{
     padding:7px 5px 7px 7px !important;
   }
 }
+
+
+/* ===== Final fixes 314 ===== */
+.my-products-toolbar{margin:10px 0 14px !important;}
+.my-products-toolbar select,.my-products-toolbar input{width:100% !important;}
+.my-product-extra-meta{display:grid;gap:3px;font-size:12px;color:#b9c8ef;}
+.request-meta,.history-meta{display:grid;gap:3px;}
+#products-list .own-product-btn,#my-products-list .own-product-btn,.seller-listings-grid .own-product-btn,.compact-actions-grid .own-product-btn,.catalog-actions-row .own-product-btn{background:linear-gradient(135deg, rgba(84,96,118,.98), rgba(58,68,88,.98)) !important;color:#eef3ff !important;box-shadow:0 10px 20px rgba(20,27,42,.28), inset 0 0 0 1px rgba(184,198,230,.08) !important;}
+#products-list .own-product-btn:hover,#my-products-list .own-product-btn:hover,.seller-listings-grid .own-product-btn:hover{filter:brightness(1.06) !important;}
+#review-modal .modal-content,#report-modal .modal-content{position:relative;z-index:3;}
