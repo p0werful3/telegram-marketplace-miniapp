@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "310";
+const FRONTEND_VERSION = "311";
 
 let tg = null;
 let telegramUser = null;
@@ -18,6 +18,8 @@ let dashboardRefreshTimer = null;
 let editingProductId = null;
 let editingExistingImages = [];
 let selectedProductFiles = [];
+let myProductsSearch = "";
+let myProductsSort = "newest";
 
 const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
@@ -946,7 +948,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button class="ghost-warning-btn" onclick="cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button class="approve-btn" onclick="openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
+                        ${item.can_review ? `<button class="approve-btn" onclick="event.stopPropagation(); openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -978,16 +980,20 @@ async function cancelPurchaseRequest(orderId) {
 }
 
 function openReviewModal(orderId, sellerId) {
+    window.event?.stopPropagation?.();
     reviewOrderId = orderId;
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
     $("review-modal")?.classList.remove("hidden");
+    document.body.classList.add("no-scroll");
 }
 
 function closeReviewModal() {
     $("review-modal")?.classList.add("hidden");
+    document.body.classList.remove("no-scroll");
 }
+
 
 async function submitReview() {
     if (!currentUser || !reviewOrderId || isLoading) return;
@@ -1614,6 +1620,80 @@ async function loginWithTelegram() {
 
 
 
+function getMyProductsComparableDate(item, view = myProductsView) {
+    if (!item) return 0;
+    const candidates = [];
+    if (view === "sold") candidates.push(item.sold_at, item.buyer_confirmed_at);
+    if (view === "requests") candidates.push(item.created_at);
+    candidates.push(item.updated_at, item.created_at);
+    for (const value of candidates) {
+        if (!value) continue;
+        const ts = new Date(value).getTime();
+        if (Number.isFinite(ts)) return ts;
+    }
+    return 0;
+}
+
+function applyMyProductsFilters(items, view = myProductsView) {
+    const search = String(myProductsSearch || "").trim().toLowerCase();
+    const list = Array.isArray(items) ? [...items] : [];
+    const filtered = !search ? list : list.filter(item => {
+        const haystack = [
+            item?.title,
+            item?.product_title,
+            item?.buyer_username,
+            item?.buyer_full_name,
+            item?.seller_username,
+            item?.seller_full_name,
+        ].filter(Boolean).join(' ').toLowerCase();
+        return haystack.includes(search);
+    });
+
+    filtered.sort((a, b) => {
+        if (myProductsSort === "oldest") return getMyProductsComparableDate(a, view) - getMyProductsComparableDate(b, view);
+        if (myProductsSort === "title_asc") return String(a?.title || a?.product_title || "").localeCompare(String(b?.title || b?.product_title || ""), 'uk');
+        if (myProductsSort === "title_desc") return String(b?.title || b?.product_title || "").localeCompare(String(a?.title || a?.product_title || ""), 'uk');
+        return getMyProductsComparableDate(b, view) - getMyProductsComparableDate(a, view);
+    });
+
+    return filtered;
+}
+
+function handleMyProductsFilterChange() {
+    myProductsSearch = $("my-products-search")?.value || "";
+    myProductsSort = $("my-products-sort")?.value || "newest";
+    loadMyProducts();
+}
+
+function getMyProductExtraMeta(product, view) {
+    if (view === "sold") {
+        const soldDate = formatDate(product.sold_at || product.buyer_confirmed_at) || "—";
+        const buyerLabel = product.buyer_username ? `@${escapeHtml(product.buyer_username)}` : (product.buyer_full_name ? escapeHtml(product.buyer_full_name) : "—");
+        return `
+            <div class="my-product-info-lines">
+                <div class="my-product-info-line"><span>Продано:</span> ${soldDate}</div>
+                <div class="my-product-info-line"><span>Кому:</span> ${buyerLabel}</div>
+            </div>
+        `;
+    }
+
+    if (view === "archived") {
+        return `
+            <div class="my-product-info-lines">
+                <div class="my-product-info-line"><span>Створено:</span> ${formatDate(product.created_at) || "—"}</div>
+                <div class="my-product-info-line"><span>Статус:</span> В архіві</div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="my-product-info-lines">
+            <div class="my-product-info-line"><span>Створено:</span> ${formatDate(product.created_at) || "—"}</div>
+            <div class="my-product-info-line"><span>Статус:</span> Активне</div>
+        </div>
+    `;
+}
+
 function contactSeller(username) {
     const clean = String(username || "").replace(/^@+/, "").trim();
     if (!clean) {
@@ -1714,7 +1794,7 @@ function renderCatalogCard(product) {
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions compact-actions-grid catalog-actions-row">
                     ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
-                    ${isOwnProduct ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
+                    ${isOwnProduct ? `<button class="own-product-btn own-product-indicator" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
                 </div>
             </div>
         </div>
@@ -1751,6 +1831,7 @@ function renderMyProductCard(product, view) {
                     <span class="tag soft-tag">${formatRelativeTime(product.created_at) || formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
+                ${getMyProductExtraMeta(product, view)}
                 <div class="card-actions compact-actions">${actionButton}</div>
             </div>
         </div>
@@ -1954,9 +2035,9 @@ async function openProductModal(productId) {
             : "";
 
         const primaryAction = isOwnProduct
-            ? `<button class="own-product-btn" onclick="showAlert('Це ваше оголошення')">Ваш товар</button>`
+            ? `<button class="own-product-btn own-product-indicator" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
             : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button class="ghost-warning-btn" onclick="openReportModal(${Number(product.id)}, '${escapeHtml(product.title)}')">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button class="ghost-warning-btn" onclick="event.stopPropagation(); openReportModal(${Number(product.id)}, '${escapeHtml(product.title)}')">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2070,12 +2151,14 @@ async function createProduct() {
 }
 
 async function loadMyProducts() {
+    if (!currentUser?.id) return;
     const list = $("my-products-list");
     const wrap = $("purchase-requests-wrap");
     const requestsList = $("purchase-requests-list");
-    if (!list || !currentUser) return;
+    if (!list) return;
     list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
-    if (wrap) wrap.classList.add("hidden");
+    if (requestsList) requestsList.innerHTML = "";
+
     try {
         if (myProductsView === "requests") {
             const [requests, purchases] = await Promise.all([
@@ -2084,8 +2167,12 @@ async function loadMyProducts() {
             ]);
             updatePendingRequestsBadge(Array.isArray(requests) ? requests.length : 0);
             if (wrap) wrap.classList.remove("hidden");
+
+            const filteredRequests = applyMyProductsFilters(Array.isArray(requests) ? requests : [], "requests");
+            const filteredPurchases = applyMyProductsFilters(Array.isArray(purchases) ? purchases : [], "requests");
+
             if (requestsList) {
-                requestsList.innerHTML = Array.isArray(requests) && requests.length ? requests.map(item => `
+                requestsList.innerHTML = filteredRequests.length ? filteredRequests.map(item => `
                     <div class="card request-card">
                         <div class="card-body">
                             <div class="status-pill pending">Очікує відповіді</div>
@@ -2094,16 +2181,17 @@ async function loadMyProducts() {
                             <div class="request-meta">
                                 <div>Покупець: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
                                 ${item.buyer_full_name ? `<div>Ім'я: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
+                                <div>Дата запиту: ${formatDate(item.created_at) || '—'}</div>
                             </div>
                             <div class="card-actions inline-actions">
-                                <button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Підтвердити</button>
-                                <button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Відхилити</button>
+                                <button class="approve-btn" onclick="event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, true)">Підтвердити</button>
+                                <button class="reject-btn" onclick="event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, false)">Відхилити</button>
                             </div>
                         </div>
                     </div>
-                `).join("") : `<div class="empty-card">Нових запитів поки немає</div>`;
+                `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
             }
-            list.innerHTML = Array.isArray(purchases) && purchases.length ? purchases.map(item => `
+            list.innerHTML = filteredPurchases.length ? filteredPurchases.map(item => `
                 <div class="card history-card compact-history-card">
                     ${isValidUrl(item.product_image_url) ? `<img class="history-image" src="${escapeHtml(item.product_image_url)}" alt="${escapeHtml(item.product_title)}">` : ``}
                     <div class="card-body">
@@ -2112,22 +2200,31 @@ async function loadMyProducts() {
                         <p class="card-price">${formatPrice(item.offered_price, item.currency)}</p>
                         <div class="history-meta">
                             ${item.seller_username ? `<div>Продавець: @${escapeHtml(item.seller_username)}</div>` : ``}
+                            ${item.seller_full_name ? `<div>Ім'я продавця: ${escapeHtml(item.seller_full_name)}</div>` : ``}
                             <div>Дата: ${formatDate(item.created_at) || '—'}</div>
+                        </div>
+                        <div class="card-actions inline-actions compact-actions">
+                            ${item.status === "pending" ? `<button class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
+                            ${item.can_review ? `<button class="approve-btn" onclick="event.stopPropagation(); openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
+                            ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                         </div>
                     </div>
                 </div>
-            `).join("") : `<div class="empty-card">Ваші покупки поки порожні</div>`;
+            `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
             return;
         }
+
+        if (wrap) wrap.classList.add("hidden");
         let url = `${API_BASE}/users/${currentUser.id}/products`;
         if (myProductsView === "sold") url = `${API_BASE}/users/${currentUser.id}/products/sold`;
         if (myProductsView === "archived") url = `${API_BASE}/users/${currentUser.id}/products/archived`;
         const products = await safeFetch(url);
-        if (!Array.isArray(products) || products.length === 0) {
-            list.innerHTML = myProductsView === "active" ? `<div class="empty-card">У вас поки немає активних оголошень</div>` : myProductsView === "sold" ? `<div class="empty-card">У вас поки немає проданих товарів</div>` : `<div class="empty-card">Архів порожній</div>`;
+        const filteredProducts = applyMyProductsFilters(products, myProductsView);
+        if (!Array.isArray(filteredProducts) || filteredProducts.length === 0) {
+            list.innerHTML = `<div class="empty-card">${String(myProductsSearch || '').trim() ? 'Нічого не знайдено' : (myProductsView === 'active' ? 'У вас поки немає активних оголошень' : myProductsView === 'sold' ? 'У вас поки немає проданих товарів' : 'Архів порожній')}</div>`;
             return;
         }
-        list.innerHTML = products.map(product => renderMyProductCard(product, myProductsView)).join("");
+        list.innerHTML = filteredProducts.map(product => renderMyProductCard(product, myProductsView)).join("");
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
     }
@@ -2612,6 +2709,7 @@ async function submitIdea() {
 }
 
 function openReportModal(productId, title = "") {
+    window.event?.stopPropagation?.();
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
@@ -2620,6 +2718,7 @@ function openReportModal(productId, title = "") {
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
     modal.classList.remove("hidden");
+    document.body.classList.add("no-scroll");
 }
 
 function handleReportReasonChange() {
@@ -2629,7 +2728,9 @@ function handleReportReasonChange() {
 
 function closeReportModal() {
     $("report-modal")?.classList.add("hidden");
+    document.body.classList.remove("no-scroll");
 }
+
 
 function closeReportModalOnBackdrop(event) {
     if (event.target?.id === "report-modal") closeReportModal();
@@ -3007,6 +3108,7 @@ if (typeof loginWithTelegram === "function") window.loginWithTelegram = loginWit
 if (typeof switchTab === "function") window.switchTab = switchTab;
 if (typeof switchCatalogView === "function") window.switchCatalogView = switchCatalogView;
 if (typeof switchMyProductsView === "function") window.switchMyProductsView = switchMyProductsView;
+if (typeof handleMyProductsFilterChange === "function") window.handleMyProductsFilterChange = handleMyProductsFilterChange;
 if (typeof toggleFilters === "function") window.toggleFilters = toggleFilters;
 if (typeof loadProducts === "function") window.loadProducts = loadProducts;
 if (typeof loadMyProducts === "function") window.loadMyProducts = loadMyProducts;
