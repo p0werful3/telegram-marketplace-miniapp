@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "304";
+const FRONTEND_VERSION = "310";
 
 let tg = null;
 let telegramUser = null;
@@ -1647,15 +1647,23 @@ function renderCardTags(product) {
 }
 
 function renderImageBlock(product) {
-    if (Array.isArray(product.image_urls) && product.image_urls.length) {
-        return `<img class="card-image" src="${escapeHtml(product.image_urls[0])}" alt="${escapeHtml(product.title)}">`;
+    const imageUrl = Array.isArray(product.image_urls) && product.image_urls.length
+        ? product.image_urls[0]
+        : (isValidUrl(product.image_url) ? product.image_url : "");
+
+    if (imageUrl) {
+        return `
+            <div class="catalog-media-frame">
+                <img class="card-image catalog-media-img" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(product.title)}">
+            </div>
+        `;
     }
 
-    if (isValidUrl(product.image_url)) {
-        return `<img class="card-image" src="${escapeHtml(product.image_url)}" alt="${escapeHtml(product.title)}">`;
-    }
-
-    return `<div class="card-image card-image-placeholder">Фото відсутнє</div>`;
+    return `
+        <div class="catalog-media-frame catalog-media-frame-placeholder">
+            <div class="card-image card-image-placeholder catalog-media-placeholder">Фото відсутнє</div>
+        </div>
+    `;
 }
 
 function renderFavoriteButton(product) {
