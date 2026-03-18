@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=311">
+    <link rel="stylesheet" href="style.css?v=312">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -153,16 +153,6 @@
                     <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')">Запити на продаж <span id="my-products-requests-badge" class="mini-badge hidden">0</span></button>
                     <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Продані</button>
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
-                </div>
-
-                <div class="my-products-filters">
-                    <input id="my-products-search" type="text" class="my-products-search" placeholder="Пошук за назвою" oninput="handleMyProductsFilterChange()">
-                    <select id="my-products-sort" class="my-products-sort" onchange="handleMyProductsFilterChange()">
-                        <option value="newest">Спочатку нові</option>
-                        <option value="oldest">Спочатку старі</option>
-                        <option value="title_asc">Назва А-Я</option>
-                        <option value="title_desc">Назва Я-А</option>
-                    </select>
                 </div>
 
                 <div id="purchase-requests-wrap" class="hidden">
@@ -467,7 +457,7 @@
     </div>
 
     <div id="product-modal" class="modal hidden" onclick="closeProductModalOnBackdrop(event)">
-        <div class="modal-content" onclick="event.stopPropagation()"><button class="modal-close" onclick="event.stopPropagation(); closeProductModal()">×</button><div id="product-modal-body"></div></div>
+        <div class="modal-content" onclick="event.stopPropagation()"><button type="button" class="modal-close" onclick="event.stopPropagation(); closeProductModal()">×</button><div id="product-modal-body"></div></div>
     </div>
 
     <div id="image-viewer-modal" class="image-viewer-modal hidden" onclick="closeImageViewerOnBackdrop(event)">
@@ -481,24 +471,24 @@
     </div>
 
     <div id="user-profile-modal" class="modal hidden" onclick="closeUserProfileOnBackdrop(event)">
-        <div class="modal-content"><button class="modal-close" onclick="closeUserProfileModal()">×</button><div id="user-profile-modal-body"></div></div>
+        <div class="modal-content" onclick="event.stopPropagation()"><button type="button" class="modal-close" onclick="event.stopPropagation(); closeUserProfileModal()">×</button><div id="user-profile-modal-body"></div></div>
     </div>
 
     <div id="review-modal" class="modal hidden" onclick="if(event.target.id==='review-modal') closeReviewModal()">
         <div class="modal-content small-modal" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="event.stopPropagation(); closeReviewModal()">×</button>
+            <button type="button" class="modal-close" onclick="event.stopPropagation(); closeReviewModal()">×</button>
             <h3 class="modal-title">Залишити відгук</h3>
             <label>Оцінка</label>
             <select id="review-rating"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
             <label>Коментар</label>
             <textarea id="review-comment" placeholder="Коротко опишіть ваш досвід покупки"></textarea>
-            <button class="primary-btn" onclick="submitReview()">Зберегти відгук</button>
+            <button type="button" class="primary-btn" onclick="event.stopPropagation(); submitReview()">Зберегти відгук</button>
         </div>
     </div>
 
     <div id="report-modal" class="modal hidden" onclick="closeReportModalOnBackdrop(event)">
         <div class="modal-content small-modal" onclick="event.stopPropagation()">
-            <button class="modal-close" onclick="event.stopPropagation(); closeReportModal()">×</button>
+            <button type="button" class="modal-close" onclick="event.stopPropagation(); closeReportModal()">×</button>
             <h3 id="report-title" class="modal-title">Скарга на оголошення</h3>
             <input id="report-product-id" type="hidden">
             <label>Причина</label>
@@ -513,10 +503,10 @@
                 <label id="report-comment-label">Коментар</label>
                 <textarea id="report-comment" placeholder="Додаткова інформація для адміністратора"></textarea>
             </div>
-            <button class="warning-btn" onclick="submitReport()">Надіслати скаргу</button>
+            <button type="button" class="warning-btn" onclick="event.stopPropagation(); submitReport()">Надіслати скаргу</button>
         </div>
     </div>
 
-    <script src="app.js?v=311"></script>
+    <script src="app.js?v=312"></script>
 </body>
 </html>
