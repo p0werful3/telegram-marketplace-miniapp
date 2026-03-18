@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "320";
+const FRONTEND_VERSION = "321";
 
 let tg = null;
 let telegramUser = null;
@@ -1029,15 +1029,14 @@ async function cancelPurchaseRequest(orderId) {
 function openReviewModal(orderId, sellerId, event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    event?.stopImmediatePropagation?.();
     reviewOrderId = orderId;
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
-    requestAnimationFrame(() => {
+    setTimeout(() => {
         document.body.classList.add("no-scroll");
         $("review-modal")?.classList.remove("hidden");
-    });
+    }, 0);
 }
 
 function closeReviewModal(event = null) {
@@ -2596,20 +2595,65 @@ async function loadAdminProducts() {
     try {
         const q = $("admin-products-search")?.value.trim() || "";
         const items = await safeFetch(`${API_BASE}/admin/products?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
-        list.innerHTML = items.length ? items.map(item => `
-            <div class="compact-card">
-                <div class="compact-image-wrap">${renderImageBlock(item)}</div>
-                <div class="compact-info">
-                    <div class="compact-top-row"><h3 class="compact-title">${escapeHtml(item.title)}</h3><div class="compact-price">${formatPrice(item.price, item.currency)}</div></div>
-                    <div class="compact-meta">${escapeHtml(item.status || "")}</div>
-                    <div class="compact-desc">Продавець: @${escapeHtml(item.seller_username || "")}</div>
-                    <div class="card-actions inline-actions admin-grid-3 compact-actions">
-                        <button class="secondary-btn" onclick="openUserProfile(${Number(item.seller_id)})">Продавець</button>
-                        ${item.status === "archived" ? `<button class="approve-btn" onclick="adminRestoreProduct(${Number(item.id)})">Відновити</button>` : `<button class="remove-btn" onclick="adminArchiveProduct(${Number(item.id)})">Архів</button>`}
-                        <button class="reject-btn" onclick="adminDeleteProduct(${Number(item.id)})">Видалити</button>
-                    </div>
+        list.innerHTML = items.length ? items.map(item => {
+            const createdAt = formatDate(item.created_at) || "—";
+            const soldAt = formatDate(item.sold_at || item.sale_info?.sold_at) || "";
+            const buyerUsername = item.sale_info?.buyer_username || item.buyer_username || "";
+            const buyerId = Number(item.sale_info?.buyer_id || item.buyer_id || 0);
+            const reportsCount = Number(item.reports_count || 0);
+            const viewsCount = Number(item.views_count || 0);
+            const likesCount = Number(item.favorites_count || item.likes_count || 0);
+            const imageCount = Array.isArray(item.images) && item.images.length > 1 ? item.images.length - 1 : 0;
+
+            return `
+            <div class="card card-clickable compact-list-card catalog-product-card admin-product-card" onclick="openProductModal(${Number(item.id)})">
+                <div class="compact-thumb-wrap catalog-thumb-wrap admin-product-thumb">
+                    ${renderImageBlock(item)}
+                    ${imageCount > 0 ? `<span class="admin-photo-count">+${imageCount}</span>` : ``}
+                    ${reportsCount > 0 ? `<span class="admin-report-badge">Скарг ${reportsCount}</span>` : ``}
                 </div>
-            </div>`).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
+                <div class="card-body compact-card-body catalog-card-body admin-product-body">
+                    <div class="compact-card-top catalog-card-top">
+                        <h3 class="card-title compact-title">${escapeHtml(item.title || "")}</h3>
+                        <p class="card-price compact-price">${formatPrice(item.price, item.currency)}</p>
+                    </div>
+
+                    <div class="compact-meta-row catalog-meta-row">
+                        <span class="tag">${escapeHtml(item.city || "Без міста")}</span>
+                        <span class="tag ${getConditionTagClass(item.condition)}">${escapeHtml(item.condition || "Новий")}</span>
+                        <span class="tag soft-tag admin-status-tag">${escapeHtml(item.status || "")}</span>
+                    </div>
+
+                    <div class="compact-secondary-row catalog-secondary-row admin-secondary-row">
+                        ${item.seller_username ? `<span class="muted-meta">Продавець: @${escapeHtml(item.seller_username)}</span>` : ``}
+                        <span class="muted-meta">👁 ${viewsCount}</span>
+                        <span class="muted-meta">❤ ${likesCount}</span>
+                        ${reportsCount > 0 ? `<span class="muted-meta admin-danger-text">⚠ ${reportsCount}</span>` : ``}
+                    </div>
+
+                    <p class="card-description compact-desc catalog-desc">${escapeHtml(item.description || "")}</p>
+
+                    <div class="compact-secondary-row catalog-secondary-row my-product-extra-meta my-product-extra-meta-block admin-extra-meta">
+                        <span class="muted-meta">Створено: ${escapeHtml(createdAt)}</span>
+                        ${soldAt ? `<span class="muted-meta">Продано: ${escapeHtml(soldAt)}</span>` : ``}
+                        ${buyerUsername ? `<span class="muted-meta">Покупець: @${escapeHtml(buyerUsername)}</span>` : ``}
+                    </div>
+
+                    <div class="card-actions compact-actions compact-actions-grid catalog-actions-row admin-actions-grid">
+                        <button type="button" class="secondary-btn admin-open-btn" onclick="event.stopPropagation(); openProductModal(${Number(item.id)})">Відкрити</button>
+                        ${item.seller_id ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(item.seller_id)})">Профіль продавця</button>` : ``}
+                        ${item.status === "archived"
+                            ? `<button type="button" class="approve-btn" onclick="event.stopPropagation(); adminRestoreProduct(${Number(item.id)})">Активувати</button>`
+                            : `<button type="button" class="remove-btn" onclick="event.stopPropagation(); adminArchiveProduct(${Number(item.id)})">Архів</button>`}
+                        <button type="button" class="reject-btn" onclick="event.stopPropagation(); adminDeleteProduct(${Number(item.id)})">Видалити</button>
+                    </div>
+
+                    ${buyerId ? `<div class="card-actions compact-actions compact-actions-grid admin-actions-grid admin-buyer-row">
+                        <button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${buyerId})">Профіль покупця</button>
+                    </div>` : ``}
+                </div>
+            </div>`;
+        }).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
     }
@@ -2693,7 +2737,6 @@ async function submitIdea() {
 function openReportModal(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    event?.stopImmediatePropagation?.();
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
@@ -2701,10 +2744,10 @@ function openReportModal(productId, title = "", event = null) {
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
-    requestAnimationFrame(() => {
+    setTimeout(() => {
         document.body.classList.add("no-scroll");
         modal.classList.remove("hidden");
-    });
+    }, 0);
 }
 
 function handleReportReasonChange() {
@@ -3205,7 +3248,7 @@ document.addEventListener("click", (event) => {
         event.stopImmediatePropagation?.();
         const orderId = Number(reviewBtn.dataset.orderId || 0);
         const sellerId = Number(reviewBtn.dataset.sellerId || 0);
-        if (orderId) requestAnimationFrame(() => openReviewModal(orderId, sellerId));
+        if (orderId) setTimeout(() => openReviewModal(orderId, sellerId), 0);
         return;
     }
 
@@ -3216,7 +3259,7 @@ document.addEventListener("click", (event) => {
         event.stopImmediatePropagation?.();
         const productId = Number(reportBtn.dataset.productId || 0);
         const title = reportBtn.dataset.productTitle || "";
-        if (productId) requestAnimationFrame(() => openReportModal(productId, title));
+        if (productId) setTimeout(() => openReportModal(productId, title), 0);
         return;
     }
 }, true);
