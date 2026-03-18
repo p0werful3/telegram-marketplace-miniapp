@@ -2863,3 +2863,13 @@ body{
     padding:7px 5px 7px 7px !important;
   }
 }
+.product-owner-btn {
+    background: linear-gradient(135deg, #1f9d6a, #2ecc71) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
+}
+
+.product-owner-btn:hover {
+    background: linear-gradient(135deg, #1a8c5d, #27ae60) !important;
+}
