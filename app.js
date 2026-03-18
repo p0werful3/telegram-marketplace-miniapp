@@ -995,7 +995,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn" onclick="event.stopPropagation(); openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn review-open-btn" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -1033,12 +1033,13 @@ function openReviewModal(orderId, sellerId, event = null) {
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
-    $("review-modal")?.classList.remove("hidden");
+    requestAnimationFrame(() => { document.body.classList.add("no-scroll"); $("review-modal")?.classList.remove("hidden"); });
 }
 
 function closeReviewModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    document.body.classList.remove("no-scroll");
     $("review-modal")?.classList.add("hidden");
 }
 
@@ -1776,23 +1777,25 @@ function renderCatalogCard(product) {
 
 function renderMyProductCard(product, view) {
     let actionButton = "";
-    const saleInfo = product.sale_info || null;
-    const latestRequest = product.latest_request || null;
-    const infoBits = [`<div>Створено: ${formatDate(product.created_at) || "—"}</div>`];
 
     if (view === "active") {
-        if (Number(product.pending_requests_count || 0) > 0) infoBits.push(`<div>Запитів на покупку: ${Number(product.pending_requests_count)}</div>`);
-        if (latestRequest?.buyer_username || latestRequest?.buyer_full_name) infoBits.push(`<div>Останній запит: ${latestRequest.buyer_username ? '@' + escapeHtml(latestRequest.buyer_username) : escapeHtml(latestRequest.buyer_full_name || 'Покупець')} • ${formatDate(latestRequest.created_at) || '—'}</div>`);
-        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button type="button" class="edit-btn" onclick="event.preventDefault(); event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button><button type="button" class="delete-btn" onclick="event.preventDefault(); event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button></div>`;
+        actionButton = `
+            <div class="card-actions inline-actions catalog-actions-row">
+                <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
+            </div>
+        `;
     } else if (view === "sold") {
-        if (saleInfo?.sold_at) infoBits.push(`<div>Продано: ${formatDate(saleInfo.sold_at) || "—"}</div>`);
-        if (saleInfo?.buyer_username || saleInfo?.buyer_full_name) infoBits.push(`<div>Покупець: ${saleInfo.buyer_username ? '@' + escapeHtml(saleInfo.buyer_username) : escapeHtml(saleInfo.buyer_full_name || 'Покупець')}</div>`);
-        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button type="button" class="sold-btn" disabled>Продано</button>${saleInfo?.buyer_id ? `<button type="button" class="seller-link-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${Number(saleInfo.buyer_id)})">Профіль покупця</button>` : ""}</div>`;
+        actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
-        infoBits.push(`<div>Статус: ${escapeHtml(t('archivedState'))}</div>`);
-        if (saleInfo?.sold_at) infoBits.push(`<div>Було продано: ${formatDate(saleInfo.sold_at) || "—"}</div>`);
-        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button type="button" class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button type="button" class="approve-btn" onclick="event.preventDefault(); event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
+        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button class="approve-btn" onclick="event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
     }
+
+    const saleInfo = product.sale_info || null;
+    const latestRequest = product.latest_request || null;
+    const buyerProfileBtn = saleInfo?.buyer_id
+        ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(saleInfo.buyer_id)})">Профіль покупця</button>`
+        : "";
 
     return `
         <div class="card card-clickable compact-list-card catalog-product-card card-enter" onclick="openProductModal(${Number(product.id)})">
@@ -1808,8 +1811,17 @@ function renderMyProductCard(product, view) {
                     <span class="tag soft-tag">${formatRelativeTime(product.created_at) || formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
-                <div class="history-meta my-product-extra-meta">${infoBits.join("")}</div>
+                <div class="compact-secondary-row catalog-secondary-row my-product-extra-meta my-product-extra-meta-block">
+                    <span class="muted-meta">Створено: ${escapeHtml(formatDate(product.created_at) || "—")}</span>
+                    ${view === "sold" ? `<span class="muted-meta">Продано: ${escapeHtml(formatDate(saleInfo?.sold_at) || "—")}</span>` : ""}
+                    ${view === "sold" && saleInfo?.buyer_username ? `<span class="muted-meta">Покупець: @${escapeHtml(saleInfo.buyer_username)}</span>` : ""}
+                    ${view === "sold" && !saleInfo?.buyer_username && saleInfo?.buyer_full_name ? `<span class="muted-meta">Покупець: ${escapeHtml(saleInfo.buyer_full_name)}</span>` : ""}
+                    ${view === "active" && latestRequest?.created_at ? `<span class="muted-meta">Останній запит: ${escapeHtml(formatDate(latestRequest.created_at) || "—")}</span>` : ""}
+                    ${view === "active" && latestRequest?.buyer_username ? `<span class="muted-meta">Запит від: @${escapeHtml(latestRequest.buyer_username)}</span>` : ""}
+                    ${view === "archived" ? `<span class="muted-meta">Статус: Архів</span>` : ""}
+                </div>
                 <div class="card-actions compact-actions">${actionButton}</div>
+                ${buyerProfileBtn ? `<div class="card-actions compact-actions compact-actions-grid">${buyerProfileBtn}</div>` : ""}
             </div>
         </div>
     `;
@@ -1993,7 +2005,7 @@ async function openProductModal(productId) {
 
     if (!modal || !body) return;
 
-    modal.classList.remove("hidden");
+    requestAnimationFrame(() => { document.body.classList.add("no-scroll"); modal.classList.remove("hidden"); });
     const modalContent = modal.querySelector(".modal-content");
     if (modalContent) {
         modalContent.classList.remove("modal-animate-in");
@@ -2014,7 +2026,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" onclick="event.preventDefault(); event.stopPropagation(); openReportModal(${Number(product.id)}, '${escapeHtml(product.title)}')">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn report-open-btn" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2695,6 +2707,7 @@ function handleReportReasonChange() {
 function closeReportModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    document.body.classList.remove("no-scroll");
     $("report-modal")?.classList.add("hidden");
 }
 
@@ -3157,6 +3170,21 @@ if (typeof setModalImage === "function") window.setModalImage = setModalImage;
 if (typeof handlePurchaseRequest === "function") window.handlePurchaseRequest = handlePurchaseRequest;
 if (typeof toggleCategoryPicker === "function") window.toggleCategoryPicker = toggleCategoryPicker;
 if (typeof updateAvatarFileLabel === "function") window.updateAvatarFileLabel = updateAvatarFileLabel;
+
+const reviewModalEl = $("review-modal");
+const reportModalEl = $("report-modal");
+reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
+reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
+reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
+reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
+reviewModalEl?.addEventListener("click", (event) => { if (event.target === reviewModalEl) closeReviewModal(event); }, true);
+reportModalEl?.addEventListener("click", (event) => { if (event.target === reportModalEl) closeReportModal(event); }, true);
+
+document.addEventListener("pointerdown", (event) => {
+    if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
+        event.stopPropagation();
+    }
+}, true);
 
 document.addEventListener("click", (event) => {
     const reviewBtn = event.target.closest(".review-open-btn");
