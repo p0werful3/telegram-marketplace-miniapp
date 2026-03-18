@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "314";
+const FRONTEND_VERSION = "319";
 
 let tg = null;
 let telegramUser = null;
@@ -1033,7 +1033,10 @@ function openReviewModal(orderId, sellerId, event = null) {
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
-    requestAnimationFrame(() => { document.body.classList.add("no-scroll"); $("review-modal")?.classList.remove("hidden"); });
+    setTimeout(() => {
+        document.body.classList.add("no-scroll");
+        $("review-modal")?.classList.remove("hidden");
+    }, 0);
 }
 
 function closeReviewModal(event = null) {
@@ -2696,7 +2699,10 @@ function openReportModal(productId, title = "", event = null) {
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
-    modal.classList.remove("hidden");
+    setTimeout(() => {
+        document.body.classList.add("no-scroll");
+        modal.classList.remove("hidden");
+    }, 0);
 }
 
 function handleReportReasonChange() {
@@ -3173,6 +3179,9 @@ if (typeof updateAvatarFileLabel === "function") window.updateAvatarFileLabel = 
 
 const reviewModalEl = $("review-modal");
 const reportModalEl = $("report-modal");
+const productModalEl = $("product-modal");
+productModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
+productModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
@@ -3191,9 +3200,10 @@ document.addEventListener("click", (event) => {
     if (reviewBtn) {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation?.();
         const orderId = Number(reviewBtn.dataset.orderId || 0);
         const sellerId = Number(reviewBtn.dataset.sellerId || 0);
-        if (orderId) openReviewModal(orderId, sellerId);
+        if (orderId) setTimeout(() => openReviewModal(orderId, sellerId), 0);
         return;
     }
 
@@ -3201,12 +3211,13 @@ document.addEventListener("click", (event) => {
     if (reportBtn) {
         event.preventDefault();
         event.stopPropagation();
+        event.stopImmediatePropagation?.();
         const productId = Number(reportBtn.dataset.productId || 0);
         const title = reportBtn.dataset.productTitle || "";
-        if (productId) openReportModal(productId, title);
+        if (productId) setTimeout(() => openReportModal(productId, title), 0);
         return;
     }
-});
+}, true);
 
 initApp();
 
