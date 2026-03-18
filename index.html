@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=309">
+    <link rel="stylesheet" href="style.css?v=319">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -488,7 +488,7 @@
     </div>
 
     <div id="review-modal" class="modal hidden">
-        <div class="modal-content small-modal" onclick="event.stopPropagation()">
+        <div class="modal-content small-modal">
             <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReviewModal(event)">×</button>
             <h3 class="modal-title">Залишити відгук</h3>
             <label>Оцінка</label>
@@ -500,7 +500,7 @@
     </div>
 
     <div id="report-modal" class="modal hidden">
-        <div class="modal-content small-modal" onclick="event.stopPropagation()">
+        <div class="modal-content small-modal">
             <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReportModal(event)">×</button>
             <h3 id="report-title" class="modal-title">Скарга на оголошення</h3>
             <input id="report-product-id" type="hidden">
@@ -520,6 +520,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=318"></script>
+    <script src="app.js?v=319"></script>
 </body>
 </html>
