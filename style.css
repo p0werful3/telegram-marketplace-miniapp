@@ -2843,8 +2843,9 @@ body{
   box-shadow:0 10px 20px rgba(94,95,255,.22), 0 0 18px rgba(138,82,255,.10) !important;
 }
 #products-list .own-product-btn,#my-products-list .own-product-btn,.seller-listings-grid .own-product-btn{
-  background:linear-gradient(135deg, rgba(120,88,255,.96), rgba(214,95,214,.92)) !important;
-  box-shadow:0 10px 20px rgba(138,82,255,.18), 0 0 18px rgba(214,95,214,.08) !important;
+  background:linear-gradient(135deg, rgba(96,108,128,.98), rgba(72,82,99,.96)) !important;
+  color:#eef2f7 !important;
+  box-shadow:0 10px 20px rgba(28,34,45,.22), 0 0 0 1px rgba(255,255,255,.05) inset !important;
 }
 #products-list .favorite-btn,#my-products-list .favorite-btn,.seller-listings-grid .favorite-btn{
   top:12px !important;
@@ -2862,14 +2863,4 @@ body{
     height:136px !important;
     padding:7px 5px 7px 7px !important;
   }
-}
-.product-owner-btn {
-    background: linear-gradient(135deg, #1f9d6a, #2ecc71) !important;
-    color: #ffffff !important;
-    border: none !important;
-    box-shadow: 0 0 10px rgba(46, 204, 113, 0.4);
-}
-
-.product-owner-btn:hover {
-    background: linear-gradient(135deg, #1a8c5d, #27ae60) !important;
 }
