@@ -487,7 +487,7 @@
         <div class="modal-content"><button class="modal-close" onclick="closeUserProfileModal()">×</button><div id="user-profile-modal-body"></div></div>
     </div>
 
-    <div id="review-modal" class="modal hidden" onclick="if(event.target.id==='review-modal') closeReviewModal(event)">
+    <div id="review-modal" class="modal hidden">
         <div class="modal-content small-modal" onclick="event.stopPropagation()">
             <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReviewModal(event)">×</button>
             <h3 class="modal-title">Залишити відгук</h3>
@@ -499,7 +499,7 @@
         </div>
     </div>
 
-    <div id="report-modal" class="modal hidden" onclick="closeReportModalOnBackdrop(event)">
+    <div id="report-modal" class="modal hidden">
         <div class="modal-content small-modal" onclick="event.stopPropagation()">
             <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReportModal(event)">×</button>
             <h3 id="report-title" class="modal-title">Скарга на оголошення</h3>
@@ -520,6 +520,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=317"></script>
+    <script src="app.js?v=318"></script>
 </body>
 </html>
