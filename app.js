@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "310";
+const FRONTEND_VERSION = "313";
 
 let tg = null;
 let telegramUser = null;
@@ -262,8 +262,9 @@ function applyLanguageTexts() {
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
     setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
-    const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
-    const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
+    const filtersBtn = $('filters-toggle-btn'); if (filtersBtn) filtersBtn.textContent = filtersOpen ? `${t('filters')} ▲` : `${t('filters')} ▼`;
+    const catalogRefreshBtn = document.querySelector('#tab-catalog .section-header .section-btn'); if (catalogRefreshBtn) catalogRefreshBtn.textContent = t('refresh');
+    const catalogSearchBtn = $('catalog-search-btn'); if (catalogSearchBtn) catalogSearchBtn.textContent = t('searchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
     const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('requestsTab'); if (mpBtns[2]) mpBtns[2].textContent = t('soldTab'); if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
     setText('#tab-create .section-header h2', t('createTitle'));
@@ -946,7 +947,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button class="ghost-warning-btn" onclick="cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button class="approve-btn" onclick="event.stopPropagation(); openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn" onclick="openReviewModal(event, ${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -977,9 +978,16 @@ async function cancelPurchaseRequest(orderId) {
     }
 }
 
-function openReviewModal(orderId, sellerId) {
-    reviewOrderId = orderId;
-    reviewSellerId = sellerId;
+function openReviewModal(eventOrOrderId, maybeOrderId, maybeSellerId) {
+    if (eventOrOrderId && typeof eventOrOrderId.stopPropagation === "function") {
+        eventOrOrderId.preventDefault?.();
+        eventOrOrderId.stopPropagation();
+        reviewOrderId = maybeOrderId;
+        reviewSellerId = maybeSellerId;
+    } else {
+        reviewOrderId = eventOrOrderId;
+        reviewSellerId = maybeOrderId;
+    }
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
     $("review-modal")?.classList.remove("hidden");
@@ -1713,8 +1721,8 @@ function renderCatalogCard(product) {
                 </div>
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions compact-actions-grid catalog-actions-row">
-                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
-                    ${isOwnProduct ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
+                    ${product.seller_username ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
+                    ${isOwnProduct ? `<button type="button" class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
                 </div>
             </div>
         </div>
@@ -1791,6 +1799,33 @@ function renderCatalogSkeleton(count = 4) {
             </div>
         </div>
     `).join("");
+}
+
+function runCatalogSearch() {
+    loadProducts();
+}
+
+function initCatalogSearchUi() {
+    const searchInput = $("search-input");
+    const sellerInput = $("seller-search-input");
+    if (searchInput && !searchInput.dataset.bound) {
+        searchInput.dataset.bound = "1";
+        searchInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                runCatalogSearch();
+            }
+        });
+    }
+    if (sellerInput && !sellerInput.dataset.bound) {
+        sellerInput.dataset.bound = "1";
+        sellerInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                searchSeller();
+            }
+        });
+    }
 }
 
 async function loadProducts() {
@@ -1954,9 +1989,9 @@ async function openProductModal(productId) {
             : "";
 
         const primaryAction = isOwnProduct
-            ? `<button class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
-            : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button class="ghost-warning-btn" onclick="event.stopPropagation(); openReportModal(${Number(product.id)}, '${escapeHtml(product.title)}')">Поскаржитися</button>` : "";
+            ? `<button type="button" class="own-product-btn" onclick="showAlert('Це ваше оголошення')">Ваш товар</button>`
+            : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" onclick="openReportModal(event, ${Number(product.id)}, '${escapeHtml(product.title)}')">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -1974,7 +2009,7 @@ async function openProductModal(productId) {
                         ${product.seller_rating ? `<span class="tag soft-tag">⭐ ${escapeHtml(String(product.seller_rating))}</span>` : ``}
                     </div>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn seller-profile-btn-modal" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
+                    ${product.seller_username ? `<button type="button" class="seller-link-btn seller-profile-btn seller-profile-btn-modal" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
                     <div class="card-actions compact-actions compact-actions-grid details-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
@@ -2611,7 +2646,13 @@ async function submitIdea() {
     }
 }
 
-function openReportModal(productId, title = "") {
+function openReportModal(eventOrProductId, maybeProductId, maybeTitle = "") {
+    if (eventOrProductId && typeof eventOrProductId.stopPropagation === "function") {
+        eventOrProductId.preventDefault?.();
+        eventOrProductId.stopPropagation();
+    }
+    const productId = eventOrProductId && typeof eventOrProductId.stopPropagation === "function" ? maybeProductId : eventOrProductId;
+    const title = eventOrProductId && typeof eventOrProductId.stopPropagation === "function" ? (maybeTitle || "") : (maybeProductId || "");
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
@@ -3084,3 +3125,5 @@ if (typeof openImageViewer === "function") window.openImageViewer = openImageVie
 if (typeof closeImageViewer === "function") window.closeImageViewer = closeImageViewer;
 if (typeof closeImageViewerOnBackdrop === "function") window.closeImageViewerOnBackdrop = closeImageViewerOnBackdrop;
 if (typeof changeViewerImage === "function") window.changeViewerImage = changeViewerImage;
+
+if (typeof runCatalogSearch === "function") window.runCatalogSearch = runCatalogSearch;
