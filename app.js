@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "314";
+const FRONTEND_VERSION = "315";
 
 let tg = null;
 let telegramUser = null;
@@ -995,7 +995,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn" onclick="event.stopPropagation(); openReviewModal(${Number(item.order_id)}, ${Number(item.seller_id || 0)})">Залишити відгук</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn review-open-btn" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -2014,7 +2014,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" onclick="event.preventDefault(); event.stopPropagation(); openReportModal(${Number(product.id)}, '${escapeHtml(product.title)}')">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn report-open-btn" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -3084,6 +3084,69 @@ async function initApp() {
     $("auth-screen")?.classList.remove("hidden");
     $("app-screen")?.classList.add("hidden");
 }
+
+document.addEventListener("click", (event) => {
+    const reviewOpenBtn = event.target.closest('.review-open-btn');
+    if (reviewOpenBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        openReviewModal(Number(reviewOpenBtn.dataset.orderId || 0), Number(reviewOpenBtn.dataset.sellerId || 0), event);
+        return;
+    }
+
+    const reportOpenBtn = event.target.closest('.report-open-btn');
+    if (reportOpenBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        openReportModal(Number(reportOpenBtn.dataset.productId || 0), reportOpenBtn.dataset.productTitle || '', event);
+        return;
+    }
+
+    const reviewSubmitBtn = event.target.closest('.review-submit-btn');
+    if (reviewSubmitBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        submitReview();
+        return;
+    }
+
+    const reportSubmitBtn = event.target.closest('.report-submit-btn');
+    if (reportSubmitBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        submitReport();
+        return;
+    }
+
+    const closeReviewBtn = event.target.closest('.review-close-btn');
+    if (closeReviewBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReviewModal(event);
+        return;
+    }
+
+    const closeReportBtn = event.target.closest('.report-close-btn');
+    if (closeReportBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReportModal(event);
+        return;
+    }
+
+    if (event.target?.id === 'review-modal') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReviewModal(event);
+        return;
+    }
+
+    if (event.target?.id === 'report-modal') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReportModal(event);
+    }
+}, true);
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeProductModal();
