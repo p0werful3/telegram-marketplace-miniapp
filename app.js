@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "315";
+const FRONTEND_VERSION = "310";
 
 let tg = null;
 let telegramUser = null;
@@ -18,8 +18,6 @@ let dashboardRefreshTimer = null;
 let editingProductId = null;
 let editingExistingImages = [];
 let selectedProductFiles = [];
-let myProductsSearchQuery = "";
-let myProductsSortValue = "newest";
 
 const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
@@ -921,53 +919,6 @@ async function saveProfile() {
     }
 }
 
-function getMyProductsDateValue(item, view = myProductsView) {
-    if (!item) return 0;
-    const saleDate = item.sale_info?.sold_at || item.seller_response_at || null;
-    const requestDate = item.latest_request?.created_at || item.created_at || null;
-    const baseDate = view === "sold" ? saleDate : requestDate;
-    const ts = baseDate ? new Date(baseDate).getTime() : 0;
-    return Number.isFinite(ts) ? ts : 0;
-}
-
-function filterAndSortMyProducts(items = [], view = myProductsView) {
-    const q = String(myProductsSearchQuery || "").trim().toLowerCase();
-    let result = Array.isArray(items) ? [...items] : [];
-
-    if (q) {
-        result = result.filter(item => {
-            const buyerUsername = item.sale_info?.buyer_username || item.buyer_username || "";
-            const buyerName = item.sale_info?.buyer_full_name || item.buyer_full_name || "";
-            const sellerUsername = item.seller_username || "";
-            const fields = [item.title, item.product_title, item.description, item.city, item.category, item.condition, buyerUsername, buyerName, sellerUsername]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-            return fields.includes(q);
-        });
-    }
-
-    result.sort((a, b) => {
-        if (myProductsSortValue === "oldest") return getMyProductsDateValue(a, view) - getMyProductsDateValue(b, view);
-        if (myProductsSortValue === "price_asc") return Number(a.price || a.offered_price || 0) - Number(b.price || b.offered_price || 0);
-        if (myProductsSortValue === "price_desc") return Number(b.price || b.offered_price || 0) - Number(a.price || a.offered_price || 0);
-        return getMyProductsDateValue(b, view) - getMyProductsDateValue(a, view);
-    });
-
-    return result;
-}
-
-function syncMyProductsFilterUi() {
-    if ($("my-products-search-input")) $("my-products-search-input").value = myProductsSearchQuery;
-    if ($("my-products-sort-select")) $("my-products-sort-select").value = myProductsSortValue;
-}
-
-function applyMyProductsFilters() {
-    myProductsSearchQuery = $("my-products-search-input")?.value?.trim() || "";
-    myProductsSortValue = $("my-products-sort-select")?.value || "newest";
-    loadMyProducts();
-}
-
 async function loadPurchaseHistory() {
     const list = $("purchase-history-list");
     if (!list || !currentUser) return;
@@ -994,8 +945,8 @@ async function loadPurchaseHistory() {
                         <div>Дата: ${formatDate(item.created_at) || "—"}</div>
                     </div>
                     <div class="card-actions inline-actions compact-actions">
-                        ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn review-open-btn" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
+                        ${item.status === "pending" ? `<button class="ghost-warning-btn" onclick="cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn js-open-review" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -1026,9 +977,7 @@ async function cancelPurchaseRequest(orderId) {
     }
 }
 
-function openReviewModal(orderId, sellerId, event = null) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
+function openReviewModal(orderId, sellerId) {
     reviewOrderId = orderId;
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
@@ -1036,9 +985,7 @@ function openReviewModal(orderId, sellerId, event = null) {
     $("review-modal")?.classList.remove("hidden");
 }
 
-function closeReviewModal(event = null) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
+function closeReviewModal() {
     $("review-modal")?.classList.add("hidden");
 }
 
@@ -1767,7 +1714,7 @@ function renderCatalogCard(product) {
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions compact-actions-grid catalog-actions-row">
                     ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
-                    ${isOwnProduct ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
+                    ${isOwnProduct ? `<button type="button" class="own-product-btn" onclick="event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
                 </div>
             </div>
         </div>
@@ -1776,22 +1723,18 @@ function renderCatalogCard(product) {
 
 function renderMyProductCard(product, view) {
     let actionButton = "";
-    const saleInfo = product.sale_info || null;
-    const latestRequest = product.latest_request || null;
-    const infoBits = [`<div>Створено: ${formatDate(product.created_at) || "—"}</div>`];
 
     if (view === "active") {
-        if (Number(product.pending_requests_count || 0) > 0) infoBits.push(`<div>Запитів на покупку: ${Number(product.pending_requests_count)}</div>`);
-        if (latestRequest?.buyer_username || latestRequest?.buyer_full_name) infoBits.push(`<div>Останній запит: ${latestRequest.buyer_username ? '@' + escapeHtml(latestRequest.buyer_username) : escapeHtml(latestRequest.buyer_full_name || 'Покупець')} • ${formatDate(latestRequest.created_at) || '—'}</div>`);
-        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button type="button" class="edit-btn" onclick="event.preventDefault(); event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button><button type="button" class="delete-btn" onclick="event.preventDefault(); event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button></div>`;
+        actionButton = `
+            <div class="card-actions inline-actions catalog-actions-row">
+                <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
+            </div>
+        `;
     } else if (view === "sold") {
-        if (saleInfo?.sold_at) infoBits.push(`<div>Продано: ${formatDate(saleInfo.sold_at) || "—"}</div>`);
-        if (saleInfo?.buyer_username || saleInfo?.buyer_full_name) infoBits.push(`<div>Покупець: ${saleInfo.buyer_username ? '@' + escapeHtml(saleInfo.buyer_username) : escapeHtml(saleInfo.buyer_full_name || 'Покупець')}</div>`);
-        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button type="button" class="sold-btn" disabled>Продано</button>${saleInfo?.buyer_id ? `<button type="button" class="seller-link-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${Number(saleInfo.buyer_id)})">Профіль покупця</button>` : ""}</div>`;
+        actionButton = `<button class="sold-btn" disabled>Продано</button>`;
     } else {
-        infoBits.push(`<div>Статус: ${escapeHtml(t('archivedState'))}</div>`);
-        if (saleInfo?.sold_at) infoBits.push(`<div>Було продано: ${formatDate(saleInfo.sold_at) || "—"}</div>`);
-        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button type="button" class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button type="button" class="approve-btn" onclick="event.preventDefault(); event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
+        actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button class="approve-btn" onclick="event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
     }
 
     return `
@@ -1808,7 +1751,6 @@ function renderMyProductCard(product, view) {
                     <span class="tag soft-tag">${formatRelativeTime(product.created_at) || formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
-                <div class="history-meta my-product-extra-meta">${infoBits.join("")}</div>
                 <div class="card-actions compact-actions">${actionButton}</div>
             </div>
         </div>
@@ -2008,13 +1950,13 @@ async function openProductModal(productId) {
         const relativeTime = formatRelativeTime(product.created_at) || formatDate(product.created_at);
 
         const contactButton = product.seller_telegram_link
-            ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); event.stopPropagation(); window.open('${escapeHtml(product.seller_telegram_link)}', '_blank')">Написати продавцю</a>`
+            ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
             : "";
 
         const primaryAction = isOwnProduct
-            ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
-            : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn report-open-btn" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
+            ? `<button type="button" class="own-product-btn" onclick="event.stopPropagation();showAlert('Це ваше оголошення')">Ваш товар</button>`
+            : `<button class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn js-open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2140,12 +2082,10 @@ async function loadMyProducts() {
                 safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=pending`),
                 safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`)
             ]);
-            const filteredRequests = filterAndSortMyProducts(Array.isArray(requests) ? requests : [], "requests");
-            const filteredPurchases = filterAndSortMyProducts(Array.isArray(purchases) ? purchases : [], "requests");
             updatePendingRequestsBadge(Array.isArray(requests) ? requests.length : 0);
             if (wrap) wrap.classList.remove("hidden");
             if (requestsList) {
-                requestsList.innerHTML = filteredRequests.length ? filteredRequests.map(item => `
+                requestsList.innerHTML = Array.isArray(requests) && requests.length ? requests.map(item => `
                     <div class="card request-card">
                         <div class="card-body">
                             <div class="status-pill pending">Очікує відповіді</div>
@@ -2154,18 +2094,16 @@ async function loadMyProducts() {
                             <div class="request-meta">
                                 <div>Покупець: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
                                 ${item.buyer_full_name ? `<div>Ім'я: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
-                                <div>Дата запиту: ${formatDate(item.created_at) || '—'}</div>
                             </div>
                             <div class="card-actions inline-actions">
-                                ${item.buyer_id ? `<button type="button" class="seller-link-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${Number(item.buyer_id)})">Профіль покупця</button>` : ""}
-                                <button type="button" class="approve-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, true)">Підтвердити</button>
-                                <button type="button" class="reject-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, false)">Відхилити</button>
+                                <button class="approve-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, true)">Підтвердити</button>
+                                <button class="reject-btn" onclick="handlePurchaseRequest(${Number(item.order_id)}, false)">Відхилити</button>
                             </div>
                         </div>
                     </div>
                 `).join("") : `<div class="empty-card">Нових запитів поки немає</div>`;
             }
-            list.innerHTML = filteredPurchases.length ? filteredPurchases.map(item => `
+            list.innerHTML = Array.isArray(purchases) && purchases.length ? purchases.map(item => `
                 <div class="card history-card compact-history-card">
                     ${isValidUrl(item.product_image_url) ? `<img class="history-image" src="${escapeHtml(item.product_image_url)}" alt="${escapeHtml(item.product_title)}">` : ``}
                     <div class="card-body">
@@ -2185,12 +2123,11 @@ async function loadMyProducts() {
         if (myProductsView === "sold") url = `${API_BASE}/users/${currentUser.id}/products/sold`;
         if (myProductsView === "archived") url = `${API_BASE}/users/${currentUser.id}/products/archived`;
         const products = await safeFetch(url);
-        const filteredProducts = filterAndSortMyProducts(Array.isArray(products) ? products : [], myProductsView);
-        if (!filteredProducts.length) {
+        if (!Array.isArray(products) || products.length === 0) {
             list.innerHTML = myProductsView === "active" ? `<div class="empty-card">У вас поки немає активних оголошень</div>` : myProductsView === "sold" ? `<div class="empty-card">У вас поки немає проданих товарів</div>` : `<div class="empty-card">Архів порожній</div>`;
             return;
         }
-        list.innerHTML = filteredProducts.map(product => renderMyProductCard(product, myProductsView)).join("");
+        list.innerHTML = products.map(product => renderMyProductCard(product, myProductsView)).join("");
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
     }
@@ -2674,9 +2611,7 @@ async function submitIdea() {
     }
 }
 
-function openReportModal(productId, title = "", event = null) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
+function openReportModal(productId, title = "") {
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
@@ -2692,9 +2627,7 @@ function handleReportReasonChange() {
     $("report-custom-reason-wrap")?.classList.toggle("hidden", reason !== "Інше");
 }
 
-function closeReportModal(event = null) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
+function closeReportModal() {
     $("report-modal")?.classList.add("hidden");
 }
 
@@ -3051,30 +2984,84 @@ function closeUserProfileOnBackdrop(event) {
     if (event.target?.id === "user-profile-modal") closeUserProfileModal();
 }
 
-async function initApp() {
-    setupAuthScreen();
-    syncMyProductsFilterUi();
 
-    $("search-input")?.addEventListener("keydown", (event) => {
+function setupUiEventHandlers() {
+    const searchInput = $("search-input");
+    const productSearchBtn = $("product-search-btn");
+    const sellerSearchInput = $("seller-search-input");
+    const reportModal = $("report-modal");
+    const reviewModal = $("review-modal");
+
+    productSearchBtn?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        loadProducts();
+    });
+    searchInput?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
+            event.stopPropagation();
             loadProducts();
         }
     });
-    $("seller-search-input")?.addEventListener("keydown", (event) => {
+    sellerSearchInput?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
+            event.stopPropagation();
             searchSeller();
         }
     });
-    $("my-products-search-input")?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
+
+    $("report-reason")?.addEventListener("change", handleReportReasonChange);
+    $("report-submit-btn")?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        submitReport();
+    });
+    $("review-submit-btn")?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        submitReview();
+    });
+    $("report-close-btn")?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReportModal();
+    });
+    $("review-close-btn")?.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReviewModal();
+    });
+    $("report-modal-content")?.addEventListener("click", (event) => event.stopPropagation());
+    $("review-modal-content")?.addEventListener("click", (event) => event.stopPropagation());
+    reportModal?.addEventListener("click", (event) => {
+        if (event.target === reportModal) closeReportModal();
+    });
+    reviewModal?.addEventListener("click", (event) => {
+        if (event.target === reviewModal) closeReviewModal();
+    });
+
+    document.addEventListener("click", (event) => {
+        const reportBtn = event.target.closest(".js-open-report");
+        if (reportBtn) {
             event.preventDefault();
-            applyMyProductsFilters();
+            event.stopPropagation();
+            openReportModal(Number(reportBtn.dataset.productId || 0), reportBtn.dataset.productTitle || "");
+            return;
+        }
+        const reviewBtn = event.target.closest(".js-open-review");
+        if (reviewBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            openReviewModal(Number(reviewBtn.dataset.orderId || 0), Number(reviewBtn.dataset.sellerId || 0));
         }
     });
-    $("review-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
-    $("report-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
+}
+
+async function initApp() {
+    setupAuthScreen();
+    setupUiEventHandlers();
 
     if (loadSession()) {
         await showApp();
@@ -3084,69 +3071,6 @@ async function initApp() {
     $("auth-screen")?.classList.remove("hidden");
     $("app-screen")?.classList.add("hidden");
 }
-
-document.addEventListener("click", (event) => {
-    const reviewOpenBtn = event.target.closest('.review-open-btn');
-    if (reviewOpenBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        openReviewModal(Number(reviewOpenBtn.dataset.orderId || 0), Number(reviewOpenBtn.dataset.sellerId || 0), event);
-        return;
-    }
-
-    const reportOpenBtn = event.target.closest('.report-open-btn');
-    if (reportOpenBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        openReportModal(Number(reportOpenBtn.dataset.productId || 0), reportOpenBtn.dataset.productTitle || '', event);
-        return;
-    }
-
-    const reviewSubmitBtn = event.target.closest('.review-submit-btn');
-    if (reviewSubmitBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        submitReview();
-        return;
-    }
-
-    const reportSubmitBtn = event.target.closest('.report-submit-btn');
-    if (reportSubmitBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        submitReport();
-        return;
-    }
-
-    const closeReviewBtn = event.target.closest('.review-close-btn');
-    if (closeReviewBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        closeReviewModal(event);
-        return;
-    }
-
-    const closeReportBtn = event.target.closest('.report-close-btn');
-    if (closeReportBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        closeReportModal(event);
-        return;
-    }
-
-    if (event.target?.id === 'review-modal') {
-        event.preventDefault();
-        event.stopPropagation();
-        closeReviewModal(event);
-        return;
-    }
-
-    if (event.target?.id === 'report-modal') {
-        event.preventDefault();
-        event.stopPropagation();
-        closeReportModal(event);
-    }
-}, true);
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeProductModal();
@@ -3160,7 +3084,6 @@ if (typeof switchTab === "function") window.switchTab = switchTab;
 if (typeof switchCatalogView === "function") window.switchCatalogView = switchCatalogView;
 if (typeof switchMyProductsView === "function") window.switchMyProductsView = switchMyProductsView;
 if (typeof toggleFilters === "function") window.toggleFilters = toggleFilters;
-if (typeof applyMyProductsFilters === "function") window.applyMyProductsFilters = applyMyProductsFilters;
 if (typeof loadProducts === "function") window.loadProducts = loadProducts;
 if (typeof loadMyProducts === "function") window.loadMyProducts = loadMyProducts;
 if (typeof loadCart === "function") window.loadCart = loadCart;
