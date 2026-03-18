@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "319";
+const FRONTEND_VERSION = "320";
 
 let tg = null;
 let telegramUser = null;
@@ -1029,14 +1029,15 @@ async function cancelPurchaseRequest(orderId) {
 function openReviewModal(orderId, sellerId, event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
     reviewOrderId = orderId;
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         document.body.classList.add("no-scroll");
         $("review-modal")?.classList.remove("hidden");
-    }, 0);
+    });
 }
 
 function closeReviewModal(event = null) {
@@ -2692,6 +2693,7 @@ async function submitIdea() {
 function openReportModal(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
@@ -2699,10 +2701,10 @@ function openReportModal(productId, title = "", event = null) {
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
-    setTimeout(() => {
+    requestAnimationFrame(() => {
         document.body.classList.add("no-scroll");
         modal.classList.remove("hidden");
-    }, 0);
+    });
 }
 
 function handleReportReasonChange() {
@@ -3203,7 +3205,7 @@ document.addEventListener("click", (event) => {
         event.stopImmediatePropagation?.();
         const orderId = Number(reviewBtn.dataset.orderId || 0);
         const sellerId = Number(reviewBtn.dataset.sellerId || 0);
-        if (orderId) setTimeout(() => openReviewModal(orderId, sellerId), 0);
+        if (orderId) requestAnimationFrame(() => openReviewModal(orderId, sellerId));
         return;
     }
 
@@ -3214,7 +3216,7 @@ document.addEventListener("click", (event) => {
         event.stopImmediatePropagation?.();
         const productId = Number(reportBtn.dataset.productId || 0);
         const title = reportBtn.dataset.productTitle || "";
-        if (productId) setTimeout(() => openReportModal(productId, title), 0);
+        if (productId) requestAnimationFrame(() => openReportModal(productId, title));
         return;
     }
 }, true);
