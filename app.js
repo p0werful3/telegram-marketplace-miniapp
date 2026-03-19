@@ -211,6 +211,16 @@ function t(key) {
     return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
 }
 
+function syncBodyScrollLock() {
+    const hasOpenModal = ["product-modal", "image-viewer-modal", "review-modal", "report-modal", "user-profile-modal"].some((id) => {
+        const el = $(id);
+        return el && !el.classList.contains("hidden");
+    });
+
+    document.body.classList.toggle("no-scroll", hasOpenModal);
+    document.documentElement.classList.toggle("no-scroll", hasOpenModal);
+}
+
 function setProfileMenuButton(btnId, icon, label, isOpen = false) {
     const btn = $(btnId);
     if (!btn) return;
@@ -1731,9 +1741,12 @@ function renderFavoriteButton(product) {
 
     return `
         <button
+            type="button"
             class="favorite-btn ${product.is_favorite ? "active" : ""}"
             data-favorite-id="${Number(product.id)}"
-            onclick="event.stopPropagation(); toggleFavorite(${Number(product.id)}, ${product.is_favorite ? "true" : "false"})"
+            data-action="toggle-favorite"
+            data-product-id="${Number(product.id)}"
+            data-is-favorite="${product.is_favorite ? "true" : "false"}"
             title="Обране"
         >
             ${product.is_favorite ? "♥" : "♡"}
@@ -1928,7 +1941,7 @@ function buildGallery(images, title) {
 
     return `
         <div class="gallery">
-            <img id="modal-main-image" class="modal-product-image zoomable-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}" onclick="event.stopPropagation(); openImageViewer(${0})">
+            <img id="modal-main-image" class="modal-product-image zoomable-image" src="${escapeHtml(safeImages[0])}" alt="${escapeHtml(title)}" data-action="open-image-viewer" data-image-index="0">
             ${
                 safeImages.length > 1
                     ? `
@@ -1938,7 +1951,7 @@ function buildGallery(images, title) {
                             class="gallery-thumb ${index === 0 ? "active" : ""}"
                             src="${escapeHtml(img)}"
                             alt="thumb"
-                            onclick="event.stopPropagation(); setModalImage(${index})"
+                            data-action="set-modal-image" data-image-index="${index}"
                         >
                     `).join("")}
                 </div>
@@ -2024,12 +2037,12 @@ async function openProductModal(productId) {
         const relativeTime = formatRelativeTime(product.created_at) || formatDate(product.created_at);
 
         const contactButton = product.seller_telegram_link
-            ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer" onclick="event.preventDefault(); event.stopPropagation(); window.open('${escapeHtml(product.seller_telegram_link)}', '_blank')">Написати продавцю</a>`
+            ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer" data-action="contact-seller" data-seller-link="${escapeHtml(product.seller_telegram_link)}">Написати продавцю</a>`
             : "";
 
         const primaryAction = isOwnProduct
-            ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>`
-            : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `buyProduct(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
+            ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
+            : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
         const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn report-open-btn" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
@@ -2048,7 +2061,7 @@ async function openProductModal(productId) {
                         ${product.seller_rating ? `<span class="tag soft-tag">⭐ ${escapeHtml(String(product.seller_rating))}</span>` : ``}
                     </div>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn seller-profile-btn-modal" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
+                    ${product.seller_username ? `<button type="button" class="seller-link-btn seller-profile-btn seller-profile-btn-modal" data-action="open-seller-profile" data-seller-id="${Number(product.seller_id)}">Профіль продавця</button>` : ""}
                     <div class="card-actions compact-actions compact-actions-grid details-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
@@ -3143,6 +3156,10 @@ async function initApp() {
     });
     $("review-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
     $("report-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
+    $("product-modal-close")?.addEventListener("click", closeProductModal);
+    $("image-viewer-close")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); closeImageViewer(); });
+    $("image-viewer-prev")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); changeViewerImage(-1); });
+    $("image-viewer-next")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); changeViewerImage(1); });
 
     if (loadSession()) {
         await showApp();
@@ -3229,8 +3246,6 @@ if (typeof updateAvatarFileLabel === "function") window.updateAvatarFileLabel = 
 const reviewModalEl = $("review-modal");
 const reportModalEl = $("report-modal");
 const productModalEl = $("product-modal");
-productModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
-productModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
@@ -3267,6 +3282,61 @@ document.addEventListener("click", (event) => {
         return;
     }
 }, true);
+
+function handleProductModalDelegatedClick(event) {
+    const actionEl = event.target.closest('[data-action]');
+    if (!actionEl) return;
+
+    const action = actionEl.dataset.action;
+    if (!action) return;
+
+    if (actionEl.closest('#product-modal')) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (action === 'set-modal-image') {
+            setModalImage(Number(actionEl.dataset.imageIndex || 0));
+            return;
+        }
+        if (action === 'open-image-viewer') {
+            openImageViewer(Number(actionEl.dataset.imageIndex || currentModalImageIndex || 0));
+            return;
+        }
+        if (action === 'open-seller-profile') {
+            const sellerId = Number(actionEl.dataset.sellerId || 0);
+            if (sellerId) openUserProfile(sellerId);
+            return;
+        }
+        if (action === 'buy-product') {
+            const productId = Number(actionEl.dataset.productId || 0);
+            if (productId) buyProduct(productId);
+            return;
+        }
+        if (action === 'go-cart') {
+            switchTab('cart');
+            return;
+        }
+        if (action === 'own-product-info') {
+            showAlert('Це ваше оголошення');
+            return;
+        }
+        if (action === 'contact-seller') {
+            const link = actionEl.dataset.sellerLink;
+            if (link) window.open(link, '_blank');
+            return;
+        }
+    }
+
+    if (action === 'toggle-favorite') {
+        event.preventDefault();
+        event.stopPropagation();
+        const productId = Number(actionEl.dataset.productId || actionEl.dataset.favoriteId || 0);
+        const isFavorite = String(actionEl.dataset.isFavorite || '').toLowerCase() === 'true';
+        if (productId) toggleFavorite(productId, isFavorite);
+    }
+}
+
+document.addEventListener('click', handleProductModalDelegatedClick, true);
 
 initApp();
 
