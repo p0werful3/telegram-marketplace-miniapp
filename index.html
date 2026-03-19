@@ -470,17 +470,17 @@
     </div>
 
     <div id="product-modal" class="modal hidden" onclick="closeProductModalOnBackdrop(event)">
-        <div class="modal-content"><button class="modal-close" onclick="closeProductModal()">×</button><div id="product-modal-body"></div></div>
+        <div class="modal-content"><button id="product-modal-close" type="button" class="modal-close">×</button><div id="product-modal-body"></div></div>
     </div>
 
     <div id="image-viewer-modal" class="image-viewer-modal hidden" onclick="closeImageViewerOnBackdrop(event)">
-        <button class="image-viewer-close" onclick="closeImageViewer()">×</button>
-        <button class="image-viewer-nav image-viewer-prev" onclick="event.stopPropagation(); changeViewerImage(-1)">‹</button>
+        <button id="image-viewer-close" type="button" class="image-viewer-close">×</button>
+        <button id="image-viewer-prev" type="button" class="image-viewer-nav image-viewer-prev">‹</button>
         <div class="image-viewer-stage">
             <img id="image-viewer-img" class="image-viewer-img" src="" alt="preview">
             <div id="image-viewer-counter" class="image-viewer-counter">1 / 1</div>
         </div>
-        <button class="image-viewer-nav image-viewer-next" onclick="event.stopPropagation(); changeViewerImage(1)">›</button>
+        <button id="image-viewer-next" type="button" class="image-viewer-nav image-viewer-next">›</button>
     </div>
 
     <div id="user-profile-modal" class="modal hidden" onclick="closeUserProfileOnBackdrop(event)">
