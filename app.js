@@ -1034,16 +1034,16 @@ function openReviewModal(orderId, sellerId, event = null) {
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
     setTimeout(() => {
-        document.body.classList.add("no-scroll");
         $("review-modal")?.classList.remove("hidden");
+        syncBodyScrollLock();
     }, 0);
 }
 
 function closeReviewModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    document.body.classList.remove("no-scroll");
     $("review-modal")?.classList.add("hidden");
+    syncBodyScrollLock();
 }
 
 async function submitReview() {
@@ -1975,13 +1975,14 @@ function openImageViewer(index = 0) {
     if (!viewer || !viewerImage) return;
 
     viewer.classList.remove("hidden");
+    syncBodyScrollLock();
     viewerImage.src = currentModalImages[currentModalImageIndex];
 
     if (viewerCounter) {
         viewerCounter.textContent = `${currentModalImageIndex + 1} / ${currentModalImages.length}`;
     }
 
-    document.body.classList.add("no-scroll");
+    syncBodyScrollLock();
 }
 
 function changeViewerImage(step) {
@@ -1995,7 +1996,7 @@ function changeViewerImage(step) {
 
 function closeImageViewer() {
     $("image-viewer-modal")?.classList.add("hidden");
-    document.body.classList.remove("no-scroll");
+    syncBodyScrollLock();
 }
 
 function closeImageViewerOnBackdrop(event) {
@@ -2008,7 +2009,7 @@ async function openProductModal(productId) {
 
     if (!modal || !body) return;
 
-    requestAnimationFrame(() => { document.body.classList.add("no-scroll"); modal.classList.remove("hidden"); });
+    requestAnimationFrame(() => { modal.classList.remove("hidden"); syncBodyScrollLock(); });
     const modalContent = modal.querySelector(".modal-content");
     if (modalContent) {
         modalContent.classList.remove("modal-animate-in");
@@ -2066,6 +2067,7 @@ function closeProductModal() {
     const modalContent = modal?.querySelector(".modal-content");
     if (modalContent) modalContent.classList.remove("modal-animate-in");
     modal?.classList.add("hidden");
+    syncBodyScrollLock();
 }
 
 function closeProductModalOnBackdrop(event) {
@@ -2745,8 +2747,8 @@ function openReportModal(productId, title = "", event = null) {
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
     setTimeout(() => {
-        document.body.classList.add("no-scroll");
         modal.classList.remove("hidden");
+        syncBodyScrollLock();
     }, 0);
 }
 
@@ -2758,8 +2760,8 @@ function handleReportReasonChange() {
 function closeReportModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    document.body.classList.remove("no-scroll");
     $("report-modal")?.classList.add("hidden");
+    syncBodyScrollLock();
 }
 
 function closeReportModalOnBackdrop(event) {
@@ -3008,6 +3010,7 @@ async function openUserProfile(userId) {
     if (!modal || !body) return;
 
     modal.classList.remove("hidden");
+    syncBodyScrollLock();
     const modalContent = modal.querySelector(".modal-content");
     if (modalContent) { modalContent.classList.remove("modal-animate-in"); requestAnimationFrame(() => modalContent.classList.add("modal-animate-in")); }
     body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
@@ -3109,6 +3112,7 @@ async function toggleSellerSection(userId, section) {
 
 function closeUserProfileModal() {
     $("user-profile-modal")?.classList.add("hidden");
+    syncBodyScrollLock();
 }
 
 function closeUserProfileOnBackdrop(event) {
