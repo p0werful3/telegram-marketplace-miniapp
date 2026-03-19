@@ -2967,3 +2967,6 @@ body{
     grid-template-columns:1fr !important;
   }
 }
+
+
+.modal-close,.image-viewer-close,.image-viewer-nav,.gallery-thumb,.modal-product-image,.seller-profile-btn-modal,.favorite-btn,.buy-btn,.own-product-btn,.ghost-warning-btn,.contact-btn{touch-action:manipulation;}
