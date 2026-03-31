@@ -2,7 +2,6 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "321";
 
 let tg = null;
 let telegramUser = null;
@@ -14,7 +13,6 @@ let currentModalImageIndex = 0;
 let currentModalImages = [];
 let filtersOpen = false;
 let notificationsUnread = 0;
-let dashboardRefreshTimer = null;
 let editingProductId = null;
 let editingExistingImages = [];
 let selectedProductFiles = [];
@@ -49,8 +47,25 @@ const I18N = {
         catalogTab: "Каталог",
         favoritesTab: "Обране",
         searchPlaceholder: "Пошук товарів...",
+        searchProductsLabel: "Пошук товарів",
+        searchSellerLabel: "🔎 Пошук продавця",
         filters: "Фільтри",
+        hideFilters: "Сховати фільтри",
         searchBtn: "Шукати",
+        sellerSearchBtn: "Знайти",
+        myProductsSearchLabel: "Пошук у моїх оголошеннях",
+        myProductsSearchPlaceholder: "Назва, покупець, місто...",
+        applyBtn: "Застосувати",
+        purchaseRequestsHeader: "Запити на покупку",
+        createProductTitle: "Назва товару",
+        createProductDescription: "Опис",
+        createProductPrice: "Ціна",
+        createProductCategory: "Категорія",
+        createProductCondition: "Стан товару",
+        createProductCity: "Місто",
+        createProductPhotos: "Фото товару (можна кілька)",
+        createSubmitBtn: "Створити оголошення",
+        editPhotosHint: "Якщо вибереш нові фото, старі буде замінено.",
         myProductsTitle: "Мої оголошення",
         activeTab: "Активні",
         requestsTab: "Запити на продаж",
@@ -108,8 +123,25 @@ const I18N = {
         catalogTab: "Каталог",
         favoritesTab: "Избранное",
         searchPlaceholder: "Поиск товаров...",
+        searchProductsLabel: "Поиск товаров",
+        searchSellerLabel: "🔎 Поиск продавца",
         filters: "Фильтры",
+        hideFilters: "Скрыть фильтры",
         searchBtn: "Искать",
+        sellerSearchBtn: "Найти",
+        myProductsSearchLabel: "Поиск в моих объявлениях",
+        myProductsSearchPlaceholder: "Название, покупатель, город...",
+        applyBtn: "Применить",
+        purchaseRequestsHeader: "Запросы на покупку",
+        createProductTitle: "Название товара",
+        createProductDescription: "Описание",
+        createProductPrice: "Цена",
+        createProductCategory: "Категория",
+        createProductCondition: "Состояние",
+        createProductCity: "Город",
+        createProductPhotos: "Фото товара (можно несколько)",
+        createSubmitBtn: "Создать объявление",
+        editPhotosHint: "Если выберете новые фото, старые будут заменены.",
         myProductsTitle: "Мои объявления",
         activeTab: "Активные",
         requestsTab: "Запросы на продажу",
@@ -167,8 +199,25 @@ const I18N = {
         catalogTab: "Catalog",
         favoritesTab: "Favorites",
         searchPlaceholder: "Search products...",
+        searchProductsLabel: "Search products",
+        searchSellerLabel: "🔎 Search seller",
         filters: "Filters",
+        hideFilters: "Hide filters",
         searchBtn: "Search",
+        sellerSearchBtn: "Find",
+        myProductsSearchLabel: "Search my listings",
+        myProductsSearchPlaceholder: "Title, buyer, city...",
+        applyBtn: "Apply",
+        purchaseRequestsHeader: "Purchase requests",
+        createProductTitle: "Product title",
+        createProductDescription: "Description",
+        createProductPrice: "Price",
+        createProductCategory: "Category",
+        createProductCondition: "Condition",
+        createProductCity: "City",
+        createProductPhotos: "Product photos (multiple allowed)",
+        createSubmitBtn: "Create listing",
+        editPhotosHint: "If you choose new photos, old ones will be replaced.",
         myProductsTitle: "My listings",
         activeTab: "Active",
         requestsTab: "Sale requests",
@@ -209,6 +258,10 @@ const I18N = {
 
 function t(key) {
     return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
+}
+
+function getFiltersToggleText(isOpen) {
+    return isOpen ? `${t("hideFilters")} ▲` : `${t("filters")} ▼`;
 }
 
 function syncBodyScrollLock() {
@@ -273,26 +326,40 @@ function applyLanguageTexts() {
     setText('#tab-catalog .section-header h2', t('catalogTitle'));
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
     setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
+    setText('#catalog-search-label', t('searchProductsLabel'));
+    setText('#seller-search-label', t('searchSellerLabel'));
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
-    const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
-    const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
+    const filtersBtn = $('filters-toggle-btn');
+    if (filtersBtn) filtersBtn.textContent = getFiltersToggleText(filtersOpen);
+    const catalogRefreshBtn = document.querySelector('#tab-catalog .section-header .section-btn');
+    if (catalogRefreshBtn) catalogRefreshBtn.textContent = t('refresh');
+    if ($('catalog-search-btn')) $('catalog-search-btn').textContent = t('searchBtn');
+    if ($('seller-search-btn')) $('seller-search-btn').textContent = t('sellerSearchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('requestsTab'); if (mpBtns[2]) mpBtns[2].textContent = t('soldTab'); if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
+    if ($('my-products-active-btn')) $('my-products-active-btn').textContent = t('activeTab');
+    if ($('my-products-requests-btn-label')) $('my-products-requests-btn-label').textContent = t('requestsTab');
+    if ($('my-products-sold-btn')) $('my-products-sold-btn').textContent = t('soldTab');
+    if ($('my-products-archived-btn')) $('my-products-archived-btn').textContent = t('archivedTab');
+    setText('#tab-my-products .my-products-toolbar .toolbar-label', t('myProductsSearchLabel'));
+    const myProductsSearchInput = $('my-products-search-input');
+    if (myProductsSearchInput) myProductsSearchInput.placeholder = t('myProductsSearchPlaceholder');
+    if ($('my-products-apply-btn')) $('my-products-apply-btn').textContent = t('applyBtn');
+    setText('#purchase-requests-wrap .requests-header', t('purchaseRequestsHeader'));
     setText('#tab-create .section-header h2', t('createTitle'));
     const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
     setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
     const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
     setText('#tab-profile > h2', t('profileTitle')); setText('#profile-edit-wrap h3', t('profileSettings'));
     const createLabels = document.querySelectorAll('#tab-create label');
-    if (createLabels[0]) createLabels[0].textContent = currentLanguage === 'en' ? 'Product title' : currentLanguage === 'ru' ? 'Название товара' : 'Назва товару';
-    if (createLabels[1]) createLabels[1].textContent = currentLanguage === 'en' ? 'Description' : currentLanguage === 'ru' ? 'Описание' : 'Опис';
-    if (createLabels[2]) createLabels[2].textContent = currentLanguage === 'en' ? 'Price' : currentLanguage === 'ru' ? 'Цена' : 'Ціна';
-    if (createLabels[3]) createLabels[3].textContent = currentLanguage === 'en' ? 'Category' : currentLanguage === 'ru' ? 'Категория' : 'Категорія';
-    if (createLabels[4]) createLabels[4].textContent = currentLanguage === 'en' ? 'Condition' : currentLanguage === 'ru' ? 'Состояние' : 'Стан товару';
-    if (createLabels[5]) createLabels[5].textContent = currentLanguage === 'en' ? 'City' : currentLanguage === 'ru' ? 'Город' : 'Місто';
-    if (createLabels[6]) createLabels[6].textContent = currentLanguage === 'en' ? 'Product photos (multiple allowed)' : currentLanguage === 'ru' ? 'Фото товара (можно несколько)' : 'Фото товару (можна кілька)';
-    const submitBtn = $('submit-product-btn'); if (submitBtn) submitBtn.textContent = currentLanguage === 'en' ? 'Create listing' : currentLanguage === 'ru' ? 'Создать объявление' : 'Створити оголошення';
-    const editHint = $('edit-photos-hint'); if (editHint) editHint.textContent = currentLanguage === 'en' ? 'If you choose new photos, old ones will be replaced.' : currentLanguage === 'ru' ? 'Если выберете новые фото, старые будут заменены.' : 'Якщо вибереш нові фото, старі буде замінено.';
+    if (createLabels[0]) createLabels[0].textContent = t('createProductTitle');
+    if (createLabels[1]) createLabels[1].textContent = t('createProductDescription');
+    if (createLabels[2]) createLabels[2].textContent = t('createProductPrice');
+    if (createLabels[3]) createLabels[3].textContent = t('createProductCategory');
+    if (createLabels[4]) createLabels[4].textContent = t('createProductCondition');
+    if (createLabels[5]) createLabels[5].textContent = t('createProductCity');
+    if (createLabels[6]) createLabels[6].textContent = t('createProductPhotos');
+    const submitBtn = $('submit-product-btn'); if (submitBtn) submitBtn.textContent = t('createSubmitBtn');
+    const editHint = $('edit-photos-hint'); if (editHint) editHint.textContent = t('editPhotosHint');
     const statusLabel = document.querySelectorAll('.profile-mini-label')[1]; if (statusLabel) statusLabel.textContent = t('status');
     refreshTelegramLoginUi();
 }
@@ -341,11 +408,6 @@ function escapeHtml(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
-
-function escapeJs(value) {
-    return JSON.stringify(String(value ?? "")).slice(1, -1).replace(/'/g, "\'");
-}
-
 
 function isValidUrl(value) {
     if (!value) return false;
@@ -658,7 +720,7 @@ function toggleFilters(forceState = null) {
     filtersOpen = forceState === null ? !filtersOpen : Boolean(forceState);
 
     filtersWrap.classList.toggle("hidden", !filtersOpen);
-    toggleBtn.textContent = filtersOpen ? "Сховати фільтри" : "Фільтри";
+    toggleBtn.textContent = getFiltersToggleText(filtersOpen);
     toggleBtn.classList.toggle("active", filtersOpen);
 }
 
@@ -1018,7 +1080,8 @@ async function loadPurchaseHistory() {
 
 let reviewOrderId = null;
 let reviewSellerId = null;
-let selectedReportReason = "Шахрайство";
+let reviewModalOpenedAt = 0;
+let reportModalOpenedAt = 0;
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -1045,6 +1108,7 @@ function openReviewModal(orderId, sellerId, event = null) {
     if ($("review-comment")) $("review-comment").value = "";
     setTimeout(() => {
         $("review-modal")?.classList.remove("hidden");
+        reviewModalOpenedAt = Date.now();
         syncBodyScrollLock();
     }, 0);
 }
@@ -2761,6 +2825,7 @@ function openReportModal(productId, title = "", event = null) {
     $("report-custom-reason-wrap")?.classList.add("hidden");
     setTimeout(() => {
         modal.classList.remove("hidden");
+        reportModalOpenedAt = Date.now();
         syncBodyScrollLock();
     }, 0);
 }
@@ -3245,13 +3310,20 @@ if (typeof updateAvatarFileLabel === "function") window.updateAvatarFileLabel = 
 
 const reviewModalEl = $("review-modal");
 const reportModalEl = $("report-modal");
-const productModalEl = $("product-modal");
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
-reviewModalEl?.addEventListener("click", (event) => { if (event.target === reviewModalEl) closeReviewModal(event); }, true);
-reportModalEl?.addEventListener("click", (event) => { if (event.target === reportModalEl) closeReportModal(event); }, true);
+reviewModalEl?.addEventListener("click", (event) => {
+    if (event.target !== reviewModalEl) return;
+    if (Date.now() - reviewModalOpenedAt < 250) return;
+    closeReviewModal(event);
+}, true);
+reportModalEl?.addEventListener("click", (event) => {
+    if (event.target !== reportModalEl) return;
+    if (Date.now() - reportModalOpenedAt < 250) return;
+    closeReportModal(event);
+}, true);
 
 document.addEventListener("pointerdown", (event) => {
     if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
