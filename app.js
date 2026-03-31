@@ -49,12 +49,8 @@ const I18N = {
         catalogTab: "Каталог",
         favoritesTab: "Обране",
         searchPlaceholder: "Пошук товарів...",
-        searchProductsLabel: "Пошук товарів",
-        searchSellerLabel: "🔎 Пошук продавця",
         filters: "Фільтри",
-        hideFilters: "Сховати фільтри",
         searchBtn: "Шукати",
-        sellerSearchBtn: "Знайти",
         myProductsTitle: "Мої оголошення",
         activeTab: "Активні",
         requestsTab: "Запити на продаж",
@@ -112,12 +108,8 @@ const I18N = {
         catalogTab: "Каталог",
         favoritesTab: "Избранное",
         searchPlaceholder: "Поиск товаров...",
-        searchProductsLabel: "Поиск товаров",
-        searchSellerLabel: "🔎 Поиск продавца",
         filters: "Фильтры",
-        hideFilters: "Скрыть фильтры",
         searchBtn: "Искать",
-        sellerSearchBtn: "Найти",
         myProductsTitle: "Мои объявления",
         activeTab: "Активные",
         requestsTab: "Запросы на продажу",
@@ -175,12 +167,8 @@ const I18N = {
         catalogTab: "Catalog",
         favoritesTab: "Favorites",
         searchPlaceholder: "Search products...",
-        searchProductsLabel: "Search products",
-        searchSellerLabel: "🔎 Search seller",
         filters: "Filters",
-        hideFilters: "Hide filters",
         searchBtn: "Search",
-        sellerSearchBtn: "Find",
         myProductsTitle: "My listings",
         activeTab: "Active",
         requestsTab: "Sale requests",
@@ -221,10 +209,6 @@ const I18N = {
 
 function t(key) {
     return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
-}
-
-function getFiltersToggleText(isOpen) {
-    return isOpen ? `${t("hideFilters")} ▲` : `${t("filters")} ▼`;
 }
 
 function syncBodyScrollLock() {
@@ -289,20 +273,11 @@ function applyLanguageTexts() {
     setText('#tab-catalog .section-header h2', t('catalogTitle'));
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
     setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
-    setText('#catalog-search-label', t('searchProductsLabel'));
-    setText('#seller-search-label', t('searchSellerLabel'));
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
-    const filtersBtn = $('filters-toggle-btn');
-    if (filtersBtn) filtersBtn.textContent = getFiltersToggleText(filtersOpen);
-    const catalogRefreshBtn = document.querySelector('#tab-catalog .section-header .section-btn');
-    if (catalogRefreshBtn) catalogRefreshBtn.textContent = t('refresh');
-    if ($('catalog-search-btn')) $('catalog-search-btn').textContent = t('searchBtn');
-    if ($('seller-search-btn')) $('seller-search-btn').textContent = t('sellerSearchBtn');
+    const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
+    const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    if ($('my-products-active-btn')) $('my-products-active-btn').textContent = t('activeTab');
-    if ($('my-products-requests-btn-label')) $('my-products-requests-btn-label').textContent = t('requestsTab');
-    if ($('my-products-sold-btn')) $('my-products-sold-btn').textContent = t('soldTab');
-    if ($('my-products-archived-btn')) $('my-products-archived-btn').textContent = t('archivedTab');
+    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('requestsTab'); if (mpBtns[2]) mpBtns[2].textContent = t('soldTab'); if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
     setText('#tab-create .section-header h2', t('createTitle'));
     const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
     setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
@@ -683,7 +658,7 @@ function toggleFilters(forceState = null) {
     filtersOpen = forceState === null ? !filtersOpen : Boolean(forceState);
 
     filtersWrap.classList.toggle("hidden", !filtersOpen);
-    toggleBtn.textContent = getFiltersToggleText(filtersOpen);
+    toggleBtn.textContent = filtersOpen ? "Сховати фільтри" : "Фільтри";
     toggleBtn.classList.toggle("active", filtersOpen);
 }
 
@@ -1046,6 +1021,11 @@ let reviewSellerId = null;
 let selectedReportReason = "Шахрайство";
 let reviewModalOpenedAt = 0;
 let reportModalOpenedAt = 0;
+let reviewModalIgnoreBackdropClick = false;
+let reportModalIgnoreBackdropClick = false;
+let reviewModalIgnoreTimer = null;
+let reportModalIgnoreTimer = null;
+const MODAL_BACKDROP_GUARD_MS = 400;
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -1073,6 +1053,12 @@ function openReviewModal(orderId, sellerId, event = null) {
     setTimeout(() => {
         $("review-modal")?.classList.remove("hidden");
         reviewModalOpenedAt = Date.now();
+        reviewModalIgnoreBackdropClick = true;
+        if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
+        reviewModalIgnoreTimer = setTimeout(() => {
+            reviewModalIgnoreBackdropClick = false;
+            reviewModalIgnoreTimer = null;
+        }, MODAL_BACKDROP_GUARD_MS);
         syncBodyScrollLock();
     }, 0);
 }
@@ -1080,6 +1066,11 @@ function openReviewModal(orderId, sellerId, event = null) {
 function closeReviewModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    reviewModalIgnoreBackdropClick = false;
+    if (reviewModalIgnoreTimer) {
+        clearTimeout(reviewModalIgnoreTimer);
+        reviewModalIgnoreTimer = null;
+    }
     $("review-modal")?.classList.add("hidden");
     syncBodyScrollLock();
 }
@@ -2790,6 +2781,12 @@ function openReportModal(productId, title = "", event = null) {
     setTimeout(() => {
         modal.classList.remove("hidden");
         reportModalOpenedAt = Date.now();
+        reportModalIgnoreBackdropClick = true;
+        if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+        reportModalIgnoreTimer = setTimeout(() => {
+            reportModalIgnoreBackdropClick = false;
+            reportModalIgnoreTimer = null;
+        }, MODAL_BACKDROP_GUARD_MS);
         syncBodyScrollLock();
     }, 0);
 }
@@ -2802,6 +2799,11 @@ function handleReportReasonChange() {
 function closeReportModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    reportModalIgnoreBackdropClick = false;
+    if (reportModalIgnoreTimer) {
+        clearTimeout(reportModalIgnoreTimer);
+        reportModalIgnoreTimer = null;
+    }
     $("report-modal")?.classList.add("hidden");
     syncBodyScrollLock();
 }
@@ -3281,12 +3283,14 @@ reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.addEventListener("click", (event) => {
     if (event.target !== reviewModalEl) return;
-    if (Date.now() - reviewModalOpenedAt < 250) return;
+    if (reviewModalIgnoreBackdropClick) return;
+    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
     closeReviewModal(event);
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
     if (event.target !== reportModalEl) return;
-    if (Date.now() - reportModalOpenedAt < 250) return;
+    if (reportModalIgnoreBackdropClick) return;
+    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
     closeReportModal(event);
 }, true);
 
