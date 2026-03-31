@@ -1019,6 +1019,13 @@ async function loadPurchaseHistory() {
 let reviewOrderId = null;
 let reviewSellerId = null;
 let selectedReportReason = "Шахрайство";
+let reviewModalOpenedAt = 0;
+let reportModalOpenedAt = 0;
+let reviewModalIgnoreBackdropClick = false;
+let reportModalIgnoreBackdropClick = false;
+let reviewModalIgnoreTimer = null;
+let reportModalIgnoreTimer = null;
+const MODAL_BACKDROP_GUARD_MS = 400;
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -1045,6 +1052,13 @@ function openReviewModal(orderId, sellerId, event = null) {
     if ($("review-comment")) $("review-comment").value = "";
     setTimeout(() => {
         $("review-modal")?.classList.remove("hidden");
+        reviewModalOpenedAt = Date.now();
+        reviewModalIgnoreBackdropClick = true;
+        if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
+        reviewModalIgnoreTimer = setTimeout(() => {
+            reviewModalIgnoreBackdropClick = false;
+            reviewModalIgnoreTimer = null;
+        }, MODAL_BACKDROP_GUARD_MS);
         syncBodyScrollLock();
     }, 0);
 }
@@ -1052,6 +1066,11 @@ function openReviewModal(orderId, sellerId, event = null) {
 function closeReviewModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    reviewModalIgnoreBackdropClick = false;
+    if (reviewModalIgnoreTimer) {
+        clearTimeout(reviewModalIgnoreTimer);
+        reviewModalIgnoreTimer = null;
+    }
     $("review-modal")?.classList.add("hidden");
     syncBodyScrollLock();
 }
@@ -2761,6 +2780,13 @@ function openReportModal(productId, title = "", event = null) {
     $("report-custom-reason-wrap")?.classList.add("hidden");
     setTimeout(() => {
         modal.classList.remove("hidden");
+        reportModalOpenedAt = Date.now();
+        reportModalIgnoreBackdropClick = true;
+        if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+        reportModalIgnoreTimer = setTimeout(() => {
+            reportModalIgnoreBackdropClick = false;
+            reportModalIgnoreTimer = null;
+        }, MODAL_BACKDROP_GUARD_MS);
         syncBodyScrollLock();
     }, 0);
 }
@@ -2773,6 +2799,11 @@ function handleReportReasonChange() {
 function closeReportModal(event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    reportModalIgnoreBackdropClick = false;
+    if (reportModalIgnoreTimer) {
+        clearTimeout(reportModalIgnoreTimer);
+        reportModalIgnoreTimer = null;
+    }
     $("report-modal")?.classList.add("hidden");
     syncBodyScrollLock();
 }
@@ -3250,8 +3281,18 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
-reviewModalEl?.addEventListener("click", (event) => { if (event.target === reviewModalEl) closeReviewModal(event); }, true);
-reportModalEl?.addEventListener("click", (event) => { if (event.target === reportModalEl) closeReportModal(event); }, true);
+reviewModalEl?.addEventListener("click", (event) => {
+    if (event.target !== reviewModalEl) return;
+    if (reviewModalIgnoreBackdropClick) return;
+    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    closeReviewModal(event);
+}, true);
+reportModalEl?.addEventListener("click", (event) => {
+    if (event.target !== reportModalEl) return;
+    if (reportModalIgnoreBackdropClick) return;
+    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    closeReportModal(event);
+}, true);
 
 document.addEventListener("pointerdown", (event) => {
     if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
