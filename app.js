@@ -1026,6 +1026,26 @@ let reportModalIgnoreBackdropClick = false;
 let reviewModalIgnoreTimer = null;
 let reportModalIgnoreTimer = null;
 const MODAL_BACKDROP_GUARD_MS = 400;
+const MODAL_DEBUG_LOGS = true;
+
+function modalDebugLog(scope, reason, event = null) {
+    if (!MODAL_DEBUG_LOGS) return;
+    const target = event?.target;
+    const currentTarget = event?.currentTarget;
+    const targetId = target?.id || "";
+    const targetClass = target?.className || "";
+    const currentTargetId = currentTarget?.id || "";
+    const currentTargetClass = currentTarget?.className || "";
+    console.log(`[modal-debug] ${scope}`, {
+        reason,
+        eventType: event?.type || "none",
+        timestamp: Date.now(),
+        targetId,
+        targetClass,
+        currentTargetId,
+        currentTargetClass
+    });
+}
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -1044,6 +1064,7 @@ async function cancelPurchaseRequest(orderId) {
 }
 
 function openReviewModal(orderId, sellerId, event = null) {
+    modalDebugLog("openReviewModal", "open requested", event);
     event?.preventDefault?.();
     event?.stopPropagation?.();
     reviewOrderId = orderId;
@@ -1054,16 +1075,19 @@ function openReviewModal(orderId, sellerId, event = null) {
         $("review-modal")?.classList.remove("hidden");
         reviewModalOpenedAt = Date.now();
         reviewModalIgnoreBackdropClick = true;
+        modalDebugLog("openReviewModal", "opened + guard enabled");
         if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
         reviewModalIgnoreTimer = setTimeout(() => {
             reviewModalIgnoreBackdropClick = false;
             reviewModalIgnoreTimer = null;
+            modalDebugLog("openReviewModal", "guard disabled by timer");
         }, MODAL_BACKDROP_GUARD_MS);
         syncBodyScrollLock();
     }, 0);
 }
 
 function closeReviewModal(event = null) {
+    modalDebugLog("closeReviewModal", "close requested", event);
     event?.preventDefault?.();
     event?.stopPropagation?.();
     reviewModalIgnoreBackdropClick = false;
@@ -2769,6 +2793,7 @@ async function submitIdea() {
 }
 
 function openReportModal(productId, title = "", event = null) {
+    modalDebugLog("openReportModal", "open requested", event);
     event?.preventDefault?.();
     event?.stopPropagation?.();
     const modal = $("report-modal");
@@ -2782,10 +2807,12 @@ function openReportModal(productId, title = "", event = null) {
         modal.classList.remove("hidden");
         reportModalOpenedAt = Date.now();
         reportModalIgnoreBackdropClick = true;
+        modalDebugLog("openReportModal", "opened + guard enabled");
         if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
         reportModalIgnoreTimer = setTimeout(() => {
             reportModalIgnoreBackdropClick = false;
             reportModalIgnoreTimer = null;
+            modalDebugLog("openReportModal", "guard disabled by timer");
         }, MODAL_BACKDROP_GUARD_MS);
         syncBodyScrollLock();
     }, 0);
@@ -2797,6 +2824,7 @@ function handleReportReasonChange() {
 }
 
 function closeReportModal(event = null) {
+    modalDebugLog("closeReportModal", "close requested", event);
     event?.preventDefault?.();
     event?.stopPropagation?.();
     reportModalIgnoreBackdropClick = false;
@@ -3283,18 +3311,35 @@ reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.addEventListener("click", (event) => {
     if (event.target !== reviewModalEl) return;
-    if (reviewModalIgnoreBackdropClick) return;
-    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    if (reviewModalIgnoreBackdropClick) {
+        modalDebugLog("review-backdrop", "ignored by guard flag", event);
+        return;
+    }
+    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) {
+        modalDebugLog("review-backdrop", "ignored by guard window", event);
+        return;
+    }
+    modalDebugLog("review-backdrop", "closing modal by backdrop click", event);
     closeReviewModal(event);
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
     if (event.target !== reportModalEl) return;
-    if (reportModalIgnoreBackdropClick) return;
-    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    if (reportModalIgnoreBackdropClick) {
+        modalDebugLog("report-backdrop", "ignored by guard flag", event);
+        return;
+    }
+    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) {
+        modalDebugLog("report-backdrop", "ignored by guard window", event);
+        return;
+    }
+    modalDebugLog("report-backdrop", "closing modal by backdrop click", event);
     closeReportModal(event);
 }, true);
 
 document.addEventListener("pointerdown", (event) => {
+    if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
+        modalDebugLog("document-pointerdown", "open-button pointerdown stopPropagation", event);
+    }
     if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
         event.stopPropagation();
     }
@@ -3303,6 +3348,7 @@ document.addEventListener("pointerdown", (event) => {
 document.addEventListener("click", (event) => {
     const reviewBtn = event.target.closest(".review-open-btn");
     if (reviewBtn) {
+        modalDebugLog("document-click", "review-open-btn clicked", event);
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation?.();
@@ -3314,6 +3360,7 @@ document.addEventListener("click", (event) => {
 
     const reportBtn = event.target.closest(".report-open-btn");
     if (reportBtn) {
+        modalDebugLog("document-click", "report-open-btn clicked", event);
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation?.();
