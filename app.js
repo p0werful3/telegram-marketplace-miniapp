@@ -1026,6 +1026,8 @@ let reportModalIgnoreBackdropClick = false;
 let reviewModalIgnoreTimer = null;
 let reportModalIgnoreTimer = null;
 const MODAL_BACKDROP_GUARD_MS = 400;
+let lastModalOpenTriggerAt = 0;
+let lastModalOpenTarget = "";
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -1050,17 +1052,15 @@ function openReviewModal(orderId, sellerId, event = null) {
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
-    setTimeout(() => {
-        $("review-modal")?.classList.remove("hidden");
-        reviewModalOpenedAt = Date.now();
-        reviewModalIgnoreBackdropClick = true;
-        if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
-        reviewModalIgnoreTimer = setTimeout(() => {
-            reviewModalIgnoreBackdropClick = false;
-            reviewModalIgnoreTimer = null;
-        }, MODAL_BACKDROP_GUARD_MS);
-        syncBodyScrollLock();
-    }, 0);
+    $("review-modal")?.classList.remove("hidden");
+    reviewModalOpenedAt = Date.now();
+    reviewModalIgnoreBackdropClick = true;
+    if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
+    reviewModalIgnoreTimer = setTimeout(() => {
+        reviewModalIgnoreBackdropClick = false;
+        reviewModalIgnoreTimer = null;
+    }, 900);
+    syncBodyScrollLock();
 }
 
 function closeReviewModal(event = null) {
@@ -2778,17 +2778,15 @@ function openReportModal(productId, title = "", event = null) {
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
-    setTimeout(() => {
-        modal.classList.remove("hidden");
-        reportModalOpenedAt = Date.now();
-        reportModalIgnoreBackdropClick = true;
-        if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
-        reportModalIgnoreTimer = setTimeout(() => {
-            reportModalIgnoreBackdropClick = false;
-            reportModalIgnoreTimer = null;
-        }, MODAL_BACKDROP_GUARD_MS);
-        syncBodyScrollLock();
-    }, 0);
+    modal.classList.remove("hidden");
+    reportModalOpenedAt = Date.now();
+    reportModalIgnoreBackdropClick = true;
+    if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+    reportModalIgnoreTimer = setTimeout(() => {
+        reportModalIgnoreBackdropClick = false;
+        reportModalIgnoreTimer = null;
+    }, 900);
+    syncBodyScrollLock();
 }
 
 function handleReportReasonChange() {
@@ -2809,7 +2807,8 @@ function closeReportModal(event = null) {
 }
 
 function closeReportModalOnBackdrop(event) {
-    if (event.target?.id === "report-modal") closeReportModal();
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
 }
 
 async function submitReport() {
@@ -3281,34 +3280,45 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
+reviewModalEl?.addEventListener("pointerdown", (event) => {
+    if (event.target === reviewModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}, true);
 reviewModalEl?.addEventListener("click", (event) => {
-    if (event.target !== reviewModalEl) return;
-    if (reviewModalIgnoreBackdropClick) return;
-    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
-    closeReviewModal(event);
+    if (event.target === reviewModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}, true);
+reportModalEl?.addEventListener("pointerdown", (event) => {
+    if (event.target === reportModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
-    if (event.target !== reportModalEl) return;
-    if (reportModalIgnoreBackdropClick) return;
-    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
-    closeReportModal(event);
-}, true);
-
-document.addEventListener("pointerdown", (event) => {
-    if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
+    if (event.target === reportModalEl) {
+        event.preventDefault();
         event.stopPropagation();
     }
 }, true);
 
-document.addEventListener("click", (event) => {
+function handleReviewAndReportOpen(event) {
     const reviewBtn = event.target.closest(".review-open-btn");
     if (reviewBtn) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation?.();
+        if (event.type === "click" && lastModalOpenTarget === "review" && Date.now() - lastModalOpenTriggerAt < 900) {
+            return;
+        }
+        lastModalOpenTriggerAt = Date.now();
+        lastModalOpenTarget = "review";
         const orderId = Number(reviewBtn.dataset.orderId || 0);
         const sellerId = Number(reviewBtn.dataset.sellerId || 0);
-        if (orderId) setTimeout(() => openReviewModal(orderId, sellerId), 0);
+        if (orderId) openReviewModal(orderId, sellerId, event);
         return;
     }
 
@@ -3317,10 +3327,45 @@ document.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation?.();
+        if (event.type === "click" && lastModalOpenTarget === "report" && Date.now() - lastModalOpenTriggerAt < 900) {
+            return;
+        }
+        lastModalOpenTriggerAt = Date.now();
+        lastModalOpenTarget = "report";
         const productId = Number(reportBtn.dataset.productId || 0);
         const title = reportBtn.dataset.productTitle || "";
-        if (productId) setTimeout(() => openReportModal(productId, title), 0);
+        if (productId) openReportModal(productId, title, event);
         return;
+    }
+}
+
+document.addEventListener("pointerup", handleReviewAndReportOpen, true);
+document.addEventListener("click", handleReviewAndReportOpen, true);
+
+document.addEventListener("pointerdown", (event) => {
+    if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+    }
+}, true);
+
+document.addEventListener("click", (event) => {
+    if (reviewModalEl && !reviewModalEl.classList.contains("hidden")) {
+        if (event.target === reviewModalEl) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+    }
+    if (reportModalEl && !reportModalEl.classList.contains("hidden")) {
+        if (event.target === reportModalEl) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
     }
 }, true);
 
