@@ -96,13 +96,13 @@
                 </div>
 
                 <div class="catalog-toolbar catalog-toolbar-stacked">
-                    <label id="catalog-search-label" class="toolbar-label">Пошук товарів</label>
+                    <label class="toolbar-label">Пошук товарів</label>
                     <input id="search-input" type="text" placeholder="Пошук товарів...">
-                    <button id="catalog-search-btn" type="button" class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
-                    <label id="seller-search-label" class="toolbar-label seller-search-label">🔎 Пошук продавця</label>
+                    <button type="button" class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
+                    <label class="toolbar-label seller-search-label">🔎 Пошук продавця</label>
                     <div class="seller-search-row">
                         <input id="seller-search-input" type="text" placeholder="username (без @)">
-                        <button id="seller-search-btn" type="button" class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
+                        <button type="button" class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
                     </div>
                     <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри ▼</button>
                 </div>
@@ -151,7 +151,7 @@
 
                 <div class="subtabs">
                     <button id="my-products-active-btn" class="subtab-btn active" onclick="switchMyProductsView('active')">Активні</button>
-                    <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')"><span id="my-products-requests-btn-label">Запити на продаж</span> <span id="my-products-requests-badge" class="mini-badge hidden">0</span></button>
+                    <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')">Запити на продаж <span id="my-products-requests-badge" class="mini-badge hidden">0</span></button>
                     <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Продані</button>
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
                 </div>
@@ -165,7 +165,7 @@
                         <option value="price_asc">Дешевші</option>
                         <option value="price_desc">Дорожчі</option>
                     </select>
-                    <button id="my-products-apply-btn" type="button" class="secondary-btn section-btn" onclick="applyMyProductsFilters()">Застосувати</button>
+                    <button type="button" class="secondary-btn section-btn" onclick="applyMyProductsFilters()">Застосувати</button>
                 </div>
 
                 <div id="purchase-requests-wrap" class="hidden">
