@@ -1044,6 +1044,8 @@ async function loadPurchaseHistory() {
 let reviewOrderId = null;
 let reviewSellerId = null;
 let selectedReportReason = "Шахрайство";
+let reviewModalOpenedAt = 0;
+let reportModalOpenedAt = 0;
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -1070,6 +1072,7 @@ function openReviewModal(orderId, sellerId, event = null) {
     if ($("review-comment")) $("review-comment").value = "";
     setTimeout(() => {
         $("review-modal")?.classList.remove("hidden");
+        reviewModalOpenedAt = Date.now();
         syncBodyScrollLock();
     }, 0);
 }
@@ -2786,6 +2789,7 @@ function openReportModal(productId, title = "", event = null) {
     $("report-custom-reason-wrap")?.classList.add("hidden");
     setTimeout(() => {
         modal.classList.remove("hidden");
+        reportModalOpenedAt = Date.now();
         syncBodyScrollLock();
     }, 0);
 }
@@ -3275,8 +3279,16 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
-reviewModalEl?.addEventListener("click", (event) => { if (event.target === reviewModalEl) closeReviewModal(event); }, true);
-reportModalEl?.addEventListener("click", (event) => { if (event.target === reportModalEl) closeReportModal(event); }, true);
+reviewModalEl?.addEventListener("click", (event) => {
+    if (event.target !== reviewModalEl) return;
+    if (Date.now() - reviewModalOpenedAt < 250) return;
+    closeReviewModal(event);
+}, true);
+reportModalEl?.addEventListener("click", (event) => {
+    if (event.target !== reportModalEl) return;
+    if (Date.now() - reportModalOpenedAt < 250) return;
+    closeReportModal(event);
+}, true);
 
 document.addEventListener("pointerdown", (event) => {
     if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
