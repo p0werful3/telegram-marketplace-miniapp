@@ -2,7 +2,7 @@ const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "324";
+const FRONTEND_VERSION = "321";
 
 let tg = null;
 let telegramUser = null;
@@ -1046,21 +1046,22 @@ async function cancelPurchaseRequest(orderId) {
 function openReviewModal(orderId, sellerId, event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
     reviewOrderId = orderId;
     reviewSellerId = sellerId;
     if ($("review-rating")) $("review-rating").value = "5";
     if ($("review-comment")) $("review-comment").value = "";
-    setTimeout(() => {
-        $("review-modal")?.classList.remove("hidden");
-        reviewModalOpenedAt = Date.now();
-        reviewModalIgnoreBackdropClick = true;
-        if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
-        reviewModalIgnoreTimer = setTimeout(() => {
-            reviewModalIgnoreBackdropClick = false;
-            reviewModalIgnoreTimer = null;
-        }, MODAL_BACKDROP_GUARD_MS);
-        syncBodyScrollLock();
-    }, 0);
+    const modal = $("review-modal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    reviewModalOpenedAt = Date.now();
+    reviewModalIgnoreBackdropClick = true;
+    if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
+    reviewModalIgnoreTimer = setTimeout(() => {
+        reviewModalIgnoreBackdropClick = false;
+        reviewModalIgnoreTimer = null;
+    }, MODAL_BACKDROP_GUARD_MS);
+    syncBodyScrollLock();
 }
 
 function closeReviewModal(event = null) {
@@ -2771,6 +2772,7 @@ async function submitIdea() {
 function openReportModal(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
@@ -2778,17 +2780,17 @@ function openReportModal(productId, title = "", event = null) {
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
-    setTimeout(() => {
-        modal.classList.remove("hidden");
-        reportModalOpenedAt = Date.now();
-        reportModalIgnoreBackdropClick = true;
-        if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
-        reportModalIgnoreTimer = setTimeout(() => {
-            reportModalIgnoreBackdropClick = false;
-            reportModalIgnoreTimer = null;
-        }, MODAL_BACKDROP_GUARD_MS);
-        syncBodyScrollLock();
-    }, 0);
+    // Close product modal first so only one overlay remains active.
+    closeProductModal();
+    modal.classList.remove("hidden");
+    reportModalOpenedAt = Date.now();
+    reportModalIgnoreBackdropClick = true;
+    if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+    reportModalIgnoreTimer = setTimeout(() => {
+        reportModalIgnoreBackdropClick = false;
+        reportModalIgnoreTimer = null;
+    }, MODAL_BACKDROP_GUARD_MS);
+    syncBodyScrollLock();
 }
 
 function handleReportReasonChange() {
@@ -3301,6 +3303,25 @@ document.addEventListener("pointerdown", (event) => {
 }, true);
 
 document.addEventListener("click", (event) => {
+    const reviewModalContent = reviewModalEl?.querySelector(".modal-content");
+    const reportModalContent = reportModalEl?.querySelector(".modal-content");
+    if (reviewModalIgnoreBackdropClick && reviewModalEl && !reviewModalEl.classList.contains("hidden")) {
+        if (!reviewModalContent || !reviewModalContent.contains(event.target)) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+    }
+    if (reportModalIgnoreBackdropClick && reportModalEl && !reportModalEl.classList.contains("hidden")) {
+        if (!reportModalContent || !reportModalContent.contains(event.target)) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation?.();
+            return;
+        }
+    }
+
     const reviewBtn = event.target.closest(".review-open-btn");
     if (reviewBtn) {
         event.preventDefault();
@@ -3308,7 +3329,7 @@ document.addEventListener("click", (event) => {
         event.stopImmediatePropagation?.();
         const orderId = Number(reviewBtn.dataset.orderId || 0);
         const sellerId = Number(reviewBtn.dataset.sellerId || 0);
-        if (orderId) setTimeout(() => openReviewModal(orderId, sellerId), 0);
+        if (orderId) openReviewModal(orderId, sellerId, event);
         return;
     }
 
@@ -3319,7 +3340,7 @@ document.addEventListener("click", (event) => {
         event.stopImmediatePropagation?.();
         const productId = Number(reportBtn.dataset.productId || 0);
         const title = reportBtn.dataset.productTitle || "";
-        if (productId) setTimeout(() => openReportModal(productId, title), 0);
+        if (productId) openReportModal(productId, title, event);
         return;
     }
 }, true);
