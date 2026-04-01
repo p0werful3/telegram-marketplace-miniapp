@@ -1,3 +1,4 @@
+console.log("APP VERSION 335 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
