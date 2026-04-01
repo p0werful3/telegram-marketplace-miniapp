@@ -211,6 +211,18 @@ function t(key) {
     return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
 }
 
+function safeOpenReview(orderId, sellerId, event = null) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    openReviewModal(orderId, sellerId, event);
+}
+
+function safeOpenReport(productId, title = "", event = null) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    openReportModal(productId, title, event);
+}
+
 function syncBodyScrollLock() {
     const hasOpenModal = ["product-modal", "image-viewer-modal", "review-modal", "report-modal", "user-profile-modal"].some((id) => {
         const el = $(id);
@@ -1026,20 +1038,6 @@ let reportModalIgnoreBackdropClick = false;
 let reviewModalIgnoreTimer = null;
 let reportModalIgnoreTimer = null;
 const MODAL_BACKDROP_GUARD_MS = 400;
-
-function safeOpenReview(orderId, sellerId, event = null) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    event?.stopImmediatePropagation?.();
-    openReviewModal(orderId, sellerId, event);
-}
-
-function safeOpenReport(productId, title = "", event = null) {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    event?.stopImmediatePropagation?.();
-    openReportModal(productId, title, event);
-}
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -3309,6 +3307,7 @@ reportModalEl?.addEventListener("click", (event) => {
     if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
     closeReportModal(event);
 }, true);
+
 
 function handleProductModalDelegatedClick(event) {
     const actionEl = event.target.closest('[data-action]');
