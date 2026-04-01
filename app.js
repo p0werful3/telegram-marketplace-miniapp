@@ -1005,7 +1005,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn review-open-btn" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn" onclick="safeOpenReview(${Number(item.order_id)}, ${Number(item.seller_id || 0)}, event)">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -1026,6 +1026,20 @@ let reportModalIgnoreBackdropClick = false;
 let reviewModalIgnoreTimer = null;
 let reportModalIgnoreTimer = null;
 const MODAL_BACKDROP_GUARD_MS = 400;
+
+function safeOpenReview(orderId, sellerId, event = null) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+    openReviewModal(orderId, sellerId, event);
+}
+
+function safeOpenReport(productId, title = "", event = null) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+    openReportModal(productId, title, event);
+}
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
@@ -2063,7 +2077,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn report-open-btn" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" onclick="safeOpenReport(${Number(product.id)}, '${escapeJs(product.title)}', event)">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -3294,55 +3308,6 @@ reportModalEl?.addEventListener("click", (event) => {
     if (reportModalIgnoreBackdropClick) return;
     if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
     closeReportModal(event);
-}, true);
-
-document.addEventListener("pointerdown", (event) => {
-    if (event.target.closest('.review-open-btn') || event.target.closest('.report-open-btn')) {
-        event.stopPropagation();
-    }
-}, true);
-
-document.addEventListener("click", (event) => {
-    const reviewModalContent = reviewModalEl?.querySelector(".modal-content");
-    const reportModalContent = reportModalEl?.querySelector(".modal-content");
-    if (reviewModalIgnoreBackdropClick && reviewModalEl && !reviewModalEl.classList.contains("hidden")) {
-        if (!reviewModalContent || !reviewModalContent.contains(event.target)) {
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation?.();
-            return;
-        }
-    }
-    if (reportModalIgnoreBackdropClick && reportModalEl && !reportModalEl.classList.contains("hidden")) {
-        if (!reportModalContent || !reportModalContent.contains(event.target)) {
-            event.preventDefault();
-            event.stopPropagation();
-            event.stopImmediatePropagation?.();
-            return;
-        }
-    }
-
-    const reviewBtn = event.target.closest(".review-open-btn");
-    if (reviewBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation?.();
-        const orderId = Number(reviewBtn.dataset.orderId || 0);
-        const sellerId = Number(reviewBtn.dataset.sellerId || 0);
-        if (orderId) openReviewModal(orderId, sellerId, event);
-        return;
-    }
-
-    const reportBtn = event.target.closest(".report-open-btn");
-    if (reportBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation?.();
-        const productId = Number(reportBtn.dataset.productId || 0);
-        const title = reportBtn.dataset.productTitle || "";
-        if (productId) openReportModal(productId, title, event);
-        return;
-    }
 }, true);
 
 function handleProductModalDelegatedClick(event) {
