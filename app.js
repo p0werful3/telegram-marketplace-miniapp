@@ -2793,8 +2793,6 @@ function openReportModal(productId, title = "", event = null) {
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
-    // Close product modal first so only one overlay remains active.
-    closeProductModal();
     modal.classList.remove("hidden");
     reportModalOpenedAt = Date.now();
     reportModalIgnoreBackdropClick = true;
@@ -3297,16 +3295,12 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.addEventListener("click", (event) => {
-    if (event.target !== reviewModalEl) return;
-    if (reviewModalIgnoreBackdropClick) return;
-    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
-    closeReviewModal(event);
+    // Disabled backdrop close for review modal to avoid accidental auto-close in Telegram WebApp.
+    return;
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
-    if (event.target !== reportModalEl) return;
-    if (reportModalIgnoreBackdropClick) return;
-    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
-    closeReportModal(event);
+    // Disabled backdrop close for report modal to avoid accidental auto-close in Telegram WebApp.
+    return;
 }, true);
 
 
