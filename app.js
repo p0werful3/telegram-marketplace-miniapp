@@ -3295,12 +3295,16 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reviewModalEl?.addEventListener("click", (event) => {
-    // Disabled backdrop close for review modal to avoid accidental auto-close in Telegram WebApp.
-    return;
+    if (event.target !== reviewModalEl) return;
+    if (reviewModalIgnoreBackdropClick) return;
+    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    closeReviewModal(event);
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
-    // Disabled backdrop close for report modal to avoid accidental auto-close in Telegram WebApp.
-    return;
+    if (event.target !== reportModalEl) return;
+    if (reportModalIgnoreBackdropClick) return;
+    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    closeReportModal(event);
 }, true);
 
 
