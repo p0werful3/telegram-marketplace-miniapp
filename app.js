@@ -1,4 +1,4 @@
-console.log("APP VERSION 337 LOADED");
+console.log("APP VERSION 338 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
@@ -1455,6 +1455,10 @@ async function uploadImageToCloudinary(file) {
     return data.secure_url;
 }
 
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function safeFetch(url, options = {}, retryAttempt = 0) {
     let response;
 
@@ -1475,8 +1479,8 @@ async function safeFetch(url, options = {}, retryAttempt = 0) {
         });
     } catch (error) {
         console.error("Network error:", error);
-        if (retryAttempt < 1 && typeof url === "string" && url.startsWith(API_BASE)) {
-            await new Promise(resolve => setTimeout(resolve, 1400));
+        if (retryAttempt < 3 && typeof url === "string" && url.startsWith(API_BASE)) {
+            await sleep([1200, 2500, 4000][retryAttempt] || 1400);
             return safeFetch(url, options, retryAttempt + 1);
         }
         throw new Error("Не вдалося підключитися до API");
@@ -1517,16 +1521,24 @@ async function safeFetch(url, options = {}, retryAttempt = 0) {
 }
 
 async function wakeApi() {
-    try {
-        await fetch(`${API_BASE}/health`, {
-            method: "GET",
-            mode: "cors",
-            credentials: "omit",
-            cache: "no-store"
-        });
-    } catch (error) {
-        console.error("Wake API error:", error);
+    const delays = [0, 1000, 2000, 3500, 5000];
+    for (let attempt = 0; attempt < delays.length; attempt += 1) {
+        if (delays[attempt] > 0) {
+            await sleep(delays[attempt]);
+        }
+        try {
+            const response = await fetch(`${API_BASE}/health`, {
+                method: "GET",
+                mode: "cors",
+                credentials: "omit",
+                cache: "no-store"
+            });
+            if (response.ok) return true;
+        } catch (error) {
+            console.error(`Wake API error attempt ${attempt + 1}:`, error);
+        }
     }
+    return false;
 }
 
 function setupAuthScreen() {
