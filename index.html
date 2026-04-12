@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=338">
+    <link rel="stylesheet" href="style.css?v=326">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -489,19 +489,19 @@
 
     <div id="review-modal" class="modal hidden">
         <div class="modal-content small-modal">
-            <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReviewModal(event)">×</button>
+            <button type="button" class="modal-close" onclick="closeReviewModal()">×</button>
             <h3 class="modal-title">Залишити відгук</h3>
             <label>Оцінка</label>
             <select id="review-rating"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
             <label>Коментар</label>
             <textarea id="review-comment" placeholder="Коротко опишіть ваш досвід покупки"></textarea>
-            <button type="button" class="primary-btn" onclick="event.preventDefault(); event.stopPropagation(); submitReview()">Зберегти відгук</button>
+            <button type="button" class="primary-btn" onclick="submitReview()">Зберегти відгук</button>
         </div>
     </div>
 
     <div id="report-modal" class="modal hidden">
         <div class="modal-content small-modal">
-            <button type="button" class="modal-close" onclick="event.preventDefault(); event.stopPropagation(); closeReportModal(event)">×</button>
+            <button type="button" class="modal-close" onclick="closeReportModal()">×</button>
             <h3 id="report-title" class="modal-title">Скарга на оголошення</h3>
             <input id="report-product-id" type="hidden">
             <label>Причина</label>
@@ -516,10 +516,10 @@
                 <label id="report-comment-label">Коментар</label>
                 <textarea id="report-comment" placeholder="Додаткова інформація для адміністратора"></textarea>
             </div>
-            <button type="button" class="warning-btn" onclick="event.preventDefault(); event.stopPropagation(); submitReport()">Надіслати скаргу</button>
+            <button type="button" class="warning-btn" onclick="submitReport()">Надіслати скаргу</button>
         </div>
     </div>
 
-    <script src="app.js?v=338"></script>
+    <script src="app.js?v=337"></script>
 </body>
 </html>
