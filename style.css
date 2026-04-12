@@ -2970,3 +2970,71 @@ body{
 
 
 .modal-close,.image-viewer-close,.image-viewer-nav,.gallery-thumb,.modal-product-image,.seller-profile-btn-modal,.favorite-btn,.buy-btn,.own-product-btn,.ghost-warning-btn,.contact-btn{touch-action:manipulation;}
+
+
+/* v412 polish: admin card image + seller profile button alignment */
+.admin-product-card{
+  align-items:stretch !important;
+  gap:14px !important;
+}
+
+.admin-product-thumb,
+.admin-product-card .compact-thumb-wrap.admin-product-thumb{
+  width:112px !important;
+  min-width:112px !important;
+  max-width:112px !important;
+  height:152px !important;
+  border-radius:18px !important;
+  overflow:hidden !important;
+  background:linear-gradient(180deg, rgba(14,24,44,.96), rgba(8,15,29,.96)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 12px 28px rgba(0,0,0,.24) !important;
+}
+
+.admin-product-thumb .card-image,
+.admin-product-card .compact-thumb-wrap.admin-product-thumb .card-image{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  display:block !important;
+}
+
+.admin-product-body{
+  justify-content:space-between !important;
+  gap:10px !important;
+}
+
+.admin-product-card .card-actions.admin-actions-grid{
+  margin-top:4px !important;
+}
+
+.seller-profile-btn-modal{
+  width:100% !important;
+  margin-top:4px !important;
+  margin-bottom:0 !important;
+  min-height:50px !important;
+  border-radius:16px !important;
+  font-weight:800 !important;
+  letter-spacing:.01em;
+  box-shadow:0 10px 22px rgba(63,97,176,.18), 0 0 0 1px rgba(170,197,255,.14) inset !important;
+}
+
+.product-modal-actions .seller-profile-btn-modal,
+.modal-content .seller-profile-btn-modal{
+  align-self:stretch !important;
+}
+
+@media (max-width: 520px){
+  .admin-product-thumb,
+  .admin-product-card .compact-thumb-wrap.admin-product-thumb{
+    width:96px !important;
+    min-width:96px !important;
+    max-width:96px !important;
+    height:136px !important;
+  }
+
+  .seller-profile-btn-modal{
+    min-height:48px !important;
+    margin-top:2px !important;
+  }
+}
