@@ -215,13 +215,23 @@ function t(key) {
 function safeOpenReview(orderId, sellerId, event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    openReviewModal(orderId, sellerId, event);
+    event?.stopImmediatePropagation?.();
+    const openLater = () => openReviewModal(orderId, sellerId, null);
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(openLater);
+    else setTimeout(openLater, 0);
 }
 
 function safeOpenReport(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    openReportModal(productId, title, event);
+    event?.stopImmediatePropagation?.();
+    const productModal = $("product-modal");
+    if (productModal && !productModal.classList.contains("hidden")) {
+        closeProductModal();
+    }
+    const openLater = () => openReportModal(productId, title, null);
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(openLater);
+    else setTimeout(openLater, 0);
 }
 
 function syncBodyScrollLock() {
@@ -1018,7 +1028,7 @@ async function loadPurchaseHistory() {
                     </div>
                     <div class="card-actions inline-actions compact-actions">
                         ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn" data-action="open-review" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn" onclick="safeOpenReview(${Number(item.order_id)}, ${Number(item.seller_id || 0)}, event)">Залишити відгук</button>` : ""}
                         ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
@@ -2076,7 +2086,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || "")}">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" onclick="safeOpenReport(${Number(product.id)}, '${escapeJs(product.title)}', event)">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2786,32 +2796,22 @@ function openReportModal(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
-
     const modal = $("report-modal");
     if (!modal) return;
-
-    const productModal = $("product-modal");
-    const wasProductModalOpen = productModal && !productModal.classList.contains("hidden");
-    if (wasProductModalOpen) {
-        closeProductModal();
-    }
-
     $("report-product-id").value = String(productId || "");
     $("report-title").textContent = title ? `Скарга на: ${title}` : "Скарга на оголошення";
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
-
-    requestAnimationFrame(() => {
-        modal.classList.remove("hidden");
-        reportModalOpenedAt = Date.now();
-        reportModalIgnoreBackdropClick = true;
-        if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
-        reportModalIgnoreTimer = setTimeout(() => {
-            reportModalIgnoreBackdropClick = false;
-            reportModalIgnoreTimer = null;
-        }, MODAL_BACKDROP_GUARD_MS);
-        syncBodyScrollLock();
-    });
+    $("report-custom-reason-wrap")?.classList.add("hidden");
+    modal.classList.remove("hidden");
+    reportModalOpenedAt = Date.now();
+    reportModalIgnoreBackdropClick = true;
+    if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+    reportModalIgnoreTimer = setTimeout(() => {
+        reportModalIgnoreBackdropClick = false;
+        reportModalIgnoreTimer = null;
+    }, MODAL_BACKDROP_GUARD_MS);
+    syncBodyScrollLock();
 }
 
 function handleReportReasonChange() {
@@ -3317,8 +3317,6 @@ reportModalEl?.addEventListener("click", (event) => {
     closeReportModal(event);
 }, true);
 
-$("report-reason")?.addEventListener("change", handleReportReasonChange);
-
 
 function handleProductModalDelegatedClick(event) {
     const actionEl = event.target.closest('[data-action]');
@@ -3326,52 +3324,6 @@ function handleProductModalDelegatedClick(event) {
 
     const action = actionEl.dataset.action;
     if (!action) return;
-
-    if (action === 'open-review') {
-        event.preventDefault();
-        event.stopPropagation();
-        const orderId = Number(actionEl.dataset.orderId || 0);
-        const sellerId = Number(actionEl.dataset.sellerId || 0);
-        if (orderId) safeOpenReview(orderId, sellerId, event);
-        return;
-    }
-
-    if (action === 'open-report') {
-        event.preventDefault();
-        event.stopPropagation();
-        const productId = Number(actionEl.dataset.productId || 0);
-        const title = actionEl.dataset.productTitle || '';
-        if (productId) safeOpenReport(productId, title, event);
-        return;
-    }
-
-    if (action === 'close-review-modal') {
-        event.preventDefault();
-        event.stopPropagation();
-        closeReviewModal(event);
-        return;
-    }
-
-    if (action === 'submit-review') {
-        event.preventDefault();
-        event.stopPropagation();
-        submitReview();
-        return;
-    }
-
-    if (action === 'close-report-modal') {
-        event.preventDefault();
-        event.stopPropagation();
-        closeReportModal(event);
-        return;
-    }
-
-    if (action === 'submit-report') {
-        event.preventDefault();
-        event.stopPropagation();
-        submitReport();
-        return;
-    }
 
     if (actionEl.closest('#product-modal')) {
         event.preventDefault();
@@ -3425,6 +3377,7 @@ initApp();
 
 
 if (typeof changeLanguage === "function") window.changeLanguage = changeLanguage;
+console.log("miniapp report/review fix v409 loaded");
 
 if (typeof searchSeller === "function") window.searchSeller = searchSeller;
 if (typeof toggleNotificationsPanel === "function") window.toggleNotificationsPanel = toggleNotificationsPanel;
