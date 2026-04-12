@@ -1,4 +1,4 @@
-console.log("APP VERSION 337 LOADED");
+console.log("APP VERSION 338 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
@@ -3200,6 +3200,7 @@ async function initApp() {
     });
     $("review-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
     $("report-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
+    $("report-reason")?.addEventListener("change", handleReportReasonChange);
     $("product-modal-close")?.addEventListener("click", closeProductModal);
     $("image-viewer-close")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); closeImageViewer(); });
     $("image-viewer-prev")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); changeViewerImage(-1); });
@@ -3294,17 +3295,29 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
+reviewModalEl?.addEventListener("pointerdown", (event) => {
+    if (event.target === reviewModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}, true);
 reviewModalEl?.addEventListener("click", (event) => {
-    if (event.target !== reviewModalEl) return;
-    if (reviewModalIgnoreBackdropClick) return;
-    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
-    closeReviewModal(event);
+    if (event.target === reviewModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+}, true);
+reportModalEl?.addEventListener("pointerdown", (event) => {
+    if (event.target === reportModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
-    if (event.target !== reportModalEl) return;
-    if (reportModalIgnoreBackdropClick) return;
-    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
-    closeReportModal(event);
+    if (event.target === reportModalEl) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
 }, true);
 
 
@@ -3332,6 +3345,34 @@ function handleProductModalDelegatedClick(event) {
         const orderId = Number(actionEl.dataset.orderId || 0);
         const sellerId = Number(actionEl.dataset.sellerId || 0);
         if (orderId) openReviewModal(orderId, sellerId, event);
+        return;
+    }
+
+    if (action === 'close-review-modal') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReviewModal(event);
+        return;
+    }
+
+    if (action === 'submit-review') {
+        event.preventDefault();
+        event.stopPropagation();
+        submitReview();
+        return;
+    }
+
+    if (action === 'close-report-modal') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeReportModal(event);
+        return;
+    }
+
+    if (action === 'submit-report') {
+        event.preventDefault();
+        event.stopPropagation();
+        submitReport();
         return;
     }
 
