@@ -489,23 +489,23 @@
 
     <div id="review-modal" class="modal hidden">
         <div class="modal-content small-modal">
-            <button type="button" class="modal-close" onclick="closeReviewModal()">×</button>
+            <button type="button" class="modal-close" data-action="close-review">×</button>
             <h3 class="modal-title">Залишити відгук</h3>
             <label>Оцінка</label>
             <select id="review-rating"><option value="5">5</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select>
             <label>Коментар</label>
             <textarea id="review-comment" placeholder="Коротко опишіть ваш досвід покупки"></textarea>
-            <button type="button" class="primary-btn" onclick="submitReview()">Зберегти відгук</button>
+            <button type="button" class="primary-btn" data-action="submit-review">Зберегти відгук</button>
         </div>
     </div>
 
     <div id="report-modal" class="modal hidden">
         <div class="modal-content small-modal">
-            <button type="button" class="modal-close" onclick="closeReportModal()">×</button>
+            <button type="button" class="modal-close" data-action="close-report">×</button>
             <h3 id="report-title" class="modal-title">Скарга на оголошення</h3>
             <input id="report-product-id" type="hidden">
             <label>Причина</label>
-            <select id="report-reason" onchange="handleReportReasonChange()">
+            <select id="report-reason">
                 <option>Шахрайство</option>
                 <option>Неправдивий опис</option>
                 <option>Заборонений товар</option>
@@ -516,10 +516,10 @@
                 <label id="report-comment-label">Коментар</label>
                 <textarea id="report-comment" placeholder="Додаткова інформація для адміністратора"></textarea>
             </div>
-            <button type="button" class="warning-btn" onclick="submitReport()">Надіслати скаргу</button>
+            <button type="button" class="warning-btn" data-action="submit-report">Надіслати скаргу</button>
         </div>
     </div>
 
-    <script src="app.js?v=338"></script>
+    <script src="app.js?v=336"></script>
 </body>
 </html>
