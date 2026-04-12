@@ -1072,6 +1072,11 @@ function openReviewModal(orderId, sellerId, event = null) {
     const modal = $("review-modal");
     if (!modal) return;
     modal.classList.remove("hidden");
+    const modalContent = modal.querySelector(".modal-content");
+    if (modalContent) {
+        modalContent.classList.remove("modal-animate-in");
+        requestAnimationFrame(() => modalContent.classList.add("modal-animate-in"));
+    }
     reviewModalOpenedAt = Date.now();
     reviewModalIgnoreBackdropClick = true;
     if (reviewModalIgnoreTimer) clearTimeout(reviewModalIgnoreTimer);
@@ -1090,7 +1095,9 @@ function closeReviewModal(event = null) {
         clearTimeout(reviewModalIgnoreTimer);
         reviewModalIgnoreTimer = null;
     }
-    $("review-modal")?.classList.add("hidden");
+    const modal = $("review-modal");
+    modal?.querySelector(".modal-content")?.classList.remove("modal-animate-in");
+    modal?.classList.add("hidden");
     syncBodyScrollLock();
 }
 
@@ -2802,6 +2809,11 @@ function openReportModal(productId, title = "", event = null) {
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
     modal.classList.remove("hidden");
+    const modalContent = modal.querySelector(".modal-content");
+    if (modalContent) {
+        modalContent.classList.remove("modal-animate-in");
+        requestAnimationFrame(() => modalContent.classList.add("modal-animate-in"));
+    }
     reportModalOpenedAt = Date.now();
     reportModalIgnoreBackdropClick = true;
     if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
@@ -2825,7 +2837,9 @@ function closeReportModal(event = null) {
         clearTimeout(reportModalIgnoreTimer);
         reportModalIgnoreTimer = null;
     }
-    $("report-modal")?.classList.add("hidden");
+    const modal = $("report-modal");
+    modal?.querySelector(".modal-content")?.classList.remove("modal-animate-in");
+    modal?.classList.add("hidden");
     syncBodyScrollLock();
 }
 
