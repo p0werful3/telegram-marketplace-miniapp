@@ -1,4 +1,4 @@
-console.log("APP VERSION 338 LOADED");
+console.log("APP VERSION 337 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
@@ -1455,11 +1455,7 @@ async function uploadImageToCloudinary(file) {
     return data.secure_url;
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function safeFetch(url, options = {}, retryAttempt = 0) {
+async function safeFetch(url, options = {}) {
     let response;
 
     const method = (options.method || "GET").toUpperCase();
@@ -1479,10 +1475,6 @@ async function safeFetch(url, options = {}, retryAttempt = 0) {
         });
     } catch (error) {
         console.error("Network error:", error);
-        if (retryAttempt < 3 && typeof url === "string" && url.startsWith(API_BASE)) {
-            await sleep([1200, 2500, 4000][retryAttempt] || 1400);
-            return safeFetch(url, options, retryAttempt + 1);
-        }
         throw new Error("Не вдалося підключитися до API");
     }
 
@@ -1521,24 +1513,16 @@ async function safeFetch(url, options = {}, retryAttempt = 0) {
 }
 
 async function wakeApi() {
-    const delays = [0, 1000, 2000, 3500, 5000];
-    for (let attempt = 0; attempt < delays.length; attempt += 1) {
-        if (delays[attempt] > 0) {
-            await sleep(delays[attempt]);
-        }
-        try {
-            const response = await fetch(`${API_BASE}/health`, {
-                method: "GET",
-                mode: "cors",
-                credentials: "omit",
-                cache: "no-store"
-            });
-            if (response.ok) return true;
-        } catch (error) {
-            console.error(`Wake API error attempt ${attempt + 1}:`, error);
-        }
+    try {
+        await fetch(`${API_BASE}/health`, {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit",
+            cache: "no-store"
+        });
+    } catch (error) {
+        console.error("Wake API error:", error);
     }
-    return false;
 }
 
 function setupAuthScreen() {
@@ -2092,7 +2076,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || "")}">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -3331,6 +3315,26 @@ function handleProductModalDelegatedClick(event) {
     const action = actionEl.dataset.action;
     if (!action) return;
 
+    if (action === 'open-report') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        const productId = Number(actionEl.dataset.productId || 0);
+        const title = actionEl.dataset.productTitle || '';
+        if (productId) openReportModal(productId, title, event);
+        return;
+    }
+
+    if (action === 'open-review') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        const orderId = Number(actionEl.dataset.orderId || 0);
+        const sellerId = Number(actionEl.dataset.sellerId || 0);
+        if (orderId) openReviewModal(orderId, sellerId, event);
+        return;
+    }
+
     if (actionEl.closest('#product-modal')) {
         event.preventDefault();
         event.stopPropagation();
@@ -3366,24 +3370,6 @@ function handleProductModalDelegatedClick(event) {
             if (link) window.open(link, '_blank');
             return;
         }
-    }
-
-    if (action === 'open-review') {
-        event.preventDefault();
-        event.stopPropagation();
-        const orderId = Number(actionEl.dataset.orderId || 0);
-        const sellerId = Number(actionEl.dataset.sellerId || 0);
-        if (orderId) openReviewModal(orderId, sellerId, event);
-        return;
-    }
-
-    if (action === 'open-report') {
-        event.preventDefault();
-        event.stopPropagation();
-        const productId = Number(actionEl.dataset.productId || 0);
-        const title = actionEl.dataset.productTitle || '';
-        if (productId) openReportModal(productId, title, event);
-        return;
     }
 
     if (action === 'toggle-favorite') {
