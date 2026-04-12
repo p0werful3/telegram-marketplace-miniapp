@@ -1,9 +1,9 @@
-console.log("APP VERSION 335 LOADED");
+console.log("APP VERSION 416 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "321";
+const FRONTEND_VERSION = "416";
 
 let tg = null;
 let telegramUser = null;
