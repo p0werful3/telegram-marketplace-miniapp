@@ -221,11 +221,6 @@ function safeOpenReview(orderId, sellerId, event = null) {
 function safeOpenReport(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
-    const productModal = $("product-modal");
-    reopenProductAfterReportClose = !!(productModal && !productModal.classList.contains("hidden"));
-    if (reopenProductAfterReportClose) {
-        closeProductModal();
-    }
     openReportModal(productId, title, event);
 }
 
@@ -1037,7 +1032,6 @@ async function loadPurchaseHistory() {
 let reviewOrderId = null;
 let reviewSellerId = null;
 let selectedReportReason = "Шахрайство";
-let reopenProductAfterReportClose = false;
 let reviewModalOpenedAt = 0;
 let reportModalOpenedAt = 0;
 let reviewModalIgnoreBackdropClick = false;
@@ -2082,7 +2076,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || '')}">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || "")}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2792,22 +2786,32 @@ function openReportModal(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
+
     const modal = $("report-modal");
     if (!modal) return;
+
+    const productModal = $("product-modal");
+    const wasProductModalOpen = productModal && !productModal.classList.contains("hidden");
+    if (wasProductModalOpen) {
+        closeProductModal();
+    }
+
     $("report-product-id").value = String(productId || "");
     $("report-title").textContent = title ? `Скарга на: ${title}` : "Скарга на оголошення";
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
-    $("report-custom-reason-wrap")?.classList.add("hidden");
-    modal.classList.remove("hidden");
-    reportModalOpenedAt = Date.now();
-    reportModalIgnoreBackdropClick = true;
-    if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
-    reportModalIgnoreTimer = setTimeout(() => {
-        reportModalIgnoreBackdropClick = false;
-        reportModalIgnoreTimer = null;
-    }, MODAL_BACKDROP_GUARD_MS);
-    syncBodyScrollLock();
+
+    requestAnimationFrame(() => {
+        modal.classList.remove("hidden");
+        reportModalOpenedAt = Date.now();
+        reportModalIgnoreBackdropClick = true;
+        if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+        reportModalIgnoreTimer = setTimeout(() => {
+            reportModalIgnoreBackdropClick = false;
+            reportModalIgnoreTimer = null;
+        }, MODAL_BACKDROP_GUARD_MS);
+        syncBodyScrollLock();
+    });
 }
 
 function handleReportReasonChange() {
@@ -2824,7 +2828,6 @@ function closeReportModal(event = null) {
         reportModalIgnoreTimer = null;
     }
     $("report-modal")?.classList.add("hidden");
-    reopenProductAfterReportClose = false;
     syncBodyScrollLock();
 }
 
@@ -3207,7 +3210,6 @@ async function initApp() {
     });
     $("review-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
     $("report-modal")?.querySelector(".modal-content")?.addEventListener("click", (event) => event.stopPropagation());
-    $("report-reason")?.addEventListener("change", handleReportReasonChange);
     $("product-modal-close")?.addEventListener("click", closeProductModal);
     $("image-viewer-close")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); closeImageViewer(); });
     $("image-viewer-prev")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); changeViewerImage(-1); });
@@ -3315,20 +3317,19 @@ reportModalEl?.addEventListener("click", (event) => {
     closeReportModal(event);
 }, true);
 
+$("report-reason")?.addEventListener("change", handleReportReasonChange);
 
-function handleDelegatedClick(event) {
+
+function handleProductModalDelegatedClick(event) {
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl) return;
 
     const action = actionEl.dataset.action;
     if (!action) return;
 
-    if (['close-review', 'submit-review', 'close-report', 'submit-report', 'open-review', 'open-report', 'toggle-favorite', 'set-modal-image', 'open-image-viewer', 'open-seller-profile', 'buy-product', 'go-cart', 'own-product-info', 'contact-seller'].includes(action)) {
+    if (action === 'open-review') {
         event.preventDefault();
         event.stopPropagation();
-    }
-
-    if (action === 'open-review') {
         const orderId = Number(actionEl.dataset.orderId || 0);
         const sellerId = Number(actionEl.dataset.sellerId || 0);
         if (orderId) safeOpenReview(orderId, sellerId, event);
@@ -3336,33 +3337,46 @@ function handleDelegatedClick(event) {
     }
 
     if (action === 'open-report') {
+        event.preventDefault();
+        event.stopPropagation();
         const productId = Number(actionEl.dataset.productId || 0);
         const title = actionEl.dataset.productTitle || '';
         if (productId) safeOpenReport(productId, title, event);
         return;
     }
 
-    if (action === 'close-review') {
+    if (action === 'close-review-modal') {
+        event.preventDefault();
+        event.stopPropagation();
         closeReviewModal(event);
         return;
     }
 
     if (action === 'submit-review') {
+        event.preventDefault();
+        event.stopPropagation();
         submitReview();
         return;
     }
 
-    if (action === 'close-report') {
+    if (action === 'close-report-modal') {
+        event.preventDefault();
+        event.stopPropagation();
         closeReportModal(event);
         return;
     }
 
     if (action === 'submit-report') {
+        event.preventDefault();
+        event.stopPropagation();
         submitReport();
         return;
     }
 
     if (actionEl.closest('#product-modal')) {
+        event.preventDefault();
+        event.stopPropagation();
+
         if (action === 'set-modal-image') {
             setModalImage(Number(actionEl.dataset.imageIndex || 0));
             return;
@@ -3397,13 +3411,15 @@ function handleDelegatedClick(event) {
     }
 
     if (action === 'toggle-favorite') {
+        event.preventDefault();
+        event.stopPropagation();
         const productId = Number(actionEl.dataset.productId || actionEl.dataset.favoriteId || 0);
         const isFavorite = String(actionEl.dataset.isFavorite || '').toLowerCase() === 'true';
         if (productId) toggleFavorite(productId, isFavorite);
     }
 }
 
-document.addEventListener('click', handleDelegatedClick, true);
+document.addEventListener('click', handleProductModalDelegatedClick, true);
 
 initApp();
 
