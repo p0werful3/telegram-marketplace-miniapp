@@ -3578,3 +3578,209 @@ body{
     min-height:82px !important;
   }
 }
+
+
+/* polish v419 - final ui pass */
+.catalog-product-card,
+#my-products-list .catalog-product-card,
+#favorites-list .catalog-product-card,
+.seller-listings-grid .catalog-product-card{
+  border-radius:22px !important;
+  box-shadow:0 10px 26px rgba(0,0,0,.18) !important;
+}
+
+.catalog-card-body,
+.compact-card-body{
+  display:grid !important;
+  align-content:start !important;
+}
+
+.catalog-card-body .compact-card-top,
+.compact-card-body .compact-card-top{
+  margin-bottom:6px !important;
+}
+
+.catalog-card-body .compact-desc,
+.compact-card-body .compact-desc{
+  margin-bottom:8px !important;
+}
+
+.catalog-actions-row,
+.compact-actions-grid,
+.inline-actions{
+  align-items:stretch !important;
+}
+
+.catalog-actions-row button,
+.compact-actions-grid button,
+.inline-actions button,
+.catalog-actions-row a,
+.compact-actions-grid a,
+.inline-actions a{
+  min-height:38px !important;
+}
+
+.seller-profile-btn,
+.seller-profile-btn-modal{
+  background:linear-gradient(180deg,#546f9d,#445d87) !important;
+  color:#f3f7ff !important;
+  border:1px solid rgba(159,185,236,.12) !important;
+}
+
+.modal-product-body > .seller-profile-btn-modal,
+.product-actions .seller-profile-btn-modal,
+.seller-profile-btn-modal{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  width:100% !important;
+  margin:12px 0 10px !important;
+  min-height:44px !important;
+  height:44px !important;
+  border-radius:14px !important;
+}
+
+.product-actions,
+.details-actions,
+.modal-product-body .card-actions{
+  gap:10px !important;
+}
+
+.admin-product-card{
+  grid-template-columns:56px minmax(0,1fr) !important;
+  align-items:start !important;
+  gap:8px !important;
+  padding:8px !important;
+  border-radius:18px !important;
+}
+
+.admin-product-thumb,
+.admin-product-thumb .catalog-media-frame,
+.admin-product-thumb .catalog-media-img,
+.admin-product-thumb .card-image,
+.admin-product-thumb img{
+  width:56px !important;
+  min-width:56px !important;
+  height:84px !important;
+  min-height:84px !important;
+  border-radius:12px !important;
+}
+
+.admin-product-body{
+  padding:0 !important;
+  display:grid !important;
+  align-content:start !important;
+}
+
+.admin-product-body .compact-card-top{
+  margin:0 0 2px !important;
+}
+
+.admin-product-body .compact-title{
+  font-size:14px !important;
+  line-height:1.12 !important;
+  margin:0 !important;
+}
+
+.admin-product-body .compact-price{
+  font-size:13px !important;
+  line-height:1.05 !important;
+  margin:0 !important;
+}
+
+.admin-product-body .compact-meta-row{
+  margin:0 0 2px !important;
+  gap:4px !important;
+}
+
+.admin-secondary-row{
+  margin:0 0 2px !important;
+  gap:4px 6px !important;
+  font-size:12px !important;
+}
+
+.admin-product-body .compact-desc{
+  margin:0 0 2px !important;
+  font-size:12px !important;
+  line-height:1.18 !important;
+  -webkit-line-clamp:1 !important;
+}
+
+.admin-extra-meta{
+  margin:0 0 4px !important;
+  gap:2px 6px !important;
+  font-size:12px !important;
+}
+
+.admin-product-body .compact-meta-row .tag,
+.admin-secondary-row .tag,
+.admin-extra-meta .tag,
+.admin-status-tag{
+  padding:2px 6px !important;
+  font-size:9.5px !important;
+  line-height:1.05 !important;
+}
+
+.admin-actions-grid{
+  gap:5px !important;
+  margin-top:2px !important;
+}
+
+.admin-actions-grid button,
+.admin-actions-grid a{
+  min-height:31px !important;
+  height:31px !important;
+  border-radius:10px !important;
+  padding:0 7px !important;
+  font-size:11px !important;
+  line-height:1.05 !important;
+}
+
+.admin-actions-grid .seller-profile-btn{
+  letter-spacing:-0.01em !important;
+}
+
+.admin-buyer-row{
+  margin-top:4px !important;
+}
+
+#admin-users-list .card,
+#admin-ideas-list .card,
+#admin-reports-list .card,
+#admin-logs-list .card{
+  border-radius:20px !important;
+}
+
+#admin-users-list .card-body,
+#admin-ideas-list .card-body,
+#admin-reports-list .card-body,
+#admin-logs-list .card-body{
+  padding:14px !important;
+}
+
+@media (max-width:520px){
+  .admin-product-card{
+    grid-template-columns:54px minmax(0,1fr) !important;
+    gap:7px !important;
+    padding:8px !important;
+  }
+
+  .admin-product-thumb,
+  .admin-product-thumb .catalog-media-frame,
+  .admin-product-thumb .catalog-media-img,
+  .admin-product-thumb .card-image,
+  .admin-product-thumb img{
+    width:54px !important;
+    min-width:54px !important;
+    height:82px !important;
+    min-height:82px !important;
+  }
+
+  .modal-product-body > .seller-profile-btn-modal,
+  .product-actions .seller-profile-btn-modal,
+  .seller-profile-btn-modal{
+    min-height:42px !important;
+    height:42px !important;
+    margin:10px 0 10px !important;
+  }
+}
