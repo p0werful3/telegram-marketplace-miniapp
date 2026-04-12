@@ -1,9 +1,9 @@
-console.log("APP VERSION 338 LOADED");
+console.log("APP VERSION 335 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "337";
+const FRONTEND_VERSION = "321";
 
 let tg = null;
 let telegramUser = null;
@@ -221,6 +221,11 @@ function safeOpenReview(orderId, sellerId, event = null) {
 function safeOpenReport(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    const productModal = $("product-modal");
+    reopenProductAfterReportClose = !!(productModal && !productModal.classList.contains("hidden"));
+    if (reopenProductAfterReportClose) {
+        closeProductModal();
+    }
     openReportModal(productId, title, event);
 }
 
@@ -1032,6 +1037,7 @@ async function loadPurchaseHistory() {
 let reviewOrderId = null;
 let reviewSellerId = null;
 let selectedReportReason = "Шахрайство";
+let reopenProductAfterReportClose = false;
 let reviewModalOpenedAt = 0;
 let reportModalOpenedAt = 0;
 let reviewModalIgnoreBackdropClick = false;
@@ -2076,7 +2082,7 @@ async function openProductModal(productId) {
         const primaryAction = isOwnProduct
             ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
             : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title)}">Поскаржитися</button>` : "";
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || '')}">Поскаржитися</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2818,6 +2824,7 @@ function closeReportModal(event = null) {
         reportModalIgnoreTimer = null;
     }
     $("report-modal")?.classList.add("hidden");
+    reopenProductAfterReportClose = false;
     syncBodyScrollLock();
 }
 
@@ -3295,91 +3302,67 @@ reviewModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", 
 reviewModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("pointerdown", (event) => { event.stopPropagation(); }, true);
 reportModalEl?.querySelector(".modal-content")?.addEventListener("click", (event) => { event.stopPropagation(); }, true);
-reviewModalEl?.addEventListener("pointerdown", (event) => {
-    if (event.target === reviewModalEl) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-}, true);
 reviewModalEl?.addEventListener("click", (event) => {
-    if (event.target === reviewModalEl) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-}, true);
-reportModalEl?.addEventListener("pointerdown", (event) => {
-    if (event.target === reportModalEl) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
+    if (event.target !== reviewModalEl) return;
+    if (reviewModalIgnoreBackdropClick) return;
+    if (Date.now() - reviewModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    closeReviewModal(event);
 }, true);
 reportModalEl?.addEventListener("click", (event) => {
-    if (event.target === reportModalEl) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
+    if (event.target !== reportModalEl) return;
+    if (reportModalIgnoreBackdropClick) return;
+    if (Date.now() - reportModalOpenedAt < MODAL_BACKDROP_GUARD_MS) return;
+    closeReportModal(event);
 }, true);
 
 
-function handleProductModalDelegatedClick(event) {
+function handleDelegatedClick(event) {
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl) return;
 
     const action = actionEl.dataset.action;
     if (!action) return;
 
-    if (action === 'open-report') {
+    if (['close-review', 'submit-review', 'close-report', 'submit-report', 'open-review', 'open-report', 'toggle-favorite', 'set-modal-image', 'open-image-viewer', 'open-seller-profile', 'buy-product', 'go-cart', 'own-product-info', 'contact-seller'].includes(action)) {
         event.preventDefault();
         event.stopPropagation();
-        event.stopImmediatePropagation?.();
-        const productId = Number(actionEl.dataset.productId || 0);
-        const title = actionEl.dataset.productTitle || '';
-        if (productId) openReportModal(productId, title, event);
-        return;
     }
 
     if (action === 'open-review') {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation?.();
         const orderId = Number(actionEl.dataset.orderId || 0);
         const sellerId = Number(actionEl.dataset.sellerId || 0);
-        if (orderId) openReviewModal(orderId, sellerId, event);
+        if (orderId) safeOpenReview(orderId, sellerId, event);
         return;
     }
 
-    if (action === 'close-review-modal') {
-        event.preventDefault();
-        event.stopPropagation();
+    if (action === 'open-report') {
+        const productId = Number(actionEl.dataset.productId || 0);
+        const title = actionEl.dataset.productTitle || '';
+        if (productId) safeOpenReport(productId, title, event);
+        return;
+    }
+
+    if (action === 'close-review') {
         closeReviewModal(event);
         return;
     }
 
     if (action === 'submit-review') {
-        event.preventDefault();
-        event.stopPropagation();
         submitReview();
         return;
     }
 
-    if (action === 'close-report-modal') {
-        event.preventDefault();
-        event.stopPropagation();
+    if (action === 'close-report') {
         closeReportModal(event);
         return;
     }
 
     if (action === 'submit-report') {
-        event.preventDefault();
-        event.stopPropagation();
         submitReport();
         return;
     }
 
     if (actionEl.closest('#product-modal')) {
-        event.preventDefault();
-        event.stopPropagation();
-
         if (action === 'set-modal-image') {
             setModalImage(Number(actionEl.dataset.imageIndex || 0));
             return;
@@ -3414,15 +3397,13 @@ function handleProductModalDelegatedClick(event) {
     }
 
     if (action === 'toggle-favorite') {
-        event.preventDefault();
-        event.stopPropagation();
         const productId = Number(actionEl.dataset.productId || actionEl.dataset.favoriteId || 0);
         const isFavorite = String(actionEl.dataset.isFavorite || '').toLowerCase() === 'true';
         if (productId) toggleFavorite(productId, isFavorite);
     }
 }
 
-document.addEventListener('click', handleProductModalDelegatedClick, true);
+document.addEventListener('click', handleDelegatedClick, true);
 
 initApp();
 
