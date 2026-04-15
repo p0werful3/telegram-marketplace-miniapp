@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=431">
+    <link rel="stylesheet" href="style.css?v=432">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -326,14 +326,16 @@
                                     <div class="profile-ref-user-copy">
                                         <div id="profile-fullname" class="profile-ref-name">Без імені</div>
                                         <div id="profile-username" class="profile-ref-username">@username</div>
-                                        <div id="profile-status-chip" class="profile-ref-status-chip">Новий продавець</div>
+                                        <div class="profile-ref-chip-row">
+                                            <div id="profile-status-chip" class="profile-ref-status-chip">Новий продавець</div>
+                                            <div id="profile-register-date-inline" class="profile-ref-date">—</div>
+                                        </div>
                                     </div>
                                     <button id="profile-edit-toggle-btn" class="icon-circle-btn profile-ref-settings-btn" onclick="toggleProfileEdit()" title="Налаштування">⚙</button>
                                 </div>
 
                                 <div class="profile-ref-user-meta">
                                     <div id="profile-rating-badge" class="profile-ref-rating-badge">⭐ 4.8 · 5 відгуків</div>
-                                    <div id="profile-register-date-inline" class="profile-ref-date">—</div>
                                 </div>
 
                                 <div class="profile-ref-stats-row">
