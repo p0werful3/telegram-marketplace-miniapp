@@ -1,9 +1,9 @@
-console.log("APP VERSION 416 LOADED");
+console.log("APP VERSION 422 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "416";
+const FRONTEND_VERSION = "422";
 
 let tg = null;
 let telegramUser = null;
@@ -65,7 +65,8 @@ const I18N = {
         profileSettings: "Налаштування профілю",
         stats: "Статистика", hideStats: "Сховати статистику",
         purchases: "Історія покупок", hidePurchases: "Сховати історію покупок",
-        reviews: "Мої відгуки",
+        notifications: "Повідомлення", hideNotifications: "Сховати повідомлення",
+        reviews: "Мої відгуки", hideReviews: "Сховати мої відгуки",
         admin: "Адмін панель", hideAdmin: "Сховати адмін панель",
         ideas: "Ідеї та побажання", hideIdeas: "Сховати ідеї та побажання",
         logout: "Змінити акаунт / Вийти",
@@ -124,7 +125,8 @@ const I18N = {
         profileSettings: "Настройки профиля",
         stats: "Статистика", hideStats: "Скрыть статистику",
         purchases: "История покупок", hidePurchases: "Скрыть историю покупок",
-        reviews: "Мои отзывы",
+        notifications: "Уведомления", hideNotifications: "Скрыть уведомления",
+        reviews: "Мои отзывы", hideReviews: "Скрыть мои отзывы",
         admin: "Админ панель", hideAdmin: "Скрыть админ панель",
         ideas: "Идеи и пожелания", hideIdeas: "Скрыть идеи и пожелания",
         logout: "Сменить аккаунт / Выйти",
@@ -183,7 +185,8 @@ const I18N = {
         profileSettings: "Profile settings",
         stats: "Statistics", hideStats: "Hide statistics",
         purchases: "Purchase history", hidePurchases: "Hide purchase history",
-        reviews: "My reviews",
+        notifications: "Notifications", hideNotifications: "Hide notifications",
+        reviews: "My reviews", hideReviews: "Hide my reviews",
         admin: "Admin panel", hideAdmin: "Hide admin panel",
         ideas: "Ideas & suggestions", hideIdeas: "Hide ideas & suggestions",
         logout: "Switch account / Log out",
@@ -281,10 +284,13 @@ function applyLanguageTexts() {
     if ($('register-password')) $('register-password').placeholder = t('passwordPlaceholder');
     const tgBtn = $('tg-login-btn');
     if (tgBtn) tgBtn.textContent = t('tgLogin');
-    const ratingLabel = document.querySelector('.profile-mini-label');
-    if (ratingLabel) ratingLabel.innerHTML = `<span class="profile-menu-icon">⭐</span> ${escapeHtml(t('rating'))}`;
+    const ratingLabel = $('profile-rating-label-text');
+    if (ratingLabel) ratingLabel.textContent = t('rating');
+    const statusLabelText = $('profile-status-label-text');
+    if (statusLabelText) statusLabelText.textContent = t('status');
     setProfileMenuButton('stats-toggle-btn', '📊', 'stats', $('stats-wrap') && !$('stats-wrap').classList.contains('hidden'));
     setProfileMenuButton('purchase-history-toggle-btn', '🛍', 'purchases', $('purchase-history-wrap') && !$('purchase-history-wrap').classList.contains('hidden'));
+    setProfileMenuButton('notifications-toggle-btn', '🔔', 'notifications', $('notifications-wrap') && !$('notifications-wrap').classList.contains('hidden'));
     setProfileMenuButton('my-reviews-toggle-btn', '⭐', 'reviews', $('my-reviews-wrap') && !$('my-reviews-wrap').classList.contains('hidden'));
     setProfileMenuButton('admin-toggle-btn', '🛡', 'admin', $('admin-panel-body') && !$('admin-panel-body').classList.contains('hidden'));
     setProfileMenuButton('ideas-toggle-btn', '💡', 'ideas', $('ideas-wrap') && !$('ideas-wrap').classList.contains('hidden'));
@@ -305,6 +311,9 @@ function applyLanguageTexts() {
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === currentLanguage));
 
     const setText = (sel, value) => { const el = document.querySelector(sel); if (el) el.textContent = value; };
+    setText('#profile-quick-active-label', t('activeTab'));
+    setText('#profile-quick-sold-label', t('soldTab'));
+    setText('#profile-quick-favorites-label', t('favoritesTab'));
     setText('.topbar-mini', t('appMini'));
     setText('#tab-catalog .section-header h2', t('catalogTitle'));
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
@@ -329,7 +338,6 @@ function applyLanguageTexts() {
     if (createLabels[6]) createLabels[6].textContent = currentLanguage === 'en' ? 'Product photos (multiple allowed)' : currentLanguage === 'ru' ? 'Фото товара (можно несколько)' : 'Фото товару (можна кілька)';
     const submitBtn = $('submit-product-btn'); if (submitBtn) submitBtn.textContent = currentLanguage === 'en' ? 'Create listing' : currentLanguage === 'ru' ? 'Создать объявление' : 'Створити оголошення';
     const editHint = $('edit-photos-hint'); if (editHint) editHint.textContent = currentLanguage === 'en' ? 'If you choose new photos, old ones will be replaced.' : currentLanguage === 'ru' ? 'Если выберете новые фото, старые будут заменены.' : 'Якщо вибереш нові фото, старі буде замінено.';
-    const statusLabel = document.querySelectorAll('.profile-mini-label')[1]; if (statusLabel) statusLabel.textContent = t('status');
     refreshTelegramLoginUi();
 }
 
@@ -728,11 +736,18 @@ function fillProfile() {
     if ($("profile-rating-count")) {
         $("profile-rating-count").textContent = `${Number(currentUser.rating_count || 0)} відгуків`;
     }
+    const registeredAt = formatDate(currentUser.created_at) || "—";
     if ($("profile-register-date")) {
-        $("profile-register-date").textContent = formatDate(currentUser.created_at) || "—";
+        $("profile-register-date").textContent = registeredAt;
+    }
+    if ($("profile-register-date-inline")) {
+        $("profile-register-date-inline").textContent = registeredAt;
     }
     if ($("profile-status-value")) {
         $("profile-status-value").textContent = getSellerBadgeText(currentUser.sold_products || 0, currentUser.rating_count || 0);
+    }
+    if ($("profile-quick-sold")) {
+        $("profile-quick-sold").textContent = Number(currentUser.sold_products || 0);
     }
 }
 
@@ -763,6 +778,7 @@ async function toggleMyReviews(forceState = null) {
     const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
     wrap.classList.toggle("hidden", !shouldOpen);
     btn.classList.toggle("is-open", shouldOpen);
+    setProfileMenuButton('my-reviews-toggle-btn', '⭐', 'reviews', shouldOpen);
 
     if (shouldOpen) await loadMyReviews();
 }
@@ -910,6 +926,9 @@ async function loadStats() {
         $("stat-sold").textContent = data.sold_products ?? 0;
         $("stat-archived").textContent = data.archived_products ?? 0;
         $("stat-favorites").textContent = data.favorites ?? 0;
+        if ($("profile-quick-active")) $("profile-quick-active").textContent = data.active_products ?? 0;
+        if ($("profile-quick-sold")) $("profile-quick-sold").textContent = data.sold_products ?? 0;
+        if ($("profile-quick-favorites")) $("profile-quick-favorites").textContent = data.favorites ?? 0;
         $("stat-cart").textContent = data.cart_items ?? 0;
         const pendingEl = $("stat-pending");
         if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
@@ -3082,12 +3101,14 @@ async function loadNotifications(markAsRead = false) {
     }
 }
 
-function toggleNotificationsPanel() {
+function toggleNotificationsPanel(forceState = null) {
     const wrap = $("notifications-wrap");
-    if (!wrap) return;
-    const open = wrap.classList.contains("hidden");
-    wrap.classList.toggle("hidden", !open);
-    if (open) loadNotifications(true);
+    const btn = $("notifications-toggle-btn");
+    if (!wrap || !btn) return;
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
+    wrap.classList.toggle("hidden", !shouldOpen);
+    setProfileMenuButton('notifications-toggle-btn', '🔔', 'notifications', shouldOpen);
+    if (shouldOpen) loadNotifications(true);
 }
 
 async function openUserProfile(userId) {
