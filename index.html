@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=423">
+    <link rel="stylesheet" href="style.css?v=326">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -303,188 +303,192 @@
                 </div>
             </section>
 
-            <section id="tab-profile" class="tab-section profile-tab-section">
-                <h2 class="profile-page-title">Профіль</h2>
+            <section id="tab-profile" class="tab-section">
+                <h2>Профіль</h2>
+                <h2>Профіль</h2>
 
-                <div class="profile-showcase-card">
-                    <div class="profile-app-banner">
-                        <div class="profile-app-logo">🛍️</div>
-                        <div class="profile-app-copy">
-                            <div class="profile-app-title">Telegram Marketplace</div>
-                            <div class="profile-app-subtitle">Маркетплейс у Telegram</div>
+                <div class="profile-shell profile-shell-premium">
+                    <div class="profile-brand-card profile-card">
+                        <div class="profile-brand-icon-wrap">
+                            <div class="profile-brand-icon">🛍</div>
+                        </div>
+                        <div class="profile-brand-copy">
+                            <div class="profile-brand-title">Telegram Marketplace</div>
+                            <div class="profile-brand-subtitle">Маркетплейс у Telegram</div>
                         </div>
                     </div>
 
-                    <div class="profile-hero-card profile-hero-card-premium">
-                        <div class="profile-hero-main profile-hero-main-premium">
-                            <div id="profile-avatar" class="profile-avatar profile-avatar-premium">U</div>
-                            <div class="profile-hero-text profile-hero-text-premium">
-                                <div id="profile-fullname" class="profile-hero-name">Без імені</div>
-                                <div id="profile-username" class="profile-hero-username">@username</div>
-                                <div class="profile-status-line">
-                                    <span id="profile-status-value" class="profile-status-text">Новий продавець</span>
-                                    <span id="profile-register-date" class="profile-register-text">—</span>
+                    <div class="profile-hero-card profile-card profile-user-card">
+                        <div class="profile-hero-main">
+                            <div class="profile-identity">
+                                <div id="profile-avatar" class="profile-avatar">U</div>
+                                <div class="profile-hero-text">
+                                    <div id="profile-fullname" class="profile-hero-name">Без імені</div>
+                                    <div id="profile-username" class="profile-hero-username">@username</div>
+                                    <div class="profile-hero-meta-line">
+                                        <div id="profile-rating-badge" class="profile-rating-badge">Новий продавець</div>
+                                        <div id="profile-register-date-inline" class="profile-register-date-inline">—</div>
+                                    </div>
                                 </div>
-                                <div id="profile-rating-badge" class="profile-rating-badge">Новий продавець</div>
                             </div>
                             <button id="profile-edit-toggle-btn" class="icon-circle-btn profile-settings-btn" onclick="toggleProfileEdit()" title="Налаштування">⚙</button>
                         </div>
 
-                        <div class="profile-quick-stats premium-stats-strip">
+                        <div class="profile-quick-stats">
                             <div class="profile-quick-stat">
-                                <span class="profile-quick-icon">▦</span>
-                                <span class="profile-quick-label">Активні</span>
-                                <strong id="profile-quick-active" class="profile-quick-value">0</strong>
+                                <span class="profile-quick-left"><span class="profile-quick-icon">▦</span><span id="profile-quick-active-label">Активні</span></span>
+                                <strong id="profile-quick-active">0</strong>
                             </div>
-                            <div class="profile-quick-divider"></div>
                             <div class="profile-quick-stat">
-                                <span class="profile-quick-icon">✓</span>
-                                <span class="profile-quick-label">Продані</span>
-                                <strong id="profile-quick-sold" class="profile-quick-value">0</strong>
+                                <span class="profile-quick-left"><span class="profile-quick-icon">✓</span><span id="profile-quick-sold-label">Продані</span></span>
+                                <strong id="profile-quick-sold">0</strong>
                             </div>
-                            <div class="profile-quick-divider"></div>
                             <div class="profile-quick-stat">
-                                <span class="profile-quick-icon">♥</span>
-                                <span class="profile-quick-label">Обране</span>
-                                <strong id="profile-quick-favorites" class="profile-quick-value">0</strong>
+                                <span class="profile-quick-left"><span class="profile-quick-icon">❤</span><span id="profile-quick-favorites-label">Обране</span></span>
+                                <strong id="profile-quick-favorites">0</strong>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="profile-edit-wrap" class="profile-card hidden profile-edit-card">
-                    <div class="profile-edit-header-row">
-                        <div>
-                            <h3 class="profile-subtitle">Налаштування профілю</h3>
-                            <p class="profile-edit-desc">Онови основні дані профілю. Зміни збережуться одразу після натискання кнопки.</p>
-                        </div>
-                        <div class="profile-edit-badge">Профіль</div>
-                    </div>
-                    <div class="profile-edit-grid">
-                        <div class="profile-edit-field">
-                            <label>Username (без @)</label>
-                            <input id="profile-edit-username" type="text" placeholder="username (без @)">
-                        </div>
-                        <div class="profile-edit-field">
-                            <label>Ім'я</label>
-                            <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
-                        </div>
-                        <div class="profile-edit-field profile-edit-field-full">
-                            <label>Аватарка</label>
-                            <label for="profile-avatar-file" class="file-picker-card">
-                                <input id="profile-avatar-file" type="file" accept="image/*" onchange="updateAvatarFileLabel(event)">
-                                <span class="file-picker-btn">Вибрати фото</span>
-                                <span id="profile-avatar-file-name" class="file-picker-name">Файл не вибрано</span>
-                            </label>
-                        </div>
-                        <div class="profile-edit-field profile-edit-field-full">
-                            <label>Новий пароль</label>
-                            <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
-                        </div>
-                    </div>
-                    <button class="primary-btn profile-save-btn" onclick="saveProfile()">Зберегти зміни</button>
-                </div>
-
-                <div class="profile-overview-grid profile-overview-grid-hidden hidden">
-                    <div class="profile-mini-stat">
-                        <span class="profile-mini-label"><span class="profile-menu-icon">⭐</span> Рейтинг</span>
-                        <strong id="profile-rating-value">—</strong>
-                        <small id="profile-rating-count">0 відгуків</small>
-                    </div>
-                </div>
-
-                <div class="profile-card"><button id="stats-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleStatsPanel()"><span class="profile-menu-icon">📊</span><span>Статистика</span><span class="profile-menu-arrow">›</span></button>
-                    <div id="stats-wrap" class="hidden" style="margin-top:14px;">
-                        <div class="stats-grid compact-stats-grid">
-                            <div class="stat-card"><span class="stat-value" id="stat-active">0</span><span class="stat-label">Активні</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-sold">0</span><span class="stat-label">Продані</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-archived">0</span><span class="stat-label">Архів</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-favorites">0</span><span class="stat-label">Обране</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-cart">0</span><span class="stat-label">У кошику</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-pending">0</span><span class="stat-label">Запити</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-purchases">0</span><span class="stat-label">Покупки</span></div>
-                            <div class="stat-card"><span class="stat-value" id="stat-purchase-pending">0</span><span class="stat-label">Очікують</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="profile-card"><button id="purchase-history-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="togglePurchaseHistory()"><span class="profile-menu-icon">🛍</span><span>Історія покупок</span><span class="profile-menu-arrow">›</span></button>
-                    <div id="purchase-history-wrap" class="hidden" style="margin-top:14px;">
-                        <div id="purchase-history-list" class="cards"></div>
-                    </div>
-                </div>
-
-                <div class="profile-card"><button id="my-reviews-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleMyReviews()"><span class="profile-menu-icon">⭐</span><span>Мої відгуки</span><span class="profile-menu-arrow">›</span></button>
-                    <div id="my-reviews-wrap" class="hidden" style="margin-top:14px;">
-                        <div id="my-reviews-list"></div>
-                    </div>
-                </div>
-
-                <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення</span><span id="notifications-badge" class="notification-count hidden">0</span><span class="profile-menu-arrow">›</span></button>
-                    <div id="notifications-wrap" class="hidden" style="margin-top:14px;">
-                        <div id="notifications-list" class="cards"></div>
-                    </div>
-                </div>
-
-                <div class="profile-card"><button id="ideas-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleIdeasPanel()"><span class="profile-menu-icon">💡</span><span>Ідеї та побажання</span><span class="profile-menu-arrow">›</span></button>
-                    <div id="ideas-wrap" class="hidden" style="margin-top:14px;">
-                        <label>Назва ідеї</label>
-                        <input id="idea-title" type="text" placeholder="Наприклад: Додати чат між продавцем і покупцем">
-                        <label>Опишіть вашу пропозицію</label>
-                        <textarea id="idea-message" placeholder="Що саме хочете покращити або додати?"></textarea>
-                        <button class="primary-btn" onclick="submitIdea()">Надіслати ідею</button>
-                    </div>
-                </div>
-
-                <div id="admin-panel-wrap" class="profile-card hidden">
-                    <button id="admin-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleAdminPanel()"><span class="profile-menu-icon">🛡</span><span>Адмін панель</span><span class="profile-menu-arrow">›</span></button>
-                    <div id="admin-panel-body" class="hidden" style="margin-top:14px;">
-                        <div id="admin-summary" class="admin-summary"></div>
-                        <div class="subtabs">
-                            <button id="admin-users-tab-btn" class="subtab-btn active" onclick="switchAdminTab('users')">Користувачі</button>
-                            <button id="admin-products-tab-btn" class="subtab-btn" onclick="switchAdminTab('products')">Оголошення</button>
-                            <button id="admin-ideas-tab-btn" class="subtab-btn" onclick="switchAdminTab('ideas')">Ідеї</button>
-                            <button id="admin-reports-tab-btn" class="subtab-btn" onclick="switchAdminTab('reports')">Скарги</button>
-                            <button id="admin-logs-tab-btn" class="subtab-btn" onclick="switchAdminTab('logs')">Логи</button>
-                        </div>
-                        <div id="admin-users-tab" class="admin-tab-section">
-                            <div class="admin-search-row">
-                                <input id="admin-users-search" type="text" placeholder="Пошук користувача">
-                                <button class="secondary-btn" onclick="loadAdminUsers()">Шукати</button>
+                    <div id="profile-edit-wrap" class="profile-card hidden profile-edit-card">
+                        <div class="profile-edit-header-row">
+                            <div>
+                                <h3 class="profile-subtitle">Налаштування профілю</h3>
+                                <p class="profile-edit-desc">Онови основні дані профілю. Зміни збережуться одразу після натискання кнопки.</p>
                             </div>
-                            <div id="admin-users-list" class="cards"></div>
+                            <div class="profile-edit-badge">Профіль</div>
                         </div>
-                        <div id="admin-products-tab" class="admin-tab-section hidden">
-                            <div class="admin-search-row">
-                                <input id="admin-products-search" type="text" placeholder="Пошук оголошення">
-                                <button class="secondary-btn" onclick="loadAdminProducts()">Шукати</button>
+                        <div class="profile-edit-grid">
+                            <div class="profile-edit-field">
+                                <label>Username (без @)</label>
+                                <input id="profile-edit-username" type="text" placeholder="username (без @)">
                             </div>
-                            <div id="admin-products-list" class="cards"></div>
+                            <div class="profile-edit-field">
+                                <label>Ім'я</label>
+                                <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
+                            </div>
+                            <div class="profile-edit-field profile-edit-field-full">
+                                <label>Аватарка</label>
+                                <label for="profile-avatar-file" class="file-picker-card">
+                                    <input id="profile-avatar-file" type="file" accept="image/*" onchange="updateAvatarFileLabel(event)">
+                                    <span class="file-picker-btn">Вибрати фото</span>
+                                    <span id="profile-avatar-file-name" class="file-picker-name">Файл не вибрано</span>
+                                </label>
+                            </div>
+                            <div class="profile-edit-field profile-edit-field-full">
+                                <label>Новий пароль</label>
+                                <input id="profile-edit-password" type="password" placeholder="Залиш порожнім, якщо не змінюєш">
+                            </div>
                         </div>
-                        <div id="admin-ideas-tab" class="admin-tab-section hidden"><div id="admin-ideas-list" class="cards"></div></div>
-                        <div id="admin-reports-tab" class="admin-tab-section hidden"><div id="admin-reports-list" class="cards"></div></div>
-                        <div id="admin-logs-tab" class="admin-tab-section hidden"><div id="admin-logs-list" class="cards"></div></div>
+                        <button class="primary-btn profile-save-btn" onclick="saveProfile()">Зберегти зміни</button>
                     </div>
-                </div>
 
-                <div class="profile-card profile-language-card">
-                    <div class="language-switch-stack">
-                        <div class="language-switch-label"><span class="profile-menu-icon">🌐</span><span>Мова / Language</span></div>
-                        <div id="profile-language-switcher" class="lang-switcher profile-lang-switcher">
-                            <button type="button" class="lang-btn" data-lang="uk" onclick="changeLanguage('uk')">Українська</button>
-                            <button type="button" class="lang-btn" data-lang="ru" onclick="changeLanguage('ru')">Русский</button>
-                            <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">English</button>
+                    <div class="profile-overview-grid profile-overview-grid-hidden" aria-hidden="true">
+                        <div class="profile-mini-stat">
+                            <span class="profile-mini-label"><span class="profile-menu-icon">⭐</span><span id="profile-rating-label-text">Рейтинг</span></span>
+                            <strong id="profile-rating-value">—</strong>
+                            <small id="profile-rating-count">0 відгуків</small>
                         </div>
-                        <select id="language-select" class="hidden" onchange="changeLanguage(this.value)">
-                            <option value="uk">Українська</option>
-                            <option value="ru">Русский</option>
-                            <option value="en">English</option>
-                        </select>
+                        <div class="profile-mini-stat">
+                            <span class="profile-mini-label"><span class="profile-menu-icon">🏆</span><span id="profile-status-label-text">Статус</span></span>
+                            <strong id="profile-status-value">Новий продавець</strong>
+                            <small id="profile-register-date">—</small>
+                        </div>
                     </div>
-                </div>
 
-                <div class="profile-card">
-                    <button class="primary-btn profile-logout-btn" onclick="logout()"><span class="profile-menu-icon">🚪</span><span>Змінити акаунт / Вийти</span></button>
+                    <div class="profile-card"><button id="purchase-history-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="togglePurchaseHistory()"><span class="profile-menu-icon">🛍</span><span>Історія покупок</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="purchase-history-wrap" class="hidden" style="margin-top:14px;">
+                            <div id="purchase-history-list" class="cards"></div>
+                        </div>
+                    </div>
+
+                    <div class="profile-card"><button id="my-reviews-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleMyReviews()"><span class="profile-menu-icon">⭐</span><span>Мої відгуки</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="my-reviews-wrap" class="hidden" style="margin-top:14px;">
+                            <div id="my-reviews-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення</span><span id="notifications-badge" class="notification-count hidden">0</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="notifications-wrap" class="hidden" style="margin-top:14px;">
+                            <div id="notifications-list" class="cards"></div>
+                        </div>
+                    </div>
+
+                    <div class="profile-card"><button id="ideas-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleIdeasPanel()"><span class="profile-menu-icon">💡</span><span>Ідеї та побажання</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="ideas-wrap" class="hidden" style="margin-top:14px;">
+                            <label>Назва ідеї</label>
+                            <input id="idea-title" type="text" placeholder="Наприклад: Додати чат між продавцем і покупцем">
+                            <label>Опишіть вашу пропозицію</label>
+                            <textarea id="idea-message" placeholder="Що саме хочете покращити або додати?"></textarea>
+                            <button class="primary-btn" onclick="submitIdea()">Надіслати ідею</button>
+                        </div>
+                    </div>
+
+                    <div class="profile-card"><button id="stats-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleStatsPanel()"><span class="profile-menu-icon">📊</span><span>Статистика</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="stats-wrap" class="hidden" style="margin-top:14px;">
+                            <div class="stats-grid compact-stats-grid">
+                                <div class="stat-card"><span class="stat-value" id="stat-active">0</span><span class="stat-label">Активні</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-sold">0</span><span class="stat-label">Продані</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-archived">0</span><span class="stat-label">Архів</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-favorites">0</span><span class="stat-label">Обране</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-cart">0</span><span class="stat-label">У кошику</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-pending">0</span><span class="stat-label">Запити</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-purchases">0</span><span class="stat-label">Покупки</span></div>
+                                <div class="stat-card"><span class="stat-value" id="stat-purchase-pending">0</span><span class="stat-label">Очікують</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="admin-panel-wrap" class="profile-card hidden">
+                        <button id="admin-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleAdminPanel()"><span class="profile-menu-icon">🛡</span><span>Адмін панель</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="admin-panel-body" class="hidden" style="margin-top:14px;">
+                            <div id="admin-summary" class="admin-summary"></div>
+                            <div class="subtabs">
+                                <button id="admin-users-tab-btn" class="subtab-btn active" onclick="switchAdminTab('users')">Користувачі</button>
+                                <button id="admin-products-tab-btn" class="subtab-btn" onclick="switchAdminTab('products')">Оголошення</button>
+                                <button id="admin-ideas-tab-btn" class="subtab-btn" onclick="switchAdminTab('ideas')">Ідеї</button>
+                                <button id="admin-reports-tab-btn" class="subtab-btn" onclick="switchAdminTab('reports')">Скарги</button>
+                                <button id="admin-logs-tab-btn" class="subtab-btn" onclick="switchAdminTab('logs')">Логи</button>
+                            </div>
+                            <div id="admin-users-tab" class="admin-tab-section">
+                                <div class="admin-search-row">
+                                    <input id="admin-users-search" type="text" placeholder="Пошук користувача">
+                                    <button class="secondary-btn" onclick="loadAdminUsers()">Шукати</button>
+                                </div>
+                                <div id="admin-users-list" class="cards"></div>
+                            </div>
+                            <div id="admin-products-tab" class="admin-tab-section hidden">
+                                <div class="admin-search-row">
+                                    <input id="admin-products-search" type="text" placeholder="Пошук оголошення">
+                                    <button class="secondary-btn" onclick="loadAdminProducts()">Шукати</button>
+                                </div>
+                                <div id="admin-products-list" class="cards"></div>
+                            </div>
+                            <div id="admin-ideas-tab" class="admin-tab-section hidden"><div id="admin-ideas-list" class="cards"></div></div>
+                            <div id="admin-reports-tab" class="admin-tab-section hidden"><div id="admin-reports-list" class="cards"></div></div>
+                            <div id="admin-logs-tab" class="admin-tab-section hidden"><div id="admin-logs-list" class="cards"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="profile-card profile-language-card">
+                        <div class="language-switch-stack">
+                            <div class="language-switch-label"><span class="profile-menu-icon">🌐</span><span>Мова / Language</span></div>
+                            <div id="profile-language-switcher" class="lang-switcher profile-lang-switcher">
+                                <button type="button" class="lang-btn" data-lang="uk" onclick="changeLanguage('uk')">Українська</button>
+                                <button type="button" class="lang-btn" data-lang="ru" onclick="changeLanguage('ru')">Русский</button>
+                                <button type="button" class="lang-btn" data-lang="en" onclick="changeLanguage('en')">English</button>
+                            </div>
+                            <select id="language-select" class="hidden" onchange="changeLanguage(this.value)">
+                                <option value="uk">Українська</option>
+                                <option value="ru">Русский</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="profile-card">
+                        <button class="primary-btn profile-logout-btn" onclick="logout()"><span class="profile-menu-icon">🚪</span><span>Змінити акаунт / Вийти</span></button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -549,6 +553,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=423"></script>
+    <script src="app.js?v=421"></script>
 </body>
 </html>
