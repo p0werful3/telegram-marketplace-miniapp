@@ -1,9 +1,9 @@
-console.log("APP VERSION 416 LOADED");
+console.log("APP VERSION 433 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "416";
+const FRONTEND_VERSION = "433";
 
 let tg = null;
 let telegramUser = null;
@@ -14,6 +14,7 @@ let catalogView = "all";
 let currentModalImageIndex = 0;
 let currentModalImages = [];
 let filtersOpen = false;
+let catalogSearchOpen = false;
 let notificationsUnread = 0;
 let dashboardRefreshTimer = null;
 let editingProductId = null;
@@ -691,11 +692,34 @@ function toggleFilters(forceState = null) {
 
     if (!filtersWrap || !toggleBtn) return;
 
+    if (!catalogSearchOpen) {
+        filtersOpen = false;
+        filtersWrap.classList.add("hidden");
+        toggleBtn.textContent = "Фільтри";
+        toggleBtn.classList.remove("active");
+        return;
+    }
+
     filtersOpen = forceState === null ? !filtersOpen : Boolean(forceState);
 
     filtersWrap.classList.toggle("hidden", !filtersOpen);
     toggleBtn.textContent = filtersOpen ? "Сховати фільтри" : "Фільтри";
     toggleBtn.classList.toggle("active", filtersOpen);
+}
+
+function toggleCatalogSearchPanel(forceState = null) {
+    const panelBody = $("catalog-search-panel-body");
+    const collapseBtn = $("catalog-search-collapse-btn");
+    if (!panelBody || !collapseBtn) return;
+
+    catalogSearchOpen = forceState === null ? !catalogSearchOpen : Boolean(forceState);
+    panelBody.classList.toggle("hidden", !catalogSearchOpen);
+    collapseBtn.textContent = catalogSearchOpen ? '˄' : '˅';
+    collapseBtn.setAttribute('aria-expanded', catalogSearchOpen ? 'true' : 'false');
+
+    if (!catalogSearchOpen) {
+        toggleFilters(false);
+    }
 }
 
 function fillProfile() {
@@ -844,6 +868,7 @@ async function showApp() {
 
     initCreateFormUi();
     resetCreateForm();
+    toggleCatalogSearchPanel(false);
     toggleFilters(false);
     setActiveNavButton("catalog");
     switchTab("catalog");
@@ -874,6 +899,11 @@ function switchTab(tabName, btn = null) {
         btn.classList.add("active");
     } else {
         setActiveNavButton(tabName);
+    }
+
+    if (tabName !== "catalog") {
+        toggleCatalogSearchPanel(false);
+        toggleFilters(false);
     }
 
     if (tabName === "catalog") loadProducts();
@@ -3463,3 +3493,5 @@ if (typeof openImageViewer === "function") window.openImageViewer = openImageVie
 if (typeof closeImageViewer === "function") window.closeImageViewer = closeImageViewer;
 if (typeof closeImageViewerOnBackdrop === "function") window.closeImageViewerOnBackdrop = closeImageViewerOnBackdrop;
 if (typeof changeViewerImage === "function") window.changeViewerImage = changeViewerImage;
+
+if (typeof toggleCatalogSearchPanel === "function") window.toggleCatalogSearchPanel = toggleCatalogSearchPanel;
