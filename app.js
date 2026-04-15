@@ -720,7 +720,11 @@ function fillProfile() {
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
     if ($("profile-avatar-file")) $("profile-avatar-file").value = "";
     if ($("profile-rating-badge")) {
-        $("profile-rating-badge").textContent = getUserRatingLabel(currentUser);
+        const avg = getUserAverageRating(currentUser);
+        const ratingCount = Number(currentUser.rating_count || 0);
+        $("profile-rating-badge").textContent = ratingCount > 0
+            ? `⭐ ${avg} · ${ratingCount} ${currentLanguage === "en" ? "reviews" : currentLanguage === "ru" ? "отзывов" : "відгуків"}`
+            : getUserRatingLabel(currentUser);
     }
     if ($("profile-rating-value")) {
         $("profile-rating-value").textContent = Number(currentUser.rating_count || 0) > 0 ? `${getUserAverageRating(currentUser)}` : "—";
@@ -730,6 +734,9 @@ function fillProfile() {
     }
     if ($("profile-register-date")) {
         $("profile-register-date").textContent = formatDate(currentUser.created_at) || "—";
+    }
+    if ($("profile-register-date-inline")) {
+        $("profile-register-date-inline").textContent = formatDate(currentUser.created_at) || "—";
     }
     if ($("profile-status-value")) {
         $("profile-status-value").textContent = getSellerBadgeText(currentUser.sold_products || 0, currentUser.rating_count || 0);
@@ -912,6 +919,9 @@ async function loadStats() {
         $("stat-sold").textContent = data.sold_products ?? 0;
         $("stat-archived").textContent = data.archived_products ?? 0;
         $("stat-favorites").textContent = data.favorites ?? 0;
+        if ($("profile-quick-active")) $("profile-quick-active").textContent = data.active_products ?? 0;
+        if ($("profile-quick-sold")) $("profile-quick-sold").textContent = data.sold_products ?? 0;
+        if ($("profile-quick-favorites")) $("profile-quick-favorites").textContent = data.favorites ?? 0;
         $("stat-cart").textContent = data.cart_items ?? 0;
         const pendingEl = $("stat-pending");
         if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
