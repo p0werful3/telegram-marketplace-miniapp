@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=432">
+    <link rel="stylesheet" href="style.css?v=433">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -95,16 +95,22 @@
                     <button id="catalog-favorites-btn" class="subtab-btn" onclick="switchCatalogView('favorites')">Обране</button>
                 </div>
 
-                <div class="catalog-toolbar catalog-toolbar-stacked">
-                    <label id="catalog-search-label" class="toolbar-label">Пошук товарів</label>
-                    <input id="search-input" type="text" placeholder="Пошук товарів...">
-                    <button id="catalog-search-btn" type="button" class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
-                    <label id="seller-search-label" class="toolbar-label seller-search-label">🔎 Пошук продавця</label>
-                    <div class="seller-search-row">
-                        <input id="seller-search-input" type="text" placeholder="username (без @)">
-                        <button id="seller-search-btn" type="button" class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
+                <div id="catalog-search-panel" class="catalog-toolbar catalog-toolbar-stacked catalog-search-panel">
+                    <div class="catalog-search-head">
+                        <div class="catalog-search-head-title">Пошук та фільтри</div>
+                        <button id="catalog-search-collapse-btn" type="button" class="catalog-collapse-btn" onclick="toggleCatalogSearchPanel()" aria-expanded="false" title="Відкрити або закрити пошук">˅</button>
                     </div>
-                    <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри ▼</button>
+                    <div id="catalog-search-panel-body" class="catalog-search-panel-body hidden">
+                        <label id="catalog-search-label" class="toolbar-label">Пошук товарів</label>
+                        <input id="search-input" type="text" placeholder="Пошук товарів...">
+                        <button id="catalog-search-btn" type="button" class="secondary-btn section-btn" onclick="loadProducts()">Шукати</button>
+                        <label id="seller-search-label" class="toolbar-label seller-search-label">🔎 Пошук продавця</label>
+                        <div class="seller-search-row">
+                            <input id="seller-search-input" type="text" placeholder="username (без @)">
+                            <button id="seller-search-btn" type="button" class="secondary-btn section-btn seller-search-btn" onclick="searchSeller()">Знайти</button>
+                        </div>
+                        <button id="filters-toggle-btn" class="secondary-btn section-btn" onclick="toggleFilters()">Фільтри ▼</button>
+                    </div>
                 </div>
 
                 <div id="catalog-filters-wrap" class="filters-panel hidden">
