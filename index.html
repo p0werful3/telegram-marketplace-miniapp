@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=326">
+    <link rel="stylesheet" href="style.css?v=426">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -305,47 +305,50 @@
 
             <section id="tab-profile" class="tab-section">
                 <h2>Профіль</h2>
-                <h2>Профіль</h2>
 
-                <div class="profile-shell profile-shell-premium">
-                    <div class="profile-brand-card profile-card">
-                        <div class="profile-brand-icon-wrap">
-                            <div class="profile-brand-icon">🛍</div>
+                <div class="profile-ref-shell">
+                    <div class="profile-ref-master profile-card">
+                        <div class="profile-ref-app-row">
+                            <div class="profile-ref-app-icon-wrap">
+                                <div class="profile-ref-app-icon">🛍</div>
+                            </div>
+                            <div class="profile-ref-app-copy">
+                                <div class="profile-ref-app-title">Telegram Marketplace</div>
+                                <div class="profile-ref-app-subtitle">Маркетплейс у Telegram</div>
+                            </div>
                         </div>
-                        <div class="profile-brand-copy">
-                            <div class="profile-brand-title">Telegram Marketplace</div>
-                            <div class="profile-brand-subtitle">Маркетплейс у Telegram</div>
-                        </div>
-                    </div>
 
-                    <div class="profile-hero-card profile-card profile-user-card">
-                        <div class="profile-hero-main">
-                            <div class="profile-identity">
-                                <div id="profile-avatar" class="profile-avatar">U</div>
-                                <div class="profile-hero-text">
-                                    <div id="profile-fullname" class="profile-hero-name">Без імені</div>
-                                    <div id="profile-username" class="profile-hero-username">@username</div>
-                                    <div class="profile-hero-meta-line">
-                                        <div id="profile-rating-badge" class="profile-rating-badge">Новий продавець</div>
-                                        <div id="profile-register-date-inline" class="profile-register-date-inline">—</div>
+                        <div class="profile-ref-user-card">
+                            <div id="profile-avatar" class="profile-avatar profile-ref-avatar">U</div>
+
+                            <div class="profile-ref-user-main">
+                                <div class="profile-ref-user-top">
+                                    <div class="profile-ref-user-copy">
+                                        <div id="profile-fullname" class="profile-ref-name">Без імені</div>
+                                        <div id="profile-username" class="profile-ref-username">@username</div>
+                                    </div>
+                                    <button id="profile-edit-toggle-btn" class="icon-circle-btn profile-ref-settings-btn" onclick="toggleProfileEdit()" title="Налаштування">⚙</button>
+                                </div>
+
+                                <div class="profile-ref-user-meta">
+                                    <div id="profile-rating-badge" class="profile-ref-rating-badge">⭐ 4.8 · 5 відгуків</div>
+                                    <div id="profile-register-date-inline" class="profile-ref-date">—</div>
+                                </div>
+
+                                <div class="profile-ref-stats-row">
+                                    <div class="profile-ref-stat">
+                                        <span class="profile-ref-stat-left"><span class="profile-ref-stat-icon">▦</span><span id="profile-quick-active-label">Активні</span></span>
+                                        <strong id="profile-quick-active">0</strong>
+                                    </div>
+                                    <div class="profile-ref-stat">
+                                        <span class="profile-ref-stat-left"><span class="profile-ref-stat-icon">✓</span><span id="profile-quick-sold-label">Продані</span></span>
+                                        <strong id="profile-quick-sold">0</strong>
+                                    </div>
+                                    <div class="profile-ref-stat">
+                                        <span class="profile-ref-stat-left"><span class="profile-ref-stat-icon heart">❤</span><span id="profile-quick-favorites-label">Обране</span></span>
+                                        <strong id="profile-quick-favorites">0</strong>
                                     </div>
                                 </div>
-                            </div>
-                            <button id="profile-edit-toggle-btn" class="icon-circle-btn profile-settings-btn" onclick="toggleProfileEdit()" title="Налаштування">⚙</button>
-                        </div>
-
-                        <div class="profile-quick-stats">
-                            <div class="profile-quick-stat">
-                                <span class="profile-quick-left"><span class="profile-quick-icon">▦</span><span id="profile-quick-active-label">Активні</span></span>
-                                <strong id="profile-quick-active">0</strong>
-                            </div>
-                            <div class="profile-quick-stat">
-                                <span class="profile-quick-left"><span class="profile-quick-icon">✓</span><span id="profile-quick-sold-label">Продані</span></span>
-                                <strong id="profile-quick-sold">0</strong>
-                            </div>
-                            <div class="profile-quick-stat">
-                                <span class="profile-quick-left"><span class="profile-quick-icon">❤</span><span id="profile-quick-favorites-label">Обране</span></span>
-                                <strong id="profile-quick-favorites">0</strong>
                             </div>
                         </div>
                     </div>
@@ -410,7 +413,7 @@
 
                     <div class="profile-card"><button id="notifications-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="toggleNotificationsPanel()"><span class="profile-menu-icon">🔔</span><span>Повідомлення</span><span id="notifications-badge" class="notification-count hidden">0</span><span class="profile-menu-arrow">›</span></button>
                         <div id="notifications-wrap" class="hidden" style="margin-top:14px;">
-                            <div id="notifications-list" class="cards"></div>
+                            <div id="notifications-list"></div>
                         </div>
                     </div>
 
@@ -553,6 +556,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=421"></script>
+    <script src="app.js?v=426"></script>
 </body>
 </html>
