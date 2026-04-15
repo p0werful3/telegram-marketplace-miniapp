@@ -4235,3 +4235,310 @@ body{
   .profile-panel-wrap{padding:12px;border-radius:20px;}
   .profile-lang-switcher{grid-template-columns:1fr !important;}
 }
+
+/* === Profile premium palette v428 overrides === */
+#app-screen.profile-mode{
+  background:
+    radial-gradient(circle at 50% 0%, rgba(88,128,255,.18) 0%, rgba(88,128,255,0) 36%),
+    radial-gradient(circle at 50% 100%, rgba(28,70,170,.22) 0%, rgba(28,70,170,0) 32%),
+    linear-gradient(180deg, #07152f 0%, #071226 52%, #050b18 100%) !important;
+}
+
+#app-screen.profile-mode .content{
+  background:transparent !important;
+}
+
+#tab-profile > h2{
+  margin:0 6px 8px !important;
+  color:#eef5ff;
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:-.03em;
+}
+
+.profile-ref-shell{
+  gap:12px !important;
+}
+
+.profile-ref-master{
+  padding:12px !important;
+  border-radius:28px !important;
+  background:
+    radial-gradient(circle at 50% -12%, rgba(105,146,255,.18), rgba(105,146,255,0) 34%),
+    linear-gradient(180deg, rgba(10,33,77,.98) 0%, rgba(8,22,52,.99) 100%) !important;
+  border:1px solid rgba(98,144,246,.24) !important;
+  box-shadow:
+    0 16px 44px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -18px 40px rgba(0,0,0,.16) !important;
+}
+
+.profile-ref-app-row{
+  padding:15px 18px !important;
+  border-radius:24px !important;
+  background:
+    linear-gradient(180deg, rgba(14,44,103,.92) 0%, rgba(10,29,70,.98) 100%) !important;
+  border:1px solid rgba(104,151,255,.2) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+
+.profile-ref-app-icon-wrap{
+  width:68px !important;
+  height:68px !important;
+  flex-basis:68px !important;
+  border-radius:20px !important;
+  background:
+    linear-gradient(180deg, rgba(70,106,196,.98) 0%, rgba(48,79,150,.98) 100%) !important;
+  border:1px solid rgba(145,186,255,.14) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 10px 24px rgba(0,0,0,.18) !important;
+}
+
+.profile-ref-app-title{
+  color:#f6fbff !important;
+  font-size:18px !important;
+}
+
+.profile-ref-app-subtitle{
+  color:#b8caf0 !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+}
+
+.profile-ref-user-card{
+  margin-top:12px !important;
+  grid-template-columns:78px minmax(0,1fr) !important;
+  gap:14px !important;
+  padding:14px 16px 12px !important;
+  border-radius:24px !important;
+  background:
+    linear-gradient(180deg, rgba(65,96,169,.98) 0%, rgba(42,66,125,.99) 100%) !important;
+  border:1px solid rgba(128,171,255,.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    inset 0 -18px 32px rgba(8,20,49,.14) !important;
+}
+
+.profile-ref-avatar{
+  width:78px !important;
+  height:78px !important;
+  flex-basis:78px !important;
+  border:3px solid rgba(224,236,255,.22) !important;
+  box-shadow:0 10px 22px rgba(0,0,0,.2) !important;
+}
+
+.profile-ref-user-main{
+  gap:10px !important;
+}
+
+.profile-ref-user-top{
+  grid-template-columns:minmax(0,1fr) 64px !important;
+  gap:12px !important;
+}
+
+.profile-ref-user-copy{
+  gap:2px !important;
+}
+
+.profile-ref-name{
+  font-size:20px !important;
+  line-height:1.02 !important;
+  color:#ffffff !important;
+}
+
+.profile-ref-username{
+  font-size:14px !important;
+  color:#d8e6ff !important;
+}
+
+.profile-ref-status-chip{
+  margin-top:7px !important;
+  min-height:24px !important;
+  padding:0 10px !important;
+  background:rgba(14,28,63,.34) !important;
+  border:1px solid rgba(221,234,255,.1) !important;
+  color:#f2f7ff !important;
+  font-size:11px !important;
+}
+
+.profile-ref-settings-btn{
+  width:64px !important;
+  height:64px !important;
+  flex-basis:64px !important;
+  background:
+    linear-gradient(180deg, rgba(94,123,186,.96) 0%, rgba(71,96,150,.98) 100%) !important;
+  border:1px solid rgba(210,226,255,.14) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 10px 22px rgba(0,0,0,.12) !important;
+}
+
+.profile-ref-user-meta{
+  gap:12px !important;
+}
+
+.profile-ref-rating-badge{
+  min-height:36px !important;
+  padding:0 14px !important;
+  background:
+    linear-gradient(180deg, rgba(104,128,186,.42) 0%, rgba(70,92,145,.48) 100%) !important;
+  border:1px solid rgba(205,223,255,.08) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+  font-size:13px !important;
+}
+
+.profile-ref-date{
+  font-size:13px !important;
+  color:#edf4ff !important;
+}
+
+.profile-ref-stats-row{
+  min-height:62px !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg, rgba(11,28,67,.98) 0%, rgba(8,21,49,.99) 100%) !important;
+  border:1px solid rgba(127,171,255,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+
+.profile-ref-stat{
+  gap:8px !important;
+  padding:0 12px !important;
+}
+
+.profile-ref-stat-left{
+  gap:7px !important;
+  color:#dce8ff !important;
+  font-size:13px !important;
+}
+
+.profile-ref-stat strong{
+  font-size:16px !important;
+}
+
+.profile-ref-stat-icon{
+  width:22px !important;
+  height:22px !important;
+  flex-basis:22px !important;
+  border-radius:7px !important;
+  background:rgba(91,132,234,.16) !important;
+  color:#8cb5ff !important;
+}
+
+.profile-ref-stat-icon.heart{
+  background:rgba(255,110,156,.13) !important;
+  color:#ff7398 !important;
+}
+
+.profile-menu-section{
+  gap:8px !important;
+}
+
+.profile-menu-btn,
+.profile-logout-btn{
+  min-height:66px !important;
+  padding:0 22px !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg, rgba(112,140,211,.94) 0%, rgba(83,109,178,.98) 100%) !important;
+  border:1px solid rgba(182,210,255,.12) !important;
+  box-shadow:
+    0 10px 22px rgba(0,0,0,.15),
+    inset 0 1px 0 rgba(255,255,255,.06),
+    inset 0 -10px 18px rgba(47,69,124,.12) !important;
+}
+
+.profile-menu-btn > span:nth-child(2),
+.profile-logout-btn > span:nth-child(2){
+  font-size:16px !important;
+  font-weight:800 !important;
+}
+
+.profile-menu-icon{
+  font-size:20px !important;
+}
+
+.profile-panel-wrap{
+  padding:14px !important;
+  border-radius:22px !important;
+  background:linear-gradient(180deg, rgba(9,23,52,.98) 0%, rgba(7,16,36,.99) 100%) !important;
+  border:1px solid rgba(116,163,255,.12) !important;
+}
+
+.profile-language-card{
+  padding:14px !important;
+  border-radius:22px !important;
+  background:
+    linear-gradient(180deg, rgba(8,22,52,.97) 0%, rgba(6,17,38,.99) 100%) !important;
+  border:1px solid rgba(111,156,246,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+
+.language-switch-stack{
+  gap:10px !important;
+}
+
+.language-switch-label{
+  color:#dfe9ff !important;
+  font-weight:700 !important;
+}
+
+.profile-lang-switcher{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+
+.profile-language-card .lang-btn{
+  min-height:42px !important;
+  padding:0 8px !important;
+  border-radius:14px !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:#eef4ff !important;
+  background:linear-gradient(180deg, rgba(20,45,96,.95) 0%, rgba(15,33,73,.98) 100%) !important;
+  border:1px solid rgba(102,143,228,.14) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+
+.profile-language-card .lang-btn.active,
+.profile-language-card .lang-btn[aria-pressed="true"]{
+  background:linear-gradient(180deg, rgba(61,117,244,.96) 0%, rgba(87,153,245,.95) 100%) !important;
+  border-color:rgba(146,192,255,.28) !important;
+  color:#ffffff !important;
+  box-shadow:0 10px 24px rgba(39,92,210,.2), inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+@media (max-width: 520px){
+  #app-screen.profile-mode .content{padding:8px 8px 16px !important;}
+  .profile-ref-master{padding:10px !important;border-radius:24px !important;}
+  .profile-ref-app-row{padding:12px 14px !important;gap:14px !important;border-radius:22px !important;}
+  .profile-ref-app-icon-wrap{width:56px !important;height:56px !important;flex-basis:56px !important;border-radius:18px !important;}
+  .profile-ref-app-icon{font-size:28px !important;}
+  .profile-ref-app-title{font-size:16px !important;}
+  .profile-ref-app-subtitle{font-size:12px !important;}
+  .profile-ref-user-card{margin-top:10px !important;grid-template-columns:72px minmax(0,1fr) !important;gap:12px !important;padding:12px 14px 12px !important;border-radius:22px !important;}
+  .profile-ref-avatar{width:72px !important;height:72px !important;flex-basis:72px !important;}
+  .profile-ref-user-main{gap:9px !important;}
+  .profile-ref-user-top{grid-template-columns:minmax(0,1fr) 56px !important;gap:10px !important;}
+  .profile-ref-name{font-size:17px !important;}
+  .profile-ref-username{font-size:13px !important;}
+  .profile-ref-status-chip{margin-top:6px !important;min-height:22px !important;padding:0 9px !important;font-size:10px !important;}
+  .profile-ref-settings-btn{width:56px !important;height:56px !important;flex-basis:56px !important;font-size:18px !important;}
+  .profile-ref-user-meta{gap:8px !important;}
+  .profile-ref-rating-badge{min-height:32px !important;padding:0 12px !important;font-size:12px !important;}
+  .profile-ref-date{font-size:12px !important;}
+  .profile-ref-stats-row{min-height:56px !important;border-radius:18px !important;}
+  .profile-ref-stat{gap:6px !important;padding:0 8px !important;}
+  .profile-ref-stat-left{gap:5px !important;font-size:10px !important;}
+  .profile-ref-stat-icon{width:20px !important;height:20px !important;flex-basis:20px !important;font-size:10px !important;}
+  .profile-ref-stat strong{font-size:13px !important;}
+  .profile-menu-btn,.profile-logout-btn{min-height:58px !important;padding:0 18px !important;}
+  .profile-menu-btn > span:nth-child(2),.profile-logout-btn > span:nth-child(2){font-size:14px !important;}
+  .profile-menu-icon{width:24px !important;height:24px !important;font-size:17px !important;}
+  .profile-menu-arrow{font-size:24px !important;}
+  .profile-language-card{padding:12px !important;}
+  .profile-lang-switcher{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:6px !important;}
+  .profile-language-card .lang-btn{min-height:38px !important;font-size:11px !important;padding:0 6px !important;border-radius:12px !important;}
+}
