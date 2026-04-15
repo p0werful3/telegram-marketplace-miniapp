@@ -5480,3 +5480,333 @@ body{
   .profile-lang-switcher{gap:6px !important;}
   .profile-language-card .lang-btn{min-height:34px !important;font-size:11px !important;}
 }
+
+
+/* ===== v434 compact panels pass ===== */
+#stats-wrap .stats-grid,
+#admin-summary .stats-grid{
+  gap:8px !important;
+  margin:8px 0 0 !important;
+}
+#stats-wrap .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
+#stats-wrap .stat-card,
+#admin-summary .stat-card{
+  padding:10px 8px !important;
+  min-height:72px !important;
+  border-radius:16px !important;
+  background:linear-gradient(180deg, rgba(14,30,58,.96), rgba(9,19,38,.98)) !important;
+}
+#stats-wrap .stat-value,
+#admin-summary .stat-value{
+  font-size:18px !important;
+  margin-bottom:4px !important;
+  line-height:1.05 !important;
+}
+#stats-wrap .stat-label,
+#admin-summary .stat-label{
+  font-size:11px !important;
+  line-height:1.15 !important;
+}
+
+#admin-panel-body{
+  padding:10px !important;
+}
+#admin-panel-body .subtabs{
+  gap:6px !important;
+  margin:8px 0 10px !important;
+}
+#admin-panel-body .subtab-btn{
+  min-height:34px !important;
+  padding:0 10px !important;
+  font-size:12px !important;
+  border-radius:12px !important;
+}
+#admin-panel-body .admin-search-row{
+  gap:8px !important;
+  margin-bottom:10px !important;
+}
+#admin-panel-body .admin-search-row input,
+#admin-panel-body .admin-search-row button{
+  min-height:38px !important;
+  border-radius:12px !important;
+  padding:0 12px !important;
+  font-size:13px !important;
+}
+#admin-panel-body .cards{gap:10px !important;}
+#admin-panel-body .card,
+#admin-panel-body .admin-idea-card,
+#admin-panel-body .admin-product-card{
+  border-radius:16px !important;
+}
+#admin-panel-body .card-body,
+#admin-panel-body .compact-card-body,
+#admin-panel-body .admin-product-body{
+  padding:10px !important;
+}
+#admin-panel-body .card-title,
+#admin-panel-body .compact-title{
+  font-size:15px !important;
+  line-height:1.15 !important;
+}
+#admin-panel-body .card-price,
+#admin-panel-body .compact-price{
+  font-size:15px !important;
+}
+#admin-panel-body .request-meta,
+#admin-panel-body .history-meta,
+#admin-panel-body .compact-desc,
+#admin-panel-body .compact-secondary-row,
+#admin-panel-body .muted-meta{
+  font-size:12px !important;
+  line-height:1.3 !important;
+  margin-bottom:8px !important;
+}
+#admin-panel-body .compact-thumb-wrap,
+#admin-panel-body .compact-image-wrap,
+#admin-panel-body .admin-product-thumb{
+  min-height:84px !important;
+  width:84px !important;
+  min-width:84px !important;
+  height:120px !important;
+}
+#admin-panel-body .admin-grid-3,
+#admin-panel-body .admin-actions-grid,
+#admin-panel-body .compact-actions,
+#admin-panel-body .inline-actions{
+  gap:6px !important;
+}
+#admin-panel-body .admin-grid-3 > *,
+#admin-panel-body .admin-actions-grid > *,
+#admin-panel-body .compact-actions > *,
+#admin-panel-body .inline-actions > *{
+  min-height:34px !important;
+  padding:7px 8px !important;
+  font-size:12px !important;
+  border-radius:10px !important;
+}
+
+#notifications-list .card{border-radius:16px !important;}
+#notifications-list .card-body{padding:10px !important;}
+#notifications-list .notification-head{gap:10px !important;margin-bottom:7px !important;}
+#notifications-list .notification-icon{
+  width:34px !important;
+  height:34px !important;
+  border-radius:11px !important;
+  font-size:16px !important;
+}
+#notifications-list .notification-title-row{gap:6px !important;}
+#notifications-list .card-title{font-size:15px !important;margin:0 !important;}
+#notifications-list .status-pill{
+  padding:4px 8px !important;
+  font-size:10px !important;
+  margin-bottom:0 !important;
+}
+#notifications-list .notification-date{font-size:11px !important;margin-top:2px !important;}
+#notifications-list .notification-text{
+  font-size:12px !important;
+  line-height:1.35 !important;
+  margin-bottom:8px !important;
+  -webkit-line-clamp:3 !important;
+}
+#notifications-list .notification-actions{gap:6px !important;}
+#notifications-list .notification-actions > *{
+  min-height:34px !important;
+  padding:7px 10px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+
+#my-reviews-list .cards{gap:10px !important;}
+#my-reviews-list .review-card{border-radius:16px !important;}
+#my-reviews-list .card-body{padding:10px !important;}
+#my-reviews-list .review-topline{margin-bottom:6px !important;}
+#my-reviews-list .review-stars{font-size:13px !important;}
+#my-reviews-list .review-date{font-size:11px !important;}
+#my-reviews-list .card-title{font-size:16px !important;margin-bottom:4px !important;}
+#my-reviews-list .card-description{
+  font-size:12px !important;
+  line-height:1.35 !important;
+  margin-bottom:8px !important;
+  -webkit-line-clamp:3 !important;
+}
+#my-reviews-list .review-deal-box{
+  gap:8px !important;
+  padding:8px !important;
+  border-radius:12px !important;
+  margin-top:8px !important;
+}
+#my-reviews-list .review-deal-thumb{
+  width:42px !important;
+  height:42px !important;
+  min-width:42px !important;
+  border-radius:10px !important;
+}
+#my-reviews-list .review-deal-info{
+  font-size:12px !important;
+  line-height:1.3 !important;
+}
+#my-reviews-list .compact-actions{gap:6px !important; margin-top:8px !important;}
+#my-reviews-list .compact-actions > *{
+  min-height:34px !important;
+  padding:7px 10px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+
+#purchase-history-list{gap:10px !important;}
+#purchase-history-list .history-card{
+  grid-template-columns:76px 1fr !important;
+  border-radius:16px !important;
+}
+#purchase-history-list .history-image{
+  min-height:76px !important;
+  height:100% !important;
+  object-fit:cover !important;
+}
+#purchase-history-list .card-body{padding:10px !important;}
+#purchase-history-list .status-pill{
+  padding:4px 8px !important;
+  font-size:10px !important;
+  margin-bottom:6px !important;
+}
+#purchase-history-list .card-title{font-size:15px !important;margin-bottom:2px !important;}
+#purchase-history-list .card-price{font-size:15px !important;margin-bottom:6px !important;}
+#purchase-history-list .history-meta{
+  gap:3px !important;
+  margin-bottom:8px !important;
+  font-size:12px !important;
+  line-height:1.3 !important;
+}
+#purchase-history-list .card-actions{gap:6px !important;}
+#purchase-history-list .card-actions > *{
+  min-height:34px !important;
+  padding:7px 10px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+
+#tab-cart #cart-list{gap:10px !important;}
+#tab-cart #cart-list .cart-compact-card{
+  grid-template-columns:76px 1fr !important;
+  border-radius:16px !important;
+}
+#tab-cart #cart-list .compact-image-wrap{
+  min-height:76px !important;
+}
+#tab-cart #cart-list .card-image{
+  min-height:76px !important;
+}
+#tab-cart #cart-list .compact-info{padding:10px !important;}
+#tab-cart #cart-list .compact-top-row{margin-bottom:6px !important;gap:8px !important;}
+#tab-cart #cart-list .compact-title{font-size:15px !important;}
+#tab-cart #cart-list .compact-price{font-size:15px !important;}
+#tab-cart #cart-list .cart-seller-line{
+  font-size:12px !important;
+  line-height:1.3 !important;
+  min-height:auto !important;
+  margin-bottom:8px !important;
+}
+#tab-cart #cart-list .cart-card-actions{
+  grid-template-columns:1fr 1fr !important;
+  gap:6px !important;
+}
+#tab-cart #cart-list .cart-card-actions > *{
+  min-height:34px !important;
+  padding:7px 8px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+#tab-cart .cart-summary-card{
+  padding:12px !important;
+  border-radius:18px !important;
+}
+#tab-cart #cart-total{font-size:16px !important;margin:0 !important;}
+#tab-cart #buy-all-btn{
+  min-height:38px !important;
+  border-radius:12px !important;
+  padding:8px 12px !important;
+  font-size:13px !important;
+}
+
+#profile-edit-wrap{
+  padding:12px !important;
+  border-radius:20px !important;
+}
+#profile-edit-wrap h3{
+  font-size:18px !important;
+  margin-bottom:8px !important;
+}
+#profile-edit-wrap .profile-edit-desc{
+  margin-top:2px !important;
+  font-size:12px !important;
+  line-height:1.35 !important;
+}
+#profile-edit-wrap .profile-edit-header-row{
+  gap:8px !important;
+  margin-bottom:10px !important;
+}
+#profile-edit-wrap .profile-edit-badge{
+  padding:6px 9px !important;
+  border-radius:10px !important;
+  font-size:10px !important;
+}
+#profile-edit-wrap .profile-edit-grid{gap:10px !important;}
+#profile-edit-wrap .profile-edit-field{gap:5px !important;}
+#profile-edit-wrap .profile-edit-field label{
+  font-size:11px !important;
+  margin-bottom:0 !important;
+}
+#profile-edit-wrap input,
+#profile-edit-wrap .file-picker-card{
+  min-height:42px !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+}
+#profile-edit-wrap input{padding:0 12px !important;}
+#profile-edit-wrap .file-picker-card{padding:8px 10px !important;gap:8px !important;}
+#profile-edit-wrap .file-picker-btn{
+  min-height:32px !important;
+  padding:6px 10px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+}
+#profile-edit-wrap .file-picker-name{
+  font-size:12px !important;
+  line-height:1.25 !important;
+}
+#profile-edit-wrap .profile-save-btn{
+  margin-top:10px !important;
+  min-height:40px !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+}
+
+#ideas-wrap label{
+  font-size:11px !important;
+  margin-bottom:4px !important;
+}
+#ideas-wrap input,
+#ideas-wrap textarea{
+  min-height:40px !important;
+  padding:10px 12px !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+}
+#ideas-wrap textarea{min-height:96px !important;}
+#ideas-wrap .primary-btn{
+  min-height:38px !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+}
+
+@media (max-width: 560px){
+  #stats-wrap .stats-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important;}
+  #admin-summary .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  #admin-panel-body .admin-grid-3,
+  #admin-panel-body .admin-actions-grid,
+  #admin-panel-body .compact-actions,
+  #admin-panel-body .inline-actions{grid-template-columns:1fr 1fr !important;}
+  #purchase-history-list .history-card,
+  #tab-cart #cart-list .cart-compact-card{grid-template-columns:70px 1fr !important;}
+  #tab-cart #cart-list .cart-card-actions{grid-template-columns:1fr 1fr !important;}
+}
