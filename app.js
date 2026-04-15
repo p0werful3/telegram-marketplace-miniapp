@@ -741,6 +741,9 @@ function fillProfile() {
     if ($("profile-status-value")) {
         $("profile-status-value").textContent = getSellerBadgeText(currentUser.sold_products || 0, currentUser.rating_count || 0);
     }
+    if ($("profile-status-chip")) {
+        $("profile-status-chip").textContent = getSellerBadgeText(currentUser.sold_products || 0, currentUser.rating_count || 0);
+    }
 }
 
 function toggleProfileEdit(forceState = null) {
