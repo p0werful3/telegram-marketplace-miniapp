@@ -319,11 +319,6 @@ function applyLanguageTexts() {
     setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
     const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
     setText('#tab-profile > h2', t('profileTitle')); setText('#profile-edit-wrap h3', t('profileSettings'));
-    setText('#tab-profile .profile-app-subtitle', t('appMini'));
-    const quickLabels = document.querySelectorAll('#tab-profile .profile-quick-label');
-    if (quickLabels[0]) quickLabels[0].textContent = t('activeTab');
-    if (quickLabels[1]) quickLabels[1].textContent = t('soldTab');
-    if (quickLabels[2]) quickLabels[2].textContent = t('favoritesTab');
     const createLabels = document.querySelectorAll('#tab-create label');
     if (createLabels[0]) createLabels[0].textContent = currentLanguage === 'en' ? 'Product title' : currentLanguage === 'ru' ? 'Название товара' : 'Назва товару';
     if (createLabels[1]) createLabels[1].textContent = currentLanguage === 'en' ? 'Description' : currentLanguage === 'ru' ? 'Описание' : 'Опис';
@@ -825,6 +820,7 @@ function renderReviewCard(item, showProfileButton = true) {
 async function showApp() {
     $("auth-screen")?.classList.add("hidden");
     $("app-screen")?.classList.remove("hidden");
+    $("app-screen")?.classList.toggle("profile-mode", document.querySelector('#tab-profile')?.classList.contains('active'));
 
     fillProfile();
     toggleProfileEdit(false);
@@ -861,6 +857,7 @@ function switchAuthTab(tabName, btn) {
 function switchTab(tabName, btn = null) {
     document.querySelectorAll(".tab-section").forEach(section => section.classList.remove("active"));
     $(`tab-${tabName}`)?.classList.add("active");
+    $("app-screen")?.classList.toggle("profile-mode", tabName === "profile");
 
     if (btn) {
         document.querySelectorAll(".nav-btn").forEach(button => button.classList.remove("active"));
@@ -915,12 +912,6 @@ async function loadStats() {
         $("stat-sold").textContent = data.sold_products ?? 0;
         $("stat-archived").textContent = data.archived_products ?? 0;
         $("stat-favorites").textContent = data.favorites ?? 0;
-        const quickActiveEl = $("profile-quick-active");
-        if (quickActiveEl) quickActiveEl.textContent = data.active_products ?? 0;
-        const quickSoldEl = $("profile-quick-sold");
-        if (quickSoldEl) quickSoldEl.textContent = data.sold_products ?? 0;
-        const quickFavoritesEl = $("profile-quick-favorites");
-        if (quickFavoritesEl) quickFavoritesEl.textContent = data.favorites ?? 0;
         $("stat-cart").textContent = data.cart_items ?? 0;
         const pendingEl = $("stat-pending");
         if (pendingEl) pendingEl.textContent = data.pending_requests ?? 0;
