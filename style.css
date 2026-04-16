@@ -6489,3 +6489,137 @@ input::placeholder,textarea::placeholder{color:#7f97bd !important;}
     gap:5px !important;
   }
 }
+
+
+/* ===== Final admin compact/stretch fix v439 ===== */
+#admin-products-list .admin-product-card{
+  grid-template-columns:82px minmax(0,1fr) !important;
+  min-height:144px !important;
+  align-items:stretch !important;
+}
+#admin-products-list .admin-product-thumb,
+#admin-products-list .compact-thumb-wrap{
+  width:82px !important;
+  min-width:82px !important;
+  height:auto !important;
+  min-height:100% !important;
+  align-self:stretch !important;
+  display:block !important;
+}
+#admin-products-list .admin-product-thumb .card-image,
+#admin-products-list .compact-thumb-wrap .card-image{
+  width:82px !important;
+  height:100% !important;
+  min-height:144px !important;
+  object-fit:cover !important;
+  display:block !important;
+}
+#admin-products-list .admin-product-body{
+  justify-content:flex-start !important;
+  padding:10px 12px 10px 12px !important;
+  gap:6px !important;
+}
+#admin-products-list .admin-product-card .compact-desc{
+  min-height:0 !important;
+  -webkit-line-clamp:2 !important;
+  margin:0 !important;
+}
+#admin-products-list .admin-extra-meta{
+  gap:4px 10px !important;
+}
+#admin-products-list .admin-actions-grid{
+  grid-template-columns:1fr 1fr !important;
+  gap:6px !important;
+  margin-top:4px !important;
+}
+#admin-products-list .admin-actions-grid button{
+  min-height:34px !important;
+  border-radius:12px !important;
+  font-size:13px !important;
+  padding:0 10px !important;
+}
+#admin-products-list .admin-buyer-row{
+  margin-top:2px !important;
+}
+#admin-products-list .admin-buyer-row button{
+  grid-column:1 / -1 !important;
+}
+
+#admin-ideas-list .admin-idea-card,
+#admin-reports-list .admin-idea-card{
+  min-height:unset !important;
+}
+#admin-ideas-list .admin-idea-card .card-body,
+#admin-reports-list .admin-idea-card .card-body{
+  padding:14px 14px 12px !important;
+  gap:8px !important;
+}
+#admin-ideas-list .admin-idea-card .card-title,
+#admin-reports-list .admin-idea-card .card-title{
+  font-size:15px !important;
+  line-height:1.18 !important;
+}
+#admin-ideas-list .admin-idea-card .history-meta,
+#admin-reports-list .admin-idea-card .history-meta{
+  gap:2px !important;
+  font-size:13px !important;
+}
+#admin-ideas-list .admin-idea-card .card-description,
+#admin-reports-list .admin-idea-card .card-description{
+  min-height:0 !important;
+  margin:0 !important;
+  font-size:13px !important;
+  line-height:1.32 !important;
+  -webkit-line-clamp:4 !important;
+}
+#admin-ideas-list .admin-idea-card .card-actions,
+#admin-reports-list .admin-idea-card .card-actions{
+  display:grid !important;
+  grid-template-columns:1fr 1fr 1fr !important;
+  gap:8px !important;
+  margin-top:2px !important;
+}
+#admin-ideas-list .admin-idea-card .card-actions button,
+#admin-reports-list .admin-idea-card .card-actions button{
+  min-height:34px !important;
+  border-radius:12px !important;
+  font-size:12px !important;
+  padding:0 10px !important;
+}
+
+@media (max-width: 600px){
+  #admin-products-list .admin-product-card{
+    grid-template-columns:72px minmax(0,1fr) !important;
+    min-height:132px !important;
+  }
+  #admin-products-list .admin-product-thumb,
+  #admin-products-list .compact-thumb-wrap{
+    width:72px !important;
+    min-width:72px !important;
+  }
+  #admin-products-list .admin-product-thumb .card-image,
+  #admin-products-list .compact-thumb-wrap .card-image{
+    width:72px !important;
+    min-height:132px !important;
+  }
+  #admin-products-list .admin-product-body{
+    padding:9px 10px 9px 10px !important;
+    gap:5px !important;
+  }
+  #admin-products-list .admin-actions-grid{
+    grid-template-columns:1fr 1fr !important;
+  }
+  #admin-products-list .admin-actions-grid button{
+    min-height:32px !important;
+    font-size:12px !important;
+  }
+  #admin-ideas-list .admin-idea-card .card-actions,
+  #admin-reports-list .admin-idea-card .card-actions{
+    grid-template-columns:1fr !important;
+    gap:6px !important;
+  }
+  #admin-ideas-list .admin-idea-card .card-actions button,
+  #admin-reports-list .admin-idea-card .card-actions button{
+    min-height:32px !important;
+  }
+}
