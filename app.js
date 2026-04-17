@@ -1,9 +1,9 @@
-console.log("APP VERSION 434 LOADED");
+console.log("APP VERSION 435 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "434";
+const FRONTEND_VERSION = "435";
 
 let tg = null;
 let telegramUser = null;
@@ -27,7 +27,13 @@ const TG_CACHE_INIT_KEY = "marketplace_tg_init_data";
 const TG_CACHE_USER_KEY = "marketplace_tg_user";
 
 const APP_LANG_KEY = "marketplace_lang";
-let currentLanguage = localStorage.getItem(APP_LANG_KEY) || "uk";
+const supportedLanguages = ["uk", "en"];
+
+function normalizeLanguage(lang) {
+    return supportedLanguages.includes(lang) ? lang : "uk";
+}
+
+let currentLanguage = normalizeLanguage(localStorage.getItem(APP_LANG_KEY));
 
 const I18N = {
     uk: {
@@ -88,65 +94,6 @@ const I18N = {
         authLangTitle: "Мова інтерфейсу",
         superadmin: "Суперадмін",
         protectedAdmin: "Захищений акаунт"
-    },
-    ru: {
-        authLoginTitle: "Войдите или зарегистрируйтесь",
-        authLoginTab: "Вход",
-        authRegisterTab: "Регистрация",
-        loginBtn: "Войти",
-        registerBtn: "Зарегистрироваться",
-        authDivider: "или",
-        rememberTitle: "Запомнить аккаунт",
-        rememberSubtitle: "Сохранить вход на этом устройстве",
-        usernamePlaceholder: "Username",
-        passwordPlaceholder: "Password",
-        fullNamePlaceholder: "Имя",
-        tgLogin: "Войти через Telegram",
-        tgHintReady: "Быстрый вход через ваш Telegram аккаунт",
-        tgHintUnavailable: "Кнопка Telegram временно скрыта — используйте обычный вход",
-        appMini: "Маркетплейс в Telegram",
-        catalogTitle: "Каталог товаров",
-        refresh: "Обновить",
-        catalogTab: "Каталог",
-        favoritesTab: "Избранное",
-        searchPlaceholder: "Поиск товаров...",
-        filters: "Фильтры",
-        searchBtn: "Искать",
-        myProductsTitle: "Мои объявления",
-        activeTab: "Активные",
-        requestsTab: "Запросы на продажу",
-        soldTab: "Проданные",
-        archivedTab: "Архив",
-        createTitle: "Создать объявление",
-        cancelEdit: "Отменить редактирование",
-        cartTitle: "Корзина",
-        buyAll: "Купить всё",
-        profileTitle: "Профиль",
-        profileSettings: "Настройки профиля",
-        stats: "Статистика", hideStats: "Скрыть статистику",
-        purchases: "История покупок", hidePurchases: "Скрыть историю покупок",
-        reviews: "Мои отзывы",
-        admin: "Админ панель", hideAdmin: "Скрыть админ панель",
-        ideas: "Идеи и пожелания", hideIdeas: "Скрыть идеи и пожелания",
-        logout: "Сменить аккаунт / Выйти",
-        navCatalog: "Каталог", navMine: "Мои", navCart: "Корзина", navProfile: "Профиль",
-        rating: "Рейтинг",
-        status: "Статус",
-        tgOnly: "Работает только внутри Telegram Mini App",
-        loading: "Загрузка...",
-        noReviews: "У вас пока нет отзывов",
-        noSellerReviews: "Отзывов пока нет",
-        noComment: "Без комментария",
-        buyer: "Покупатель",
-        dealAmount: "Сумма сделки",
-        item: "Объявление",
-        authorProfile: "Профиль автора",
-        archivedState: "В архиве",
-        restoreBtn: "Вернуть в каталог",
-        ratingReviews: "отзывов",
-        authLangTitle: "Язык интерфейса",
-        superadmin: "Суперадмин",
-        protectedAdmin: "Защищённый аккаунт"
     },
     en: {
         authLoginTitle: "Sign in or register",
@@ -212,6 +159,125 @@ const I18N = {
 function t(key) {
     return I18N[currentLanguage]?.[key] || I18N.uk[key] || key;
 }
+
+function tr(uk, en) {
+    return currentLanguage === "en" ? en : uk;
+}
+
+const VALUE_TRANSLATIONS = {
+    "Усі категорії": "All categories",
+    "Усі міста": "All cities",
+    "Будь-який стан": "Any condition",
+    "Оберіть категорію": "Choose a category",
+    "Оберіть стан": "Choose condition",
+    "Без категорії": "No category",
+    "Без міста": "No city",
+    "Інше": "Other",
+    "Новий": "New",
+    "Б/У": "Used",
+    "Смартфони": "Smartphones",
+    "Ноутбуки": "Laptops",
+    "Навушники": "Headphones",
+    "Ігрові приставки": "Game consoles",
+    "Планшети": "Tablets",
+    "Смарт-годинники": "Smartwatches",
+    "Телевізори": "TVs",
+    "Фото / відео": "Photo / video",
+    "ПК комплектуючі": "PC components",
+    "Монітори": "Monitors",
+    "Аксесуари": "Accessories",
+    "Будматеріали": "Building materials",
+    "Інструменти": "Tools",
+    "Тварини": "Pets",
+    "Нерухомість": "Real estate",
+    "Дім та сад": "Home & garden",
+    "Меблі": "Furniture",
+    "Посуд": "Kitchenware",
+    "Одяг": "Clothing",
+    "Взуття": "Shoes",
+    "Дитячі товари": "Kids' goods",
+    "Краса і здоровʼя": "Beauty & health",
+    "Автотовари": "Car accessories",
+    "Авто": "Cars",
+    "Мото": "Motorcycles",
+    "Велосипеди": "Bicycles",
+    "Спорт": "Sports",
+    "Книги": "Books",
+    "Хобі": "Hobbies",
+    "Музичні інструменти": "Musical instruments",
+    "Робота": "Jobs",
+    "Послуги": "Services",
+    "Колекції": "Collections",
+    "Подарунки": "Gifts",
+    "Київ": "Kyiv",
+    "Одеса": "Odesa",
+    "Дніпро": "Dnipro",
+    "Львів": "Lviv",
+    "Харків": "Kharkiv",
+    "Прага": "Prague",
+    "Берлін": "Berlin",
+    "Рим": "Rome",
+    "Варшава": "Warsaw",
+    "Відень": "Vienna",
+    "Париж": "Paris",
+    "Мадрид": "Madrid",
+    "Лондон": "London",
+    "Амстердам": "Amsterdam",
+    "Брюссель": "Brussels",
+    "Будапешт": "Budapest",
+    "Братислава": "Bratislava",
+    "Вільнюс": "Vilnius",
+    "Рига": "Riga",
+    "Таллінн": "Tallinn",
+    "Новіші": "Newest",
+    "Старіші": "Oldest",
+    "Дешевші": "Cheapest first",
+    "Дорожчі": "Most expensive first",
+    "Кращий рейтинг продавця": "Best seller rating",
+    "Шахрайство": "Fraud",
+    "Неправдивий опис": "Misleading description",
+    "Заборонений товар": "Prohibited item",
+    "Спам": "Spam",
+    "Продано": "Sold",
+    "Архів": "Archive",
+    "Активні": "Active",
+    "Продані": "Sold",
+    "Куплені": "Bought",
+    "У кошику": "In cart",
+    "Запити": "Requests",
+    "Покупки": "Purchases",
+    "Очікують": "Pending",
+    "Користувачі": "Users",
+    "Оголошення": "Listings",
+    "Ідеї": "Ideas",
+    "Скарги": "Reports",
+    "Логи": "Logs"
+};
+
+function tv(value) {
+    const text = String(value ?? "");
+    if (currentLanguage !== "en") return text;
+    return VALUE_TRANSLATIONS[text] || text;
+}
+
+function translateStatusValue(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (["sold", "продано"].includes(normalized)) return tr("Продано", "Sold");
+    if (["archived", "архів", "в архіві"].includes(normalized)) return tr("Архів", "Archived");
+    if (["active", "активний", "активні"].includes(normalized)) return tr("Активний", "Active");
+    if (["blocked", "заблокирован", "заблокований"].includes(normalized)) return tr("Заблокований", "Blocked");
+    return currentLanguage === "en" ? tv(value) : String(value || "");
+}
+
+function translateSelectOptions(selectId) {
+    const select = $(selectId);
+    if (!select) return;
+    Array.from(select.options).forEach(option => {
+        if (!option.dataset.ukLabel) option.dataset.ukLabel = option.textContent;
+        option.textContent = currentLanguage === "en" ? tv(option.dataset.ukLabel) : option.dataset.ukLabel;
+    });
+}
+
 
 function animateModalOpen(modalId) {
     const modal = $(modalId);
@@ -306,37 +372,155 @@ function applyLanguageTexts() {
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === currentLanguage));
 
     const setText = (sel, value) => { const el = document.querySelector(sel); if (el) el.textContent = value; };
+
     setText('.topbar-mini', t('appMini'));
     setText('#tab-catalog .section-header h2', t('catalogTitle'));
     setText('#tab-catalog .catalog-subtabs #catalog-all-btn', t('catalogTab'));
     setText('#tab-catalog .catalog-subtabs #catalog-favorites-btn', t('favoritesTab'));
+
+    setText('#catalog-search-label', tr('Пошук товарів', 'Product search'));
+    setText('#seller-search-label', tr('🔎 Пошук продавця', '🔎 Seller search'));
+    setText('#catalog-search-btn', t('searchBtn'));
+    setText('#seller-search-btn', tr('Знайти', 'Find'));
+    setText('.catalog-search-head-title', tr('Пошук та фільтри', 'Search and filters'));
+    const collapseBtn = $('catalog-search-collapse-btn');
+    if (collapseBtn) collapseBtn.title = tr('Відкрити або закрити пошук', 'Open or close search');
+    if ($('seller-search-input')) $('seller-search-input').placeholder = tr('username (без @)', 'username (without @)');
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
     const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
-    const catBtns = document.querySelectorAll('#tab-catalog .section-btn'); if (catBtns[0]) catBtns[0].textContent = t('refresh'); if (catBtns[2]) catBtns[2].textContent = t('searchBtn');
+    const catBtns = document.querySelectorAll('#tab-catalog .section-btn');
+    if (catBtns[0]) catBtns[0].textContent = t('refresh');
+
+    translateSelectOptions('category-filter');
+    translateSelectOptions('city-filter');
+    translateSelectOptions('condition-filter');
+    translateSelectOptions('sort-filter');
+    if ($('price-min-filter')) $('price-min-filter').placeholder = tr('Ціна від', 'Price from');
+    if ($('price-max-filter')) $('price-max-filter').placeholder = tr('Ціна до', 'Price to');
+
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn'); if (mpBtns[0]) mpBtns[0].textContent = t('activeTab'); if (mpBtns[1]) mpBtns[1].textContent = t('requestsTab'); if (mpBtns[2]) mpBtns[2].textContent = t('soldTab'); if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
+    const mpRefreshBtn = document.querySelector('#tab-my-products .section-header .section-btn');
+    if (mpRefreshBtn) mpRefreshBtn.textContent = t('refresh');
+    const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn');
+    if (mpBtns[0]) mpBtns[0].textContent = t('activeTab');
+    if ($('my-products-requests-btn-label')) $('my-products-requests-btn-label').textContent = t('requestsTab');
+    if (mpBtns[2]) mpBtns[2].textContent = t('soldTab');
+    if (mpBtns[3]) mpBtns[3].textContent = t('archivedTab');
+    const myToolbarLabel = document.querySelector('#tab-my-products .catalog-toolbar .toolbar-label');
+    if (myToolbarLabel) myToolbarLabel.textContent = tr('Пошук у моїх оголошеннях', 'Search in my listings');
+    if ($('my-products-search-input')) $('my-products-search-input').placeholder = tr('Назва, покупець, місто...', 'Title, buyer, city...');
+    translateSelectOptions('my-products-sort-select');
+    const myApplyBtn = document.querySelector('#tab-my-products .catalog-toolbar .section-btn');
+    if (myApplyBtn) myApplyBtn.textContent = tr('Застосувати', 'Apply');
+    setText('.requests-header', tr('Запити на покупку', 'Purchase requests'));
+
     setText('#tab-create .section-header h2', t('createTitle'));
     const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
-    setText('#tab-cart .section-header h2', t('cartTitle')); const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
-    const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
-    setText('#tab-profile > h2', t('profileTitle')); setText('#profile-edit-wrap h3', t('profileSettings'));
+
     const createLabels = document.querySelectorAll('#tab-create label');
-    if (createLabels[0]) createLabels[0].textContent = currentLanguage === 'en' ? 'Product title' : currentLanguage === 'ru' ? 'Название товара' : 'Назва товару';
-    if (createLabels[1]) createLabels[1].textContent = currentLanguage === 'en' ? 'Description' : currentLanguage === 'ru' ? 'Описание' : 'Опис';
-    if (createLabels[2]) createLabels[2].textContent = currentLanguage === 'en' ? 'Price' : currentLanguage === 'ru' ? 'Цена' : 'Ціна';
-    if (createLabels[3]) createLabels[3].textContent = currentLanguage === 'en' ? 'Category' : currentLanguage === 'ru' ? 'Категория' : 'Категорія';
-    if (createLabels[4]) createLabels[4].textContent = currentLanguage === 'en' ? 'Condition' : currentLanguage === 'ru' ? 'Состояние' : 'Стан товару';
-    if (createLabels[5]) createLabels[5].textContent = currentLanguage === 'en' ? 'City' : currentLanguage === 'ru' ? 'Город' : 'Місто';
-    if (createLabels[6]) createLabels[6].textContent = currentLanguage === 'en' ? 'Product photos (multiple allowed)' : currentLanguage === 'ru' ? 'Фото товара (можно несколько)' : 'Фото товару (можна кілька)';
-    const submitBtn = $('submit-product-btn'); if (submitBtn) submitBtn.textContent = currentLanguage === 'en' ? 'Create listing' : currentLanguage === 'ru' ? 'Создать объявление' : 'Створити оголошення';
-    const editHint = $('edit-photos-hint'); if (editHint) editHint.textContent = currentLanguage === 'en' ? 'If you choose new photos, old ones will be replaced.' : currentLanguage === 'ru' ? 'Если выберете новые фото, старые будут заменены.' : 'Якщо вибереш нові фото, старі буде замінено.';
+    if (createLabels[0]) createLabels[0].textContent = tr('Назва товару', 'Product title');
+    if (createLabels[1]) createLabels[1].textContent = tr('Опис', 'Description');
+    if (createLabels[2]) createLabels[2].textContent = tr('Ціна', 'Price');
+    if (createLabels[3]) createLabels[3].textContent = tr('Категорія', 'Category');
+    if (createLabels[4]) createLabels[4].textContent = tr('Стан товару', 'Condition');
+    if (createLabels[5]) createLabels[5].textContent = tr('Місто', 'City');
+    if (createLabels[6]) createLabels[6].textContent = tr('Причина', 'Reason');
+
+    setText('.listing-eyebrow', tr('Швидке створення', 'Quick creation'));
+    setText('.listing-form-hero h3', tr('Створи оголошення красиво і без зайвого', 'Create a clean and attractive listing'));
+    setText('.listing-form-hero p', tr('Заповни основну інформацію, вибери категорію та додай фото. Ми залишили тільки те, що реально важливо.', 'Fill in the main details, choose a category, and add photos. We kept only what really matters.'));
+    const stepBadges = document.querySelectorAll('.listing-step-badge');
+    if (stepBadges[0]) stepBadges[0].textContent = tr('1. Основне', '1. Basics');
+    if (stepBadges[1]) stepBadges[1].textContent = tr('2. Деталі', '2. Details');
+    if (stepBadges[2]) stepBadges[2].textContent = tr('3. Фото', '3. Photos');
+    const sectionTitles = document.querySelectorAll('.listing-section-title');
+    if (sectionTitles[0]) sectionTitles[0].textContent = tr('Основна інформація', 'Main information');
+    if (sectionTitles[1]) sectionTitles[1].textContent = tr('Категорія та параметри', 'Category and details');
+    if (sectionTitles[2]) sectionTitles[2].textContent = tr('Фото товару', 'Product photos');
+    if ($('product-title')) $('product-title').placeholder = tr('Наприклад: iPhone 15 Pro Max', 'Example: iPhone 15 Pro Max');
+    if ($('product-description')) $('product-description').placeholder = tr('Коротко опишіть стан, комплект, особливості та що важливо для покупця', 'Briefly describe the condition, included items, special features, and what matters to the buyer');
+    const fieldHint = document.querySelector('.field-hint'); if (fieldHint) fieldHint.textContent = tr('Найкраще працюють короткі, чесні та зрозумілі описи.', 'Short, honest, and clear descriptions work best.');
+    if ($('category-selected-label')) $('category-selected-label').textContent = $('product-category')?.value ? tv($('product-category').value) : tr('Оберіть категорію', 'Choose a category');
+    if ($('product-city')) $('product-city').placeholder = tr('Почни вводити місто або вибери зі списку', 'Start typing a city or choose from the list');
+    const uploadTitle = document.querySelector('.upload-dropzone-title'); if (uploadTitle) uploadTitle.textContent = tr('Додати фото товару', 'Add product photos');
+    const uploadSubtitle = document.querySelector('.upload-dropzone-subtitle'); if (uploadSubtitle) uploadSubtitle.textContent = tr('До 10 фото. Можна додавати по одному. Перше фото буде головним у каталозі.', 'Up to 10 photos. You can add them one by one. The first photo will be the cover image in the catalog.');
+    const submitNote = document.querySelector('.listing-submit-note'); if (submitNote) submitNote.textContent = tr('Перед публікацією перевір назву, ціну та головне фото.', 'Before publishing, check the title, price, and cover photo.');
+    const submitBtn = $('submit-product-btn'); if (submitBtn) submitBtn.textContent = editingProductId ? tr('Зберегти зміни', 'Save changes') : tr('Створити оголошення', 'Create listing');
+    const editHint = $('edit-photos-hint'); if (editHint) editHint.textContent = tr('Якщо вибереш нові фото, старі буде замінено.', 'If you choose new photos, the old ones will be replaced.');
+    translateSelectOptions('product-category');
+    translateSelectOptions('product-condition');
+    document.querySelectorAll('#category-chip-group .choice-chip').forEach(chip => chip.textContent = tv(chip.dataset.value || ''));
+    document.querySelectorAll('#condition-chip-group .segment-chip').forEach(chip => chip.textContent = tv(chip.dataset.value || ''));
+
+    setText('#tab-cart .section-header h2', t('cartTitle'));
+    const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
+    const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
+
+    setText('#tab-profile > h2', t('profileTitle'));
+    setText('#profile-edit-wrap h3', t('profileSettings'));
+    setText('#profile-quick-active-label', tr('Активні', 'Active'));
+    setText('#profile-quick-sold-label', tr('Продані', 'Sold'));
+    setText('#profile-quick-favorites-label', tr('Обране', 'Favorites'));
+    const appSubtitle = document.querySelector('.profile-ref-app-subtitle'); if (appSubtitle) appSubtitle.textContent = t('appMini');
+    const settingsTitle = document.querySelector('.profile-edit-desc'); if (settingsTitle) settingsTitle.textContent = tr('Онови основні дані профілю. Зміни збережуться одразу після натискання кнопки.', 'Update the main profile details. Changes will be saved right after you press the button.');
+    const profileEditBadge = document.querySelector('.profile-edit-badge'); if (profileEditBadge) profileEditBadge.textContent = t('profileTitle');
+    const profileLabels = document.querySelectorAll('#profile-edit-wrap label');
+    if (profileLabels[0]) profileLabels[0].textContent = tr('Username (без @)', 'Username (without @)');
+    if (profileLabels[1]) profileLabels[1].textContent = tr("Ім'я", 'Name');
+    if (profileLabels[2]) profileLabels[2].textContent = tr('Аватарка', 'Avatar');
+    if (profileLabels[3]) profileLabels[3].textContent = tr('Новий пароль', 'New password');
+    if ($('profile-edit-username')) $('profile-edit-username').placeholder = tr('username (без @)', 'username (without @)');
+    if ($('profile-edit-fullname')) $('profile-edit-fullname').placeholder = tr("Ваше ім'я", 'Your name');
+    if ($('profile-edit-password')) $('profile-edit-password').placeholder = tr('Залиш порожнім, якщо не змінюєш', "Leave empty if you don't want to change it");
+    const filePickerBtn = document.querySelector('.file-picker-btn'); if (filePickerBtn) filePickerBtn.textContent = tr('Вибрати фото', 'Choose photo');
+    const saveProfileBtn = document.querySelector('.profile-save-btn'); if (saveProfileBtn) saveProfileBtn.textContent = tr('Зберегти зміни', 'Save changes');
     const statusLabel = document.querySelectorAll('.profile-mini-label')[1]; if (statusLabel) statusLabel.textContent = t('status');
+
+    const statCards = document.querySelectorAll('#stats-wrap .stat-card .stat-label');
+    if (statCards[0]) statCards[0].textContent = tr('Активні', 'Active');
+    if (statCards[1]) statCards[1].textContent = tr('Продані', 'Sold');
+    if (statCards[2]) statCards[2].textContent = tr('Обране', 'Favorites');
+    if (statCards[3]) statCards[3].textContent = tr('У кошику', 'In cart');
+    if (statCards[4]) statCards[4].textContent = tr('Запити', 'Requests');
+    if (statCards[5]) statCards[5].textContent = tr('Покупки', 'Purchases');
+    if (statCards[6]) statCards[6].textContent = tr('Очікують', 'Pending');
+
+    const adminTabBtns = document.querySelectorAll('#admin-panel-body .subtabs .subtab-btn');
+    if (adminTabBtns[0]) adminTabBtns[0].textContent = tr('Користувачі', 'Users');
+    if (adminTabBtns[1]) adminTabBtns[1].textContent = tr('Оголошення', 'Listings');
+    if (adminTabBtns[2]) adminTabBtns[2].textContent = tr('Ідеї', 'Ideas');
+    if (adminTabBtns[3]) adminTabBtns[3].textContent = tr('Скарги', 'Reports');
+    if (adminTabBtns[4]) adminTabBtns[4].textContent = tr('Логи', 'Logs');
+    if ($('admin-users-search')) $('admin-users-search').placeholder = tr('Пошук користувача', 'Search user');
+    if ($('admin-products-search')) $('admin-products-search').placeholder = tr('Пошук оголошення', 'Search listing');
+    const adminSearchBtns = document.querySelectorAll('#admin-panel-body .admin-search-row .secondary-btn');
+    adminSearchBtns.forEach(btn => btn.textContent = t('searchBtn'));
+
+    const languageLabel = document.querySelector('.language-switch-label span:last-child');
+    if (languageLabel) languageLabel.textContent = t('authLangTitle');
+
+    const reviewTitle = document.querySelector('#review-modal .modal-title'); if (reviewTitle) reviewTitle.textContent = tr('Залишити відгук', 'Leave a review');
+    const reviewLabels = document.querySelectorAll('#review-modal label');
+    if (reviewLabels[0]) reviewLabels[0].textContent = tr('Оцінка', 'Rating');
+    if (reviewLabels[1]) reviewLabels[1].textContent = tr('Коментар', 'Comment');
+    if ($('review-comment')) $('review-comment').placeholder = tr('Коротко опишіть ваш досвід покупки', 'Briefly describe your purchase experience');
+    const reviewSubmit = document.querySelector('#review-modal .primary-btn'); if (reviewSubmit) reviewSubmit.textContent = tr('Зберегти відгук', 'Save review');
+
+    const reportLabels = document.querySelectorAll('#report-modal label');
+    if (reportLabels[0]) reportLabels[0].textContent = tr('Причина', 'Reason');
+    if ($('report-comment-label')) $('report-comment-label').textContent = tr('Коментар', 'Comment');
+    if ($('report-comment')) $('report-comment').placeholder = tr('Додаткова інформація для адміністратора', 'Additional information for the administrator');
+    translateSelectOptions('report-reason');
+    const reportSubmit = document.querySelector('#report-modal .warning-btn'); if (reportSubmit) reportSubmit.textContent = tr('Надіслати скаргу', 'Send report');
+
     refreshTelegramLoginUi();
+    updateCategorySummary();
+    updateProductFileLabel(selectedProductFiles);
+    updateAvatarFileLabel();
 }
 
-
 function changeLanguage(lang) {
-    currentLanguage = ['uk','ru','en'].includes(lang) ? lang : 'uk';
+    currentLanguage = normalizeLanguage(lang);
     try { localStorage.setItem(APP_LANG_KEY, currentLanguage); } catch {}
     applyLanguageTexts();
 }
@@ -447,16 +631,18 @@ function getUserAverageRating(user = currentUser) {
 
 function getUserRatingLabel(user = currentUser) {
     const count = Number(user?.rating_count || 0);
-    if (!count) return "Новий продавець";
-    return `⭐ ${getUserAverageRating(user)} · ${count} відгук${count > 1 ? 'ів' : ''}`;
+    if (!count) return tr("Новий продавець", "New seller");
+    return currentLanguage === "en"
+        ? `⭐ ${getUserAverageRating(user)} · ${count} reviews`
+        : `⭐ ${getUserAverageRating(user)} · ${count} відгук${count > 1 ? 'ів' : ''}`;
 }
 
 function getSellerBadgeText(soldProducts = 0, reviewCount = 0) {
     const sold = Number(soldProducts || 0);
     const reviews = Number(reviewCount || 0);
-    if (sold >= 10) return "Топ продавець";
-    if (sold >= 3 && reviews >= 3) return "Надійний продавець";
-    return "Новий продавець";
+    if (sold >= 10) return tr("Топ продавець", "Top seller");
+    if (sold >= 3 && reviews >= 3) return tr("Надійний продавець", "Trusted seller");
+    return tr("Новий продавець", "New seller");
 }
 
 
@@ -747,7 +933,7 @@ function fillProfile() {
         const avg = getUserAverageRating(currentUser);
         const ratingCount = Number(currentUser.rating_count || 0);
         $("profile-rating-badge").textContent = ratingCount > 0
-            ? `⭐ ${avg} · ${ratingCount} ${currentLanguage === "en" ? "reviews" : currentLanguage === "ru" ? "отзывов" : "відгуків"}`
+            ? `⭐ ${avg} · ${ratingCount} ${currentLanguage === "en" ? "reviews" : tr("відгуків", "reviews")}`
             : getUserRatingLabel(currentUser);
     }
     if ($("profile-rating-value")) {
@@ -1063,7 +1249,7 @@ async function loadPurchaseHistory() {
     const list = $("purchase-history-list");
     if (!list || !currentUser) return;
 
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
 
     try {
         const items = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`);
@@ -1267,13 +1453,13 @@ function toggleCategoryPicker(forceOpen = null) {
 function updateCategorySummary() {
     const value = $("product-category")?.value || "";
     const label = $("category-selected-label");
-    if (label) label.textContent = value || "Оберіть категорію";
+    if (label) label.textContent = value ? tv(value) : tr("Оберіть категорію", "Choose a category");
 }
 
 function updateAvatarFileLabel(event) {
-    const file = event?.target?.files?.[0] || null;
+    const file = event?.target?.files?.[0] || $("profile-avatar-file")?.files?.[0] || null;
     const label = $("profile-avatar-file-name");
-    if (label) label.textContent = file ? file.name : "Файл не вибрано";
+    if (label) label.textContent = file ? file.name : tr("Файл не вибрано", "No file selected");
 }
 
 function openProductFilePicker() {
@@ -1352,8 +1538,8 @@ function resetCreateForm() {
     editingProductId = null;
     editingExistingImages = [];
     selectedProductFiles = [];
-    if ($("create-form-title")) $("create-form-title").textContent = "Створити оголошення";
-    if ($("submit-product-btn")) $("submit-product-btn").textContent = "Створити оголошення";
+    if ($("create-form-title")) $("create-form-title").textContent = tr("Створити оголошення", "Create listing");
+    if ($("submit-product-btn")) $("submit-product-btn").textContent = tr("Створити оголошення", "Create listing");
     $("cancel-edit-btn")?.classList.add("hidden");
     $("edit-photos-hint")?.classList.add("hidden");
     if ($("product-title")) $("product-title").value = "";
@@ -1395,14 +1581,14 @@ async function startEditProduct(productId) {
     try {
         const product = await safeFetch(`${API_BASE}/products/${productId}?current_user_id=${currentUser.id}`);
         if (Number(product.seller_id) !== Number(currentUser.id)) {
-            showAlert("Це не ваше оголошення");
+            showAlert(tr("Це не ваше оголошення", "This is not your listing"));
             return;
         }
         editingProductId = product.id;
         editingExistingImages = Array.isArray(product.image_urls) ? product.image_urls.slice() : [];
         selectedProductFiles = [];
-        $("create-form-title").textContent = "Редагувати оголошення";
-        $("submit-product-btn").textContent = "Зберегти зміни";
+        $("create-form-title").textContent = tr("Редагувати оголошення", "Edit listing");
+        $("submit-product-btn").textContent = tr("Зберегти зміни", "Save changes");
         $("cancel-edit-btn")?.classList.remove("hidden");
         $("edit-photos-hint")?.classList.remove("hidden");
         $("product-title").value = product.title || "";
@@ -1422,7 +1608,7 @@ async function startEditProduct(productId) {
         switchTab("create");
         window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
-        showAlert(error.message || "Не вдалося завантажити оголошення");
+        showAlert(error.message || tr("Не вдалося завантажити оголошення", "Failed to load listing"));
     }
 }
 
@@ -1442,7 +1628,7 @@ function handleImagePreview(event) {
 
     const invalid = newFiles.find(file => !file.type.startsWith("image/"));
     if (invalid) {
-        showAlert("Оберіть лише зображення");
+        showAlert(tr("Оберіть лише зображення", "Choose images only"));
         if (input) input.value = "";
         return;
     }
@@ -1458,7 +1644,7 @@ function handleImagePreview(event) {
     }
 
     if (merged.length > 10) {
-        showAlert("Можна додати максимум 10 фото");
+        showAlert(tr("Можна додати максимум 10 фото", "You can add up to 10 photos"));
         if (input) input.value = "";
         return;
     }
@@ -1646,7 +1832,7 @@ async function registerNewUser() {
     const password = $("register-password")?.value.trim();
 
     if (!username || !full_name || !password) {
-        showAlert("Заповни username, ім'я і password");
+        showAlert(tr("Заповни username, ім\'я і password", "Fill in username, name, and password"));
         return;
     }
 
@@ -1672,10 +1858,10 @@ async function registerNewUser() {
         if ($("register-fullname")) $("register-fullname").value = "";
         if ($("register-password")) $("register-password").value = "";
 
-        showAlert("Реєстрація успішна");
+        showAlert(tr("Реєстрація успішна", "Registration successful"));
         await showApp();
     } catch (error) {
-        showAlert(error.message || "Помилка реєстрації");
+        showAlert(error.message || tr("Помилка реєстрації", "Registration error"));
     } finally {
         setLoading(false);
     }
@@ -1688,7 +1874,7 @@ async function loginUser() {
     const password = $("login-password")?.value.trim();
 
     if (!username || !password) {
-        showAlert("Введи username і password");
+        showAlert(tr("Введи username і password", "Enter username and password"));
         return;
     }
 
@@ -1706,10 +1892,10 @@ async function loginUser() {
         try { localStorage.setItem("marketplace_last_username", username); } catch {}
         if ($("login-password")) $("login-password").value = "";
 
-        showAlert("Вхід успішний");
+        showAlert(tr("Вхід успішний", "Sign in successful"));
         await showApp();
     } catch (error) {
-        showAlert(error.message || "Помилка входу");
+        showAlert(error.message || tr("Помилка входу", "Sign in error"));
     } finally {
         setLoading(false);
     }
@@ -1771,10 +1957,10 @@ async function loginWithTelegram() {
         currentUser = data;
         saveSession(data);
 
-        showAlert("Вхід через Telegram успішний");
+        showAlert(tr("Вхід через Telegram успішний", "Telegram sign in successful"));
         await showApp();
     } catch (error) {
-        showAlert(error.message || "Не вдалося увійти через Telegram");
+        showAlert(error.message || tr("Не вдалося увійти через Telegram", "Failed to sign in with Telegram"));
     } finally {
         setLoading(false);
     }
@@ -1785,7 +1971,7 @@ async function loginWithTelegram() {
 function contactSeller(username) {
     const clean = String(username || "").replace(/^@+/, "").trim();
     if (!clean) {
-        showAlert("Не вдалося знайти продавця");
+        showAlert(tr("Не вдалося знайти продавця", "Seller not found"));
         return;
     }
     const link = `https://t.me/${clean}`;
@@ -1799,13 +1985,13 @@ function contactSeller(username) {
 
 function renderCardTags(product) {
     const tags = [
-        product.category || "Без категорії",
-        product.condition || "Новий",
-        product.city || "Без міста"
+        tv(product.category || "Без категорії"),
+        tv(product.condition || "Новий"),
+        tv(product.city || "Без міста")
     ];
 
-    if (product.status === "sold") tags.push("Продано");
-    if (product.status === "archived") tags.push("Архів");
+    if (product.status === "sold") tags.push(tr("Продано", "Sold"));
+    if (product.status === "archived") tags.push(tr("Архів", "Archive"));
 
     return `
         <div class="card-tags">
@@ -1829,7 +2015,7 @@ function renderImageBlock(product) {
 
     return `
         <div class="catalog-media-frame catalog-media-frame-placeholder">
-            <div class="card-image card-image-placeholder catalog-media-placeholder">Фото відсутнє</div>
+            <div class="card-image card-image-placeholder catalog-media-placeholder">${escapeHtml(tr("Фото відсутнє", "No photo"))}</div>
         </div>
     `;
 }
@@ -1848,7 +2034,7 @@ function renderFavoriteButton(product) {
             data-action="toggle-favorite"
             data-product-id="${Number(product.id)}"
             data-is-favorite="${product.is_favorite ? "true" : "false"}"
-            title="Обране"
+            title="${escapeHtml(tr('Обране', 'Favorites'))}"
         >
             ${product.is_favorite ? "♥" : "♡"}
         </button>
@@ -1873,8 +2059,8 @@ function renderCatalogCard(product) {
                     <p class="card-price compact-price">${formatPrice(product.price, product.currency)}</p>
                 </div>
                 <div class="compact-meta-row catalog-meta-row">
-                    <span class="tag">${escapeHtml(product.city || "Без міста")}</span>
-                    <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "Новий")}</span>
+                    <span class="tag">${escapeHtml(tv(product.city || "Без міста"))}</span>
+                    <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(tv(product.condition || "Новий"))}</span>
                     <span class="tag soft-tag">${escapeHtml(relativeTime || formatDate(product.created_at) || "")}</span>
                 </div>
                 <div class="compact-secondary-row catalog-secondary-row">
@@ -1884,8 +2070,8 @@ function renderCatalogCard(product) {
                 </div>
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
                 <div class="card-actions compact-actions compact-actions-grid catalog-actions-row">
-                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">Профіль продавця</button>` : ""}
-                    ${isOwnProduct ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert('Це ваше оголошення')">Ваш товар</button>` : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? 'У кошику' : 'У кошик'}</button>`}
+                    ${product.seller_username ? `<button class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(product.seller_id)})">${tr('Профіль продавця', 'Seller profile')}</button>` : ""}
+                    ${isOwnProduct ? `<button type="button" class="own-product-btn" onclick="event.preventDefault(); event.stopPropagation(); showAlert(tr('Це ваше оголошення', 'This is your listing'))">${tr('Ваш товар', 'Your listing')}</button>` : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" onclick="event.preventDefault(); event.stopPropagation(); ${product.is_in_cart ? "switchTab('cart')" : `addToCart(${Number(product.id)})`}">${product.is_in_cart ? tr('У кошику', 'In cart') : tr('У кошик', 'Add to cart')}</button>`}
                 </div>
             </div>
         </div>
@@ -1898,12 +2084,12 @@ function renderMyProductCard(product, view) {
     if (view === "active") {
         actionButton = `
             <div class="card-actions inline-actions catalog-actions-row">
-                <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">Змінити</button>
-                <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">В архів</button>
+                <button class="edit-btn" onclick="event.stopPropagation(); startEditProduct(${Number(product.id)})">${tr('Змінити', 'Edit')}</button>
+                <button class="delete-btn" onclick="event.stopPropagation(); deleteProduct(${Number(product.id)})">${tr('В архів', 'Archive')}</button>
             </div>
         `;
     } else if (view === "sold") {
-        actionButton = `<button class="sold-btn" disabled>Продано</button>`;
+        actionButton = `<button class="sold-btn" disabled>${tr('Продано', 'Sold')}</button>`;
     } else {
         actionButton = `<div class="card-actions inline-actions catalog-actions-row"><button class="archive-btn" disabled>${escapeHtml(t('archivedState'))}</button><button class="approve-btn" onclick="event.stopPropagation(); restoreArchivedProduct(${Number(product.id)})">${escapeHtml(t('restoreBtn'))}</button></div>`;
     }
@@ -1911,7 +2097,7 @@ function renderMyProductCard(product, view) {
     const saleInfo = product.sale_info || null;
     const latestRequest = product.latest_request || null;
     const buyerProfileBtn = saleInfo?.buyer_id
-        ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(saleInfo.buyer_id)})">Профіль покупця</button>`
+        ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(saleInfo.buyer_id)})">${tr('Профіль покупця', 'Buyer profile')}</button>`
         : "";
 
     return `
@@ -1923,19 +2109,19 @@ function renderMyProductCard(product, view) {
                     <p class="card-price compact-price">${formatPrice(product.price, product.currency)}</p>
                 </div>
                 <div class="compact-meta-row catalog-meta-row">
-                    <span class="tag">${escapeHtml(product.city || "")}</span>
-                    <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(product.condition || "")}</span>
+                    <span class="tag">${escapeHtml(tv(product.city || ""))}</span>
+                    <span class="tag ${getConditionTagClass(product.condition)}">${escapeHtml(tv(product.condition || ""))}</span>
                     <span class="tag soft-tag">${formatRelativeTime(product.created_at) || formatDate(product.created_at) || ""}</span>
                 </div>
                 <p class="card-description compact-desc catalog-desc">${escapeHtml(product.description || "")}</p>
                 <div class="compact-secondary-row catalog-secondary-row my-product-extra-meta my-product-extra-meta-block">
-                    <span class="muted-meta">Створено: ${escapeHtml(formatDate(product.created_at) || "—")}</span>
-                    ${view === "sold" ? `<span class="muted-meta">Продано: ${escapeHtml(formatDate(saleInfo?.sold_at) || "—")}</span>` : ""}
-                    ${view === "sold" && saleInfo?.buyer_username ? `<span class="muted-meta">Покупець: @${escapeHtml(saleInfo.buyer_username)}</span>` : ""}
-                    ${view === "sold" && !saleInfo?.buyer_username && saleInfo?.buyer_full_name ? `<span class="muted-meta">Покупець: ${escapeHtml(saleInfo.buyer_full_name)}</span>` : ""}
-                    ${view === "active" && latestRequest?.created_at ? `<span class="muted-meta">Останній запит: ${escapeHtml(formatDate(latestRequest.created_at) || "—")}</span>` : ""}
-                    ${view === "active" && latestRequest?.buyer_username ? `<span class="muted-meta">Запит від: @${escapeHtml(latestRequest.buyer_username)}</span>` : ""}
-                    ${view === "archived" ? `<span class="muted-meta">Статус: Архів</span>` : ""}
+                    <span class="muted-meta">${tr('Створено', 'Created')}: ${escapeHtml(formatDate(product.created_at) || "—")}</span>
+                    ${view === "sold" ? `<span class="muted-meta">${tr('Продано', 'Sold')}: ${escapeHtml(formatDate(saleInfo?.sold_at) || "—")}</span>` : ""}
+                    ${view === "sold" && saleInfo?.buyer_username ? `<span class="muted-meta">${tr('Покупець', 'Buyer')}: @${escapeHtml(saleInfo.buyer_username)}</span>` : ""}
+                    ${view === "sold" && !saleInfo?.buyer_username && saleInfo?.buyer_full_name ? `<span class="muted-meta">${tr('Покупець', 'Buyer')}: ${escapeHtml(saleInfo.buyer_full_name)}</span>` : ""}
+                    ${view === "active" && latestRequest?.created_at ? `<span class="muted-meta">${tr('Останній запит', 'Last request')}: ${escapeHtml(formatDate(latestRequest.created_at) || "—")}</span>` : ""}
+                    ${view === "active" && latestRequest?.buyer_username ? `<span class="muted-meta">${tr('Запит від', 'Request from')}: @${escapeHtml(latestRequest.buyer_username)}</span>` : ""}
+                    ${view === "archived" ? `<span class="muted-meta">${tr('Статус', 'Status')}: ${tr('Архів', 'Archive')}</span>` : ""}
                 </div>
                 <div class="card-actions compact-actions">${actionButton}</div>
                 ${buyerProfileBtn ? `<div class="card-actions compact-actions compact-actions-grid">${buyerProfileBtn}</div>` : ""}
@@ -1948,7 +2134,7 @@ async function restoreArchivedProduct(productId) {
     if (!currentUser?.id) return;
     try {
         await safeFetch(`${API_BASE}/products/${productId}/restore?user_id=${currentUser.id}`, { method: "POST" });
-        showAlert(currentLanguage === 'en' ? 'Listing returned to catalog' : currentLanguage === 'ru' ? 'Объявление возвращено в каталог' : 'Оголошення повернуто в каталог');
+        showAlert(tr('Оголошення повернуто в каталог', 'Listing returned to catalog'));
         await loadMyProducts();
         await loadProducts();
         await loadStats();
@@ -1991,7 +2177,7 @@ async function loadProducts() {
             const products = await safeFetch(`${API_BASE}/favorites/${currentUser.id}`);
 
             if (!Array.isArray(products) || products.length === 0) {
-                productsList.innerHTML = `<div class="empty-card">В обраному поки нічого немає</div>`;
+                productsList.innerHTML = `<div class="empty-card">${escapeHtml(tr('В обраному поки нічого немає', 'Favorites are empty'))}</div>`;
                 return;
             }
 
@@ -2020,14 +2206,14 @@ async function loadProducts() {
         const products = await safeFetch(`${API_BASE}/products?${params.toString()}`);
 
         if (!Array.isArray(products) || products.length === 0) {
-            productsList.innerHTML = `<div class="empty-card">Нічого не знайдено за цими фільтрами</div>`;
+            productsList.innerHTML = `<div class="empty-card">${escapeHtml(tr('Нічого не знайдено за цими фільтрами', 'Nothing found for these filters'))}</div>`;
             return;
         }
 
         productsList.innerHTML = products.map(renderCatalogCard).join("");
     } catch (error) {
         console.error("Load products error:", error);
-        productsList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "API недоступне")}</div>`;
+        productsList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("API недоступне", "API is unavailable"))}</div>`;
     }
 }
 
@@ -2037,7 +2223,7 @@ function buildGallery(images, title) {
     currentModalImageIndex = 0;
 
     if (!safeImages.length) {
-        return `<div class="modal-product-image card-image-placeholder">Фото відсутнє</div>`;
+        return `<div class="modal-product-image card-image-placeholder">${escapeHtml(tr("Фото відсутнє", "No photo"))}</div>`;
     }
 
     return `
@@ -2129,7 +2315,7 @@ async function openProductModal(productId) {
         modalContent.classList.remove("modal-animate-in");
         requestAnimationFrame(() => modalContent.classList.add("modal-animate-in"));
     }
-    body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    body.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
 
     try {
         const product = await safeFetch(`${API_BASE}/products/${productId}?current_user_id=${currentUser ? currentUser.id : ""}`);
@@ -2138,13 +2324,13 @@ async function openProductModal(productId) {
         const relativeTime = formatRelativeTime(product.created_at) || formatDate(product.created_at);
 
         const contactButton = product.seller_telegram_link
-            ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer" data-action="contact-seller" data-seller-link="${escapeHtml(product.seller_telegram_link)}">Написати продавцю</a>`
+            ? `<a class="contact-btn contact-link" href="${escapeHtml(product.seller_telegram_link)}" target="_blank" rel="noopener noreferrer" data-action="contact-seller" data-seller-link="${escapeHtml(product.seller_telegram_link)}">${tr('Написати продавцю', 'Message seller')}</a>`
             : "";
 
         const primaryAction = isOwnProduct
-            ? `<button type="button" class="own-product-btn" data-action="own-product-info">Ваш товар</button>`
-            : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? 'У кошику' : 'Купити'}</button>`;
-        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || '')}">Поскаржитися</button>` : "";
+            ? `<button type="button" class="own-product-btn" data-action="own-product-info">${tr('Ваш товар', 'Your listing')}</button>`
+            : `<button type="button" class="buy-btn ${product.is_in_cart ? 'cart-added-btn' : ''}" data-action="${product.is_in_cart ? 'go-cart' : 'buy-product'}" data-product-id="${Number(product.id)}">${product.is_in_cart ? tr('У кошику', 'In cart') : tr('Купити', 'Buy')}</button>`;
+        const reportButton = !isOwnProduct ? `<button type="button" class="ghost-warning-btn" data-action="open-report" data-product-id="${Number(product.id)}" data-product-title="${escapeHtml(product.title || '')}">${tr('Поскаржитися', 'Report')}</button>` : "";
 
         body.innerHTML = `
             <div class="modal-product">
@@ -2157,12 +2343,12 @@ async function openProductModal(productId) {
                     <h3 class="modal-product-title">${escapeHtml(product.title)}</h3>
                     <p class="modal-product-price">${formatPrice(product.price, product.currency)}</p>
                     <div class="modal-inline-meta">
-                        <span class="tag soft-tag">👁 ${views} переглядів</span>
+                        <span class="tag soft-tag">👁 ${views} ${tr('переглядів', 'views')}</span>
                         <span class="tag soft-tag">🕒 ${escapeHtml(relativeTime || '—')}</span>
                         ${product.seller_rating ? `<span class="tag soft-tag">⭐ ${escapeHtml(String(product.seller_rating))}</span>` : ``}
                     </div>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
-                    ${product.seller_username ? `<button type="button" class="seller-link-btn seller-profile-btn seller-profile-btn-modal" data-action="open-seller-profile" data-seller-id="${Number(product.seller_id)}">Профіль продавця</button>` : ""}
+                    ${product.seller_username ? `<button type="button" class="seller-link-btn seller-profile-btn seller-profile-btn-modal" data-action="open-seller-profile" data-seller-id="${Number(product.seller_id)}">${tr('Профіль продавця', 'Seller profile')}</button>` : ""}
                     <div class="card-actions compact-actions compact-actions-grid details-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
@@ -2172,7 +2358,7 @@ async function openProductModal(productId) {
             </div>
         `;
     } catch (error) {
-        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження товару")}</div>`;
+        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка завантаження товару", "Failed to load listing"))}</div>`;
     }
 }
 
@@ -2203,7 +2389,7 @@ async function createProduct() {
     const files = selectedProductFiles.slice();
 
     if (!title || !description || !Number.isFinite(price) || price <= 0 || !category || !condition || !city) {
-        showAlert("Заповни назву, опис, ціну, категорію, стан і місто");
+        showAlert(tr("Заповни назву, опис, ціну, категорію, стан і місто", "Fill in the title, description, price, category, condition, and city"));
         return;
     }
 
@@ -2213,16 +2399,16 @@ async function createProduct() {
         let imageUrls = editingExistingImages.slice();
         if (files.length) {
             imageUrls = [];
-            if ($("image-status")) $("image-status").textContent = `Завантаження фото: 0/${files.length}`;
+            if ($("image-status")) $("image-status").textContent = tr(`Завантаження фото: 0/${files.length}`, `Uploading photos: 0/${files.length}`);
             for (let i = 0; i < files.length; i += 1) {
                 const uploaded = await uploadImageToCloudinary(files[i]);
                 imageUrls.push(uploaded);
-                if ($("image-status")) $("image-status").textContent = `Завантаження фото: ${i + 1}/${files.length}`;
+                if ($("image-status")) $("image-status").textContent = tr(`Завантаження фото: ${i + 1}/${files.length}`, `Uploading photos: ${i + 1}/${files.length}`);
             }
         }
 
         if (!imageUrls.length) {
-            showAlert("Додай хоча б одне фото товару");
+            showAlert(tr("Додай хоча б одне фото товару", "Add at least one product photo"));
             return;
         }
 
@@ -2245,14 +2431,14 @@ async function createProduct() {
             body: JSON.stringify(payload)
         });
 
-        showAlert(isEdit ? "Оголошення оновлено" : "Оголошення створено");
+        showAlert(isEdit ? tr("Оголошення оновлено", "Listing updated") : tr("Оголошення створено", "Listing created"));
         resetCreateForm();
         switchTab("my-products");
         loadMyProducts();
         loadProducts();
         loadStats();
     } catch (error) {
-        showAlert(error.message || "Помилка збереження оголошення");
+        showAlert(error.message || tr("Помилка збереження оголошення", "Failed to save listing"));
     } finally {
         setLoading(false);
     }
@@ -2263,7 +2449,7 @@ async function loadMyProducts() {
     const wrap = $("purchase-requests-wrap");
     const requestsList = $("purchase-requests-list");
     if (!list || !currentUser) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     if (wrap) wrap.classList.add("hidden");
     try {
         if (myProductsView === "requests") {
@@ -2325,7 +2511,11 @@ async function loadMyProducts() {
         const products = await safeFetch(url);
         const filteredProducts = filterAndSortMyProducts(Array.isArray(products) ? products : [], myProductsView);
         if (!filteredProducts.length) {
-            list.innerHTML = myProductsView === "active" ? `<div class="empty-card">У вас поки немає активних оголошень</div>` : myProductsView === "sold" ? `<div class="empty-card">У вас поки немає проданих товарів</div>` : `<div class="empty-card">Архів порожній</div>`;
+            list.innerHTML = myProductsView === "active"
+                ? `<div class="empty-card">${escapeHtml(tr('У вас поки немає активних оголошень', 'You have no active listings yet'))}</div>`
+                : myProductsView === "sold"
+                    ? `<div class="empty-card">${escapeHtml(tr('У вас поки немає проданих товарів', 'You have no sold items yet'))}</div>`
+                    : `<div class="empty-card">${escapeHtml(tr('Архів порожній', 'Archive is empty'))}</div>`;
             return;
         }
         list.innerHTML = filteredProducts.map(product => renderMyProductCard(product, myProductsView)).join("");
@@ -2593,12 +2783,12 @@ function renderAdminSummary(summary) {
     if (!box || !summary) return;
     box.innerHTML = `
         <div class="stats-grid compact-stats-grid admin-stats-grid">
-            <div class="stat-card"><span class="stat-value">${summary.users ?? 0}</span><span class="stat-label">Користувачі</span></div>
-            <div class="stat-card"><span class="stat-value">${summary.banned_users ?? 0}</span><span class="stat-label">Бан</span></div>
-            <div class="stat-card"><span class="stat-value">${summary.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
-            <div class="stat-card"><span class="stat-value">${summary.orders_pending ?? 0}</span><span class="stat-label">Запити</span></div>
-            <div class="stat-card"><span class="stat-value">${summary.suggestions_new ?? 0}</span><span class="stat-label">Ідеї</span></div>
-            <div class="stat-card"><span class="stat-value">${summary.reports_new ?? 0}</span><span class="stat-label">Скарги</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.users ?? 0}</span><span class="stat-label">${tr('Користувачі', 'Users')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.banned_users ?? 0}</span><span class="stat-label">${tr('Бан', 'Banned')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.active_products ?? 0}</span><span class="stat-label">${tr('Активні', 'Active')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.orders_pending ?? 0}</span><span class="stat-label">${tr('Запити', 'Requests')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.suggestions_new ?? 0}</span><span class="stat-label">${tr('Ідеї', 'Ideas')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.reports_new ?? 0}</span><span class="stat-label">${tr('Скарги', 'Reports')}</span></div>
         </div>`;
 }
 
@@ -2641,28 +2831,28 @@ async function loadAdminUsers() {
     if (!currentUser?.id) return;
     const list = $("admin-users-list");
     if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const q = $("admin-users-search")?.value.trim() || "";
         const items = await safeFetch(`${API_BASE}/admin/users?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
         list.innerHTML = items.length ? items.map(item => `
             <div class="card"><div class="card-body">
                 <h3 class="card-title">@${escapeHtml(item.username || "")}</h3>
-                <p class="card-seller">${escapeHtml(item.full_name || "Без імені")}</p>
+                <p class="card-seller">${escapeHtml(item.full_name || tr("Без імені", "No name"))}</p>
                 <div class="request-meta">
-                    <div>${currentLanguage === 'en' ? 'Active' : currentLanguage === 'ru' ? 'Активные' : 'Активні'}: ${Number(item.active_products || 0)}</div>
-                    <div>${currentLanguage === 'en' ? 'Sold' : currentLanguage === 'ru' ? 'Проданные' : 'Продані'}: ${Number(item.sold_products || 0)}</div>
-                    <div>${currentLanguage === 'en' ? 'Status' : currentLanguage === 'ru' ? 'Статус' : 'Статус'}: ${item.is_superadmin ? t('superadmin') : item.is_banned ? (currentLanguage === 'en' ? 'Blocked' : currentLanguage === 'ru' ? 'Заблокирован' : 'Заблокований') : (currentLanguage === 'en' ? 'Active' : currentLanguage === 'ru' ? 'Активный' : 'Активний')}</div>
+                    <div>${tr('Активні', 'Active')}: ${Number(item.active_products || 0)}</div>
+                    <div>${tr('Продані', 'Sold')}: ${Number(item.sold_products || 0)}</div>
+                    <div>${tr('Статус', 'Status')}: ${item.is_superadmin ? t('superadmin') : item.is_banned ? tr('Заблокований', 'Blocked') : tr('Активний', 'Active')}</div>
                 </div>
                 <div class="card-actions inline-actions admin-grid-3">
-                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">${currentLanguage === 'en' ? 'Profile' : currentLanguage === 'ru' ? 'Профиль' : 'Профіль'}</button>
-                    ${item.is_superadmin ? `<button class="secondary-btn" disabled>${escapeHtml(t('protectedAdmin'))}</button>` : item.is_banned ? `<button class="approve-btn" onclick="adminUnbanUser(${Number(item.id)})">${currentLanguage === 'en' ? 'Unban' : currentLanguage === 'ru' ? 'Разбан' : 'Розбан'}</button>` : `<button class="reject-btn" onclick="adminBanUser(${Number(item.id)})">${currentLanguage === 'en' ? 'Ban' : currentLanguage === 'ru' ? 'Бан' : 'Бан'}</button>`}
-                    ${item.is_superadmin ? `<button class="secondary-btn" disabled>${escapeHtml(t('superadmin'))}</button>` : item.is_admin ? `<button class="remove-btn" onclick="adminRemoveAdmin(${Number(item.id)})">${currentLanguage === 'en' ? 'Remove admin' : currentLanguage === 'ru' ? 'Снять админа' : 'Зняти адмін'}</button>` : `<button class="buy-btn" onclick="adminMakeAdmin(${Number(item.id)})">${currentLanguage === 'en' ? 'Make admin' : currentLanguage === 'ru' ? 'Дать админа' : 'Дати адмін'}</button>`}
+                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">${tr('Профіль', 'Profile')}</button>
+                    ${item.is_superadmin ? `<button class="secondary-btn" disabled>${escapeHtml(t('protectedAdmin'))}</button>` : item.is_banned ? `<button class="approve-btn" onclick="adminUnbanUser(${Number(item.id)})">${tr('Розбан', 'Unban')}</button>` : `<button class="reject-btn" onclick="adminBanUser(${Number(item.id)})">${tr('Бан', 'Ban')}</button>`}
+                    ${item.is_superadmin ? `<button class="secondary-btn" disabled>${escapeHtml(t('superadmin'))}</button>` : item.is_admin ? `<button class="remove-btn" onclick="adminRemoveAdmin(${Number(item.id)})">${tr('Зняти адмін', 'Remove admin')}</button>` : `<button class="buy-btn" onclick="adminMakeAdmin(${Number(item.id)})">${tr('Дати адмін', 'Make admin')}</button>`}
                 </div>
             </div></div>
-        `).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
+        `).join("") : `<div class="empty-card">${escapeHtml(tr('Нічого не знайдено', 'Nothing found'))}</div>`;
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
 }
 
@@ -2714,7 +2904,7 @@ async function loadAdminProducts() {
     if (!currentUser?.id) return;
     const list = $("admin-products-list");
     if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const q = $("admin-products-search")?.value.trim() || "";
         const items = await safeFetch(`${API_BASE}/admin/products?current_admin_id=${currentUser.id}&q=${encodeURIComponent(q)}`);
@@ -2733,7 +2923,7 @@ async function loadAdminProducts() {
                 <div class="compact-thumb-wrap catalog-thumb-wrap admin-product-thumb">
                     ${renderImageBlock(item)}
                     ${imageCount > 0 ? `<span class="admin-photo-count">+${imageCount}</span>` : ``}
-                    ${reportsCount > 0 ? `<span class="admin-report-badge">Скарг ${reportsCount}</span>` : ``}
+                    ${reportsCount > 0 ? `<span class="admin-report-badge">${tr('Скарг', 'Reports')} ${reportsCount}</span>` : ``}
                 </div>
                 <div class="card-body compact-card-body catalog-card-body admin-product-body">
                     <div class="compact-card-top catalog-card-top">
@@ -2742,13 +2932,13 @@ async function loadAdminProducts() {
                     </div>
 
                     <div class="compact-meta-row catalog-meta-row">
-                        <span class="tag">${escapeHtml(item.city || "Без міста")}</span>
-                        <span class="tag ${getConditionTagClass(item.condition)}">${escapeHtml(item.condition || "Новий")}</span>
-                        <span class="tag soft-tag admin-status-tag">${escapeHtml(item.status || "")}</span>
+                        <span class="tag">${escapeHtml(tv(item.city || "Без міста"))}</span>
+                        <span class="tag ${getConditionTagClass(item.condition)}">${escapeHtml(tv(item.condition || "Новий"))}</span>
+                        <span class="tag soft-tag admin-status-tag">${escapeHtml(translateStatusValue(item.status || ""))}</span>
                     </div>
 
                     <div class="compact-secondary-row catalog-secondary-row admin-secondary-row">
-                        ${item.seller_username ? `<span class="muted-meta">Продавець: @${escapeHtml(item.seller_username)}</span>` : ``}
+                        ${item.seller_username ? `<span class="muted-meta">${tr('Продавець', 'Seller')}: @${escapeHtml(item.seller_username)}</span>` : ``}
                         <span class="muted-meta">👁 ${viewsCount}</span>
                         <span class="muted-meta">❤ ${likesCount}</span>
                         ${reportsCount > 0 ? `<span class="muted-meta admin-danger-text">⚠ ${reportsCount}</span>` : ``}
@@ -2757,28 +2947,28 @@ async function loadAdminProducts() {
                     <p class="card-description compact-desc catalog-desc">${escapeHtml(item.description || "")}</p>
 
                     <div class="compact-secondary-row catalog-secondary-row my-product-extra-meta my-product-extra-meta-block admin-extra-meta">
-                        <span class="muted-meta">Створено: ${escapeHtml(createdAt)}</span>
-                        ${soldAt ? `<span class="muted-meta">Продано: ${escapeHtml(soldAt)}</span>` : ``}
-                        ${buyerUsername ? `<span class="muted-meta">Покупець: @${escapeHtml(buyerUsername)}</span>` : ``}
+                        <span class="muted-meta">${tr('Створено', 'Created')}: ${escapeHtml(createdAt)}</span>
+                        ${soldAt ? `<span class="muted-meta">${tr('Продано', 'Sold')}: ${escapeHtml(soldAt)}</span>` : ``}
+                        ${buyerUsername ? `<span class="muted-meta">${tr('Покупець', 'Buyer')}: @${escapeHtml(buyerUsername)}</span>` : ``}
                     </div>
 
                     <div class="card-actions compact-actions compact-actions-grid catalog-actions-row admin-actions-grid">
-                        <button type="button" class="secondary-btn admin-open-btn" onclick="event.stopPropagation(); openProductModal(${Number(item.id)})">Відкрити</button>
-                        ${item.seller_id ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(item.seller_id)})">Профіль продавця</button>` : ``}
+                        <button type="button" class="secondary-btn admin-open-btn" onclick="event.stopPropagation(); openProductModal(${Number(item.id)})">${tr('Відкрити', 'Open')}</button>
+                        ${item.seller_id ? `<button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${Number(item.seller_id)})">${tr('Профіль продавця', 'Seller profile')}</button>` : ``}
                         ${item.status === "archived"
-                            ? `<button type="button" class="approve-btn" onclick="event.stopPropagation(); adminRestoreProduct(${Number(item.id)})">Активувати</button>`
-                            : `<button type="button" class="remove-btn" onclick="event.stopPropagation(); adminArchiveProduct(${Number(item.id)})">Архів</button>`}
-                        <button type="button" class="reject-btn" onclick="event.stopPropagation(); adminDeleteProduct(${Number(item.id)})">Видалити</button>
+                            ? `<button type="button" class="approve-btn" onclick="event.stopPropagation(); adminRestoreProduct(${Number(item.id)})">${tr('Активувати', 'Activate')}</button>`
+                            : `<button type="button" class="remove-btn" onclick="event.stopPropagation(); adminArchiveProduct(${Number(item.id)})">${tr('Архів', 'Archive')}</button>`}
+                        <button type="button" class="reject-btn" onclick="event.stopPropagation(); adminDeleteProduct(${Number(item.id)})">${tr('Видалити', 'Delete')}</button>
                     </div>
 
                     ${buyerId ? `<div class="card-actions compact-actions compact-actions-grid admin-actions-grid admin-buyer-row">
-                        <button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${buyerId})">Профіль покупця</button>
+                        <button type="button" class="seller-link-btn seller-profile-btn" onclick="event.stopPropagation(); openUserProfile(${buyerId})">${tr('Профіль покупця', 'Buyer profile')}</button>
                     </div>` : ``}
                 </div>
             </div>`;
         }).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
 }
 
@@ -2799,11 +2989,11 @@ async function adminRestoreProduct(productId) {
     try {
         setLoading(true);
         await safeFetch(`${API_BASE}/admin/products/${productId}/restore?current_admin_id=${currentUser.id}`, { method: "POST" });
-        showAlert("Оголошення відновлено");
+        showAlert(tr("Оголошення відновлено", "Listing restored"));
         await loadAdminProducts();
         await loadProducts();
     } catch (error) {
-        showAlert(error.message || "Не вдалося відновити оголошення");
+        showAlert(error.message || tr("Не вдалося відновити оголошення", "Failed to restore listing"));
     } finally {
         setLoading(false);
     }
@@ -2811,7 +3001,7 @@ async function adminRestoreProduct(productId) {
 
 async function adminDeleteProduct(productId) {
     if (isLoading) return;
-    if (!confirm("Видалити оголошення повністю?")) return;
+    if (!confirm(tr("Видалити оголошення повністю?", "Delete listing permanently?"))) return;
     try {
         setLoading(true);
         await safeFetch(`${API_BASE}/admin/products/${productId}?current_admin_id=${currentUser.id}`, { method: "DELETE" });
@@ -2864,7 +3054,7 @@ function openReportModal(productId, title = "", event = null) {
     const modal = $("report-modal");
     if (!modal) return;
     $("report-product-id").value = String(productId || "");
-    $("report-title").textContent = title ? `Скарга на: ${title}` : "Скарга на оголошення";
+    $("report-title").textContent = title ? `${tr('Скарга на', 'Report for')}: ${title}` : tr("Скарга на оголошення", "Report listing");
     $("report-reason").value = "Шахрайство";
     $("report-comment").value = "";
     $("report-custom-reason-wrap")?.classList.add("hidden");
@@ -2906,11 +3096,11 @@ async function submitReport() {
     let reason = $("report-reason")?.value || "Шахрайство";
     const comment = $("report-comment")?.value.trim() || "";
     if (!listingId) {
-        showAlert("Оголошення не знайдено");
+        showAlert(tr("Оголошення не знайдено", "Listing not found"));
         return;
     }
     if (reason === "Інше" && !comment) {
-        showAlert("Опиши свою причину скарги");
+        showAlert(tr("Опиши свою причину скарги", "Describe your reason for the report"));
         return;
     }
     try {
@@ -2925,10 +3115,10 @@ async function submitReport() {
             })
         });
         closeReportModal();
-        showAlert("Скаргу надіслано");
+        showAlert(tr("Скаргу надіслано", "Report sent"));
         if (currentUser.is_admin) await loadAdminSummary();
     } catch (error) {
-        showAlert(error.message || "Не вдалося надіслати скаргу");
+        showAlert(error.message || tr("Не вдалося надіслати скаргу", "Failed to send report"));
     } finally {
         setLoading(false);
     }
@@ -2937,7 +3127,7 @@ async function submitReport() {
 async function loadAdminIdeas() {
     const list = $("admin-ideas-list");
     if (!list || !currentUser) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const items = await safeFetch(`${API_BASE}/admin/suggestions?current_admin_id=${currentUser.id}`);
         if (!Array.isArray(items) || !items.length) {
@@ -2963,7 +3153,7 @@ async function loadAdminIdeas() {
             </div>
         `).join("");
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
 }
 
@@ -2987,7 +3177,7 @@ async function updateSuggestionStatus(id, status) {
 async function loadAdminReports() {
     const list = $("admin-reports-list");
     if (!list || !currentUser) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const items = await safeFetch(`${API_BASE}/admin/reports?current_admin_id=${currentUser.id}`);
         if (!Array.isArray(items) || !items.length) {
@@ -3014,7 +3204,7 @@ async function loadAdminReports() {
             </div>
         `).join("");
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
 }
 
@@ -3039,7 +3229,7 @@ async function loadAdminLogs() {
     if (!currentUser?.id) return;
     const list = $("admin-logs-list");
     if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const items = await safeFetch(`${API_BASE}/admin/logs?current_admin_id=${currentUser.id}`);
         list.innerHTML = items.length ? items.map(item => `
@@ -3048,7 +3238,7 @@ async function loadAdminLogs() {
                 <div class="request-meta"><div>${escapeHtml(item.action || "")}</div><div>${formatDate(item.created_at)}</div></div>
             </div></div>`).join("") : `<div class="empty-card">Логи порожні</div>`;
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
 }
 
@@ -3090,7 +3280,7 @@ async function loadNotifications(markAsRead = false) {
     if (!currentUser?.id) return;
     const list = $("notifications-list");
     if (!list) return;
-    list.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
     try {
         const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/notifications`);
         updateNotificationsBadge(data.unread_count || 0);
@@ -3145,7 +3335,7 @@ async function openUserProfile(userId) {
     syncBodyScrollLock();
     const modalContent = modal.querySelector(".modal-content");
     if (modalContent) { modalContent.classList.remove("modal-animate-in"); requestAnimationFrame(() => modalContent.classList.add("modal-animate-in")); }
-    body.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    body.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
 
     try {
         const profile = await safeFetch(`${API_BASE}/users/${userId}/public-profile?current_user_id=${currentUser ? currentUser.id : ""}`);
@@ -3156,7 +3346,7 @@ async function openUserProfile(userId) {
 
         const listingsHtml = Array.isArray(profile.listings) && profile.listings.length
             ? profile.listings.map(item => renderCatalogCard(item)).join('')
-            : `<div class="empty-card">Активних оголошень немає</div>`;
+            : `<div class="empty-card">${escapeHtml(tr('Активних оголошень немає', 'No active listings'))}</div>`;
 
         body.innerHTML = `
             <div class="seller-profile-shell seller-profile-shell-compact">
@@ -3165,31 +3355,31 @@ async function openUserProfile(userId) {
                     <div class="seller-profile-top seller-profile-top-compact">
                         <div class="user-profile-avatar seller-avatar-large seller-avatar-medium">${avatar}</div>
                         <div class="seller-profile-main seller-profile-main-compact">
-                            <h3 class="user-profile-name seller-name-compact">${escapeHtml(profile.full_name || "Без імені")}</h3>
+                            <h3 class="user-profile-name seller-name-compact">${escapeHtml(profile.full_name || tr("Без імені", "No name"))}</h3>
                             <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
                             <div class="seller-badges seller-badges-compact">
                                 <span class="seller-badge accent">${escapeHtml(profile.seller_status || getSellerBadgeText(profile.sold_products, profile.rating_count))}</span>
                                 ${profile.rating_count > 0 ? `<span class="seller-badge">⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))}</span>` : ``}
-                                ${profile.is_superadmin ? `<span class="seller-badge">${escapeHtml(t('superadmin'))}</span>` : (profile.is_admin ? `<span class="seller-badge">${currentLanguage === 'en' ? 'Administrator' : currentLanguage === 'ru' ? 'Администратор' : 'Адміністратор'}</span>` : ``)}
+                                ${profile.is_superadmin ? `<span class="seller-badge">${escapeHtml(t('superadmin'))}</span>` : (profile.is_admin ? `<span class="seller-badge">${tr('Адміністратор', 'Administrator')}</span>` : ``)}
                             </div>
-                            <div class="seller-registered">З нами з ${formatDate(profile.registered_at) || "—"}</div>
+                            <div class="seller-registered">${tr('З нами з', 'With us since')} ${formatDate(profile.registered_at) || "—"}</div>
                         </div>
                     </div>
 
                     <div class="seller-stats-grid seller-stats-grid-compact">
-                        <div class="seller-stat"><span class="stat-value">${profile.active_products ?? 0}</span><span class="stat-label">Активні</span></div>
-                        <div class="seller-stat"><span class="stat-value">${profile.sold_products ?? 0}</span><span class="stat-label">Продані</span></div>
-                        <div class="seller-stat"><span class="stat-value">${profile.bought_products ?? 0}</span><span class="stat-label">Куплені</span></div>
-                        <div class="seller-stat"><span class="stat-value">${profile.archived_products ?? 0}</span><span class="stat-label">Архів</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.active_products ?? 0}</span><span class="stat-label">${tr('Активні', 'Active')}</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.sold_products ?? 0}</span><span class="stat-label">${tr('Продані', 'Sold')}</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.bought_products ?? 0}</span><span class="stat-label">${tr('Куплені', 'Bought')}</span></div>
+                        <div class="seller-stat"><span class="stat-value">${profile.archived_products ?? 0}</span><span class="stat-label">${tr('Архів', 'Archive')}</span></div>
                     </div>
 
                     <div class="card-actions seller-action-stack seller-action-stack-compact">
                         ${profile.telegram_link
-                            ? `<a class="contact-btn contact-link compact-cta-btn" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">Написати продавцю</a>`
-                            : `<button class="own-product-btn compact-cta-btn" disabled>Telegram недоступний</button>`
+                            ? `<a class="contact-btn contact-link compact-cta-btn" href="${escapeHtml(profile.telegram_link)}" target="_blank" rel="noopener noreferrer">${tr('Написати продавцю', 'Message seller')}</a>`
+                            : `<button class="own-product-btn compact-cta-btn" disabled>${tr('Telegram недоступний', 'Telegram unavailable')}</button>`
                         }
-                        <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'reviews')">Відгуки</button>
-                        <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'listings')">Усі оголошення продавця</button>
+                        <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'reviews')">${tr('Відгуки', 'Reviews')}</button>
+                        <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'listings')">${tr('Усі оголошення продавця', "All seller's listings")}</button>
                     </div>
 
                     <div id="seller-reviews-wrap" class="seller-section-wrap seller-reviews-wrap hidden"></div>
@@ -3198,7 +3388,7 @@ async function openUserProfile(userId) {
             </div>
         `;
     } catch (error) {
-        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити профіль")}</div>`;
+        body.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Не вдалося завантажити профіль", "Failed to load profile"))}</div>`;
     }
 }
 
@@ -3216,7 +3406,7 @@ async function loadSellerReviews(userId) {
         wrap.innerHTML = `<div class="cards seller-reviews-list compact-reviews-list">${items.map(item => renderReviewCard(item, false)).join("")}</div>`;
         wrap.dataset.loaded = "1";
     } catch (error) {
-        wrap.innerHTML = `<div class="empty-card">Не вдалося завантажити відгуки</div>`;
+        wrap.innerHTML = `<div class="empty-card">${escapeHtml(tr('Не вдалося завантажити відгуки', 'Failed to load reviews'))}</div>`;
     }
 }
 
