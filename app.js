@@ -372,6 +372,13 @@ function applyLanguageTexts() {
     document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === currentLanguage));
 
     const setText = (sel, value) => { const el = document.querySelector(sel); if (el) el.textContent = value; };
+    const setRefreshButtonLabel = (btn) => {
+        if (!btn) return;
+        const label = t('refresh');
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-label', label);
+        if (!btn.classList.contains('icon-refresh-btn')) btn.textContent = label;
+    };
 
     setText('.topbar-mini', t('appMini'));
     setText('#tab-catalog .section-header h2', t('catalogTitle'));
@@ -388,8 +395,8 @@ function applyLanguageTexts() {
     if ($('seller-search-input')) $('seller-search-input').placeholder = tr('username (без @)', 'username (without @)');
     const searchInput = $('search-input'); if (searchInput) searchInput.placeholder = t('searchPlaceholder');
     const filtersBtn = $('filters-toggle-btn'); if (filtersBtn && !filtersOpen) filtersBtn.textContent = t('filters');
-    const catBtns = document.querySelectorAll('#tab-catalog .section-btn');
-    if (catBtns[0]) catBtns[0].textContent = t('refresh');
+    const catRefreshBtn = $('catalog-refresh-btn') || document.querySelector('#tab-catalog .icon-refresh-btn');
+    setRefreshButtonLabel(catRefreshBtn);
 
     translateSelectOptions('category-filter');
     translateSelectOptions('city-filter');
@@ -399,8 +406,8 @@ function applyLanguageTexts() {
     if ($('price-max-filter')) $('price-max-filter').placeholder = tr('Ціна до', 'Price to');
 
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    const mpRefreshBtn = document.querySelector('#tab-my-products .section-header .section-btn');
-    if (mpRefreshBtn) mpRefreshBtn.textContent = t('refresh');
+    const mpRefreshBtn = document.querySelector('#tab-my-products .section-header .icon-refresh-btn') || document.querySelector('#tab-my-products .section-header .section-btn');
+    setRefreshButtonLabel(mpRefreshBtn);
     const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn');
     if (mpBtns[0]) mpBtns[0].textContent = t('activeTab');
     if ($('my-products-requests-btn-label')) $('my-products-requests-btn-label').textContent = t('requestsTab');
@@ -416,6 +423,7 @@ function applyLanguageTexts() {
 
     setText('#tab-create .section-header h2', t('createTitle'));
     const cancelEditBtn = $('cancel-edit-btn'); if (cancelEditBtn) cancelEditBtn.textContent = t('cancelEdit');
+    syncCreateSectionHeader();
 
     const createLabels = document.querySelectorAll('#tab-create label');
     if (createLabels[0]) createLabels[0].textContent = tr('Назва товару', 'Product title');
@@ -453,7 +461,8 @@ function applyLanguageTexts() {
     document.querySelectorAll('#condition-chip-group .segment-chip').forEach(chip => chip.textContent = tv(chip.dataset.value || ''));
 
     setText('#tab-cart .section-header h2', t('cartTitle'));
-    const cartRefresh = document.querySelector('#tab-cart .section-btn'); if (cartRefresh) cartRefresh.textContent = t('refresh');
+    const cartRefresh = document.querySelector('#tab-cart .section-header .icon-refresh-btn') || document.querySelector('#tab-cart .section-btn');
+    setRefreshButtonLabel(cartRefresh);
     const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
 
     setText('#tab-profile > h2', t('profileTitle'));
@@ -1534,6 +1543,14 @@ function removeProductPhoto(index) {
     renderSelectedProductFiles();
 }
 
+function syncCreateSectionHeader() {
+    const header = $("create-section-header");
+    const cancelBtn = $("cancel-edit-btn");
+    if (!header) return;
+    const shouldShow = Boolean(editingProductId) || Boolean(cancelBtn && !cancelBtn.classList.contains("hidden"));
+    header.classList.toggle("hidden", !shouldShow);
+}
+
 function resetCreateForm() {
     editingProductId = null;
     editingExistingImages = [];
@@ -1541,6 +1558,7 @@ function resetCreateForm() {
     if ($("create-form-title")) $("create-form-title").textContent = tr("Створити оголошення", "Create listing");
     if ($("submit-product-btn")) $("submit-product-btn").textContent = tr("Створити оголошення", "Create listing");
     $("cancel-edit-btn")?.classList.add("hidden");
+    syncCreateSectionHeader();
     $("edit-photos-hint")?.classList.add("hidden");
     if ($("product-title")) $("product-title").value = "";
     if ($("product-description")) $("product-description").value = "";
@@ -1590,6 +1608,7 @@ async function startEditProduct(productId) {
         $("create-form-title").textContent = tr("Редагувати оголошення", "Edit listing");
         $("submit-product-btn").textContent = tr("Зберегти зміни", "Save changes");
         $("cancel-edit-btn")?.classList.remove("hidden");
+        syncCreateSectionHeader();
         $("edit-photos-hint")?.classList.remove("hidden");
         $("product-title").value = product.title || "";
         $("product-description").value = product.description || "";
