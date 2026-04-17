@@ -83,13 +83,14 @@
 
         <main class="content">
             <section id="tab-catalog" class="tab-section active">
-                <div class="section-header">
+                <div class="section-header catalog-header hidden">
                     <button class="secondary-btn section-btn" onclick="loadProducts()">Оновити</button>
                 </div>
 
-                <div class="catalog-subtabs">
+                <div class="catalog-subtabs catalog-subtabs-with-refresh">
                     <button id="catalog-all-btn" class="subtab-btn active" onclick="switchCatalogView('all')">Каталог</button>
                     <button id="catalog-favorites-btn" class="subtab-btn" onclick="switchCatalogView('favorites')">Обране</button>
+                    <button id="catalog-refresh-btn" class="secondary-btn section-btn icon-action-btn icon-refresh-btn" onclick="loadProducts()" aria-label="Оновити" title="Оновити"></button>
                 </div>
 
                 <div id="catalog-search-panel" class="catalog-toolbar catalog-toolbar-stacked catalog-search-panel">
@@ -147,9 +148,9 @@
             </section>
 
             <section id="tab-my-products" class="tab-section">
-                <div class="section-header">
-                    <h2>Мої оголошення</h2>
-                    <button class="secondary-btn section-btn" onclick="loadMyProducts()">Оновити</button>
+                <div class="section-header section-header-icon-only">
+                    <h2 class="section-title-hidden">Мої оголошення</h2>
+                    <button id="my-products-refresh-btn" class="secondary-btn section-btn icon-action-btn icon-refresh-btn" onclick="loadMyProducts()" aria-label="Оновити" title="Оновити"></button>
                 </div>
 
                 <div class="subtabs">
@@ -180,8 +181,8 @@
             </section>
 
             <section id="tab-create" class="tab-section">
-                <div class="section-header">
-                    <h2 id="create-form-title">Створити оголошення</h2>
+                <div id="create-section-header" class="section-header section-header-icon-only hidden">
+                    <h2 id="create-form-title" class="section-title-hidden">Створити оголошення</h2>
                     <button id="cancel-edit-btn" class="secondary-btn section-btn hidden" onclick="cancelEditProduct()">Скасувати редагування</button>
                 </div>
 
@@ -293,9 +294,9 @@
             </section>
 
             <section id="tab-cart" class="tab-section">
-                <div class="section-header">
-                    <h2>Кошик</h2>
-                    <button class="secondary-btn section-btn" onclick="loadCart()">Оновити</button>
+                <div class="section-header section-header-icon-only">
+                    <h2 class="section-title-hidden">Кошик</h2>
+                    <button id="cart-refresh-btn" class="secondary-btn section-btn icon-action-btn icon-refresh-btn" onclick="loadCart()" aria-label="Оновити" title="Оновити"></button>
                 </div>
                 <div id="cart-list" class="cards"></div>
                 <div class="cart-total-card cart-summary-card">
