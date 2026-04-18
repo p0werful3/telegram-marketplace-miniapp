@@ -6693,3 +6693,49 @@ input::placeholder,textarea::placeholder{color:#7f97bd !important;}
 #tab-create .section-header.hidden{
   display:none !important;
 }
+
+
+/* ===== v435 refresh placement tune ===== */
+#tab-catalog .catalog-header,
+#tab-catalog .section-header{
+  display:none !important;
+}
+
+.my-products-subtabs-with-refresh{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+  margin-bottom:16px !important;
+}
+.my-products-subtabs-with-refresh #my-products-refresh-btn{
+  margin-left:auto !important;
+}
+#tab-my-products .subtabs.my-products-subtabs-with-refresh .subtab-btn{
+  padding-inline:14px !important;
+}
+
+.cart-refresh-row{
+  display:flex !important;
+  justify-content:flex-end !important;
+  width:100% !important;
+  margin-bottom:14px !important;
+}
+
+@media (max-width: 430px){
+  .my-products-subtabs-with-refresh{
+    gap:7px !important;
+  }
+  #tab-my-products .subtabs.my-products-subtabs-with-refresh .subtab-btn{
+    padding-inline:13px !important;
+    font-size:14px !important;
+  }
+  .my-products-subtabs-with-refresh #my-products-refresh-btn{
+    width:32px !important;
+    height:32px !important;
+    min-width:32px !important;
+    min-height:32px !important;
+    flex:0 0 32px !important;
+    border-radius:11px !important;
+  }
+}
