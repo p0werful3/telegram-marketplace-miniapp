@@ -144,11 +144,10 @@
             </section>
 
             <section id="tab-my-products" class="tab-section">
-                <div class="subtabs my-products-subtabs-with-refresh">
+                <div class="subtabs">
                     <button id="my-products-active-btn" class="subtab-btn active" onclick="switchMyProductsView('active')">Активні</button>
                     <button id="my-products-requests-btn" class="subtab-btn" onclick="switchMyProductsView('requests')"><span id="my-products-requests-btn-label">Запити на продаж</span> <span id="my-products-requests-badge" class="mini-badge hidden">0</span></button>
                     <button id="my-products-sold-btn" class="subtab-btn" onclick="switchMyProductsView('sold')">Продані</button>
-                    <button id="my-products-refresh-btn" class="secondary-btn section-btn icon-action-btn icon-refresh-btn" onclick="loadMyProducts()" aria-label="Оновити" title="Оновити"></button>
                     <button id="my-products-archived-btn" class="subtab-btn" onclick="switchMyProductsView('archived')">Архів</button>
                 </div>
 
@@ -286,9 +285,6 @@
             </section>
 
             <section id="tab-cart" class="tab-section">
-                <div class="cart-refresh-row">
-                    <button id="cart-refresh-btn" class="secondary-btn section-btn icon-action-btn icon-refresh-btn" onclick="loadCart()" aria-label="Оновити" title="Оновити"></button>
-                </div>
                 <div id="cart-list" class="cards"></div>
                 <div class="cart-total-card cart-summary-card">
                     <div class="cart-summary-top">
