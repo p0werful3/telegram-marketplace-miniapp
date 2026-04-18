@@ -406,7 +406,7 @@ function applyLanguageTexts() {
     if ($('price-max-filter')) $('price-max-filter').placeholder = tr('Ціна до', 'Price to');
 
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
-    const mpRefreshBtn = document.querySelector('#tab-my-products .section-header .icon-refresh-btn') || document.querySelector('#tab-my-products .section-header .section-btn');
+    const mpRefreshBtn = $('my-products-refresh-btn');
     setRefreshButtonLabel(mpRefreshBtn);
     const mpBtns = document.querySelectorAll('#tab-my-products .subtab-btn');
     if (mpBtns[0]) mpBtns[0].textContent = t('activeTab');
@@ -461,7 +461,7 @@ function applyLanguageTexts() {
     document.querySelectorAll('#condition-chip-group .segment-chip').forEach(chip => chip.textContent = tv(chip.dataset.value || ''));
 
     setText('#tab-cart .section-header h2', t('cartTitle'));
-    const cartRefresh = document.querySelector('#tab-cart .section-header .icon-refresh-btn') || document.querySelector('#tab-cart .section-btn');
+    const cartRefresh = $('cart-refresh-btn');
     setRefreshButtonLabel(cartRefresh);
     const buyAllBtn = $('buy-all-btn'); if (buyAllBtn) buyAllBtn.textContent = t('buyAll');
 
