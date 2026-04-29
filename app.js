@@ -473,7 +473,7 @@ function applyLanguageTexts() {
     const appSubtitle = document.querySelector('.profile-ref-app-subtitle'); if (appSubtitle) appSubtitle.textContent = t('appMini');
     const settingsTitle = document.querySelector('.profile-edit-desc'); if (settingsTitle) settingsTitle.textContent = tr('Онови основні дані профілю. Зміни збережуться одразу після натискання кнопки.', 'Update the main profile details. Changes will be saved right after you press the button.');
     const profileEditBadge = document.querySelector('.profile-edit-badge'); if (profileEditBadge) profileEditBadge.textContent = t('profileTitle');
-    const profileLabels = document.querySelectorAll('#profile-edit-wrap label');
+    const profileLabels = Array.from(document.querySelectorAll('#profile-edit-wrap .profile-edit-field > label')).filter(label => !label.hasAttribute('for'));
     if (profileLabels[0]) profileLabels[0].textContent = tr('Username (без @)', 'Username (without @)');
     if (profileLabels[1]) profileLabels[1].textContent = tr("Ім'я", 'Name');
     if (profileLabels[2]) profileLabels[2].textContent = tr('Аватарка', 'Avatar');
@@ -481,7 +481,10 @@ function applyLanguageTexts() {
     if ($('profile-edit-username')) $('profile-edit-username').placeholder = tr('username (без @)', 'username (without @)');
     if ($('profile-edit-fullname')) $('profile-edit-fullname').placeholder = tr("Ваше ім'я", 'Your name');
     if ($('profile-edit-password')) $('profile-edit-password').placeholder = tr('Залиш порожнім, якщо не змінюєш', "Leave empty if you don't want to change it");
-    const filePickerBtn = document.querySelector('.file-picker-btn'); if (filePickerBtn) filePickerBtn.textContent = tr('Вибрати фото', 'Choose photo');
+    const filePickerBtn = document.querySelector('.file-picker-btn'); if (filePickerBtn) filePickerBtn.textContent = tr('Змінити фото', 'Change photo');
+    const filePickerHint = document.querySelector('.file-picker-hint'); if (filePickerHint) filePickerHint.textContent = tr('PNG або JPG. Можна перетягнути фото сюди.', 'PNG or JPG. You can drag a photo here.');
+    updateAvatarPreview();
+    initProfileAvatarDropzone();
     const saveProfileBtn = document.querySelector('.profile-save-btn'); if (saveProfileBtn) saveProfileBtn.textContent = tr('Зберегти зміни', 'Save changes');
     const statusLabel = document.querySelectorAll('.profile-mini-label')[1]; if (statusLabel) statusLabel.textContent = t('status');
 
@@ -938,6 +941,8 @@ function fillProfile() {
     if ($("profile-edit-fullname")) $("profile-edit-fullname").value = currentUser.full_name || "";
     if ($("profile-edit-password")) $("profile-edit-password").value = "";
     if ($("profile-avatar-file")) $("profile-avatar-file").value = "";
+    updateAvatarPreview();
+    initProfileAvatarDropzone();
     if ($("profile-rating-badge")) {
         const avg = getUserAverageRating(currentUser);
         const ratingCount = Number(currentUser.rating_count || 0);
@@ -1465,10 +1470,66 @@ function updateCategorySummary() {
     if (label) label.textContent = value ? tv(value) : tr("Оберіть категорію", "Choose a category");
 }
 
+function updateAvatarPreview(file = null) {
+    const preview = $("profile-avatar-preview");
+    if (!preview) return;
+
+    const selectedFile = file || $("profile-avatar-file")?.files?.[0] || null;
+    if (selectedFile) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            preview.innerHTML = `<img src="${reader.result}" alt="avatar preview">`;
+        };
+        reader.readAsDataURL(selectedFile);
+        return;
+    }
+
+    if (currentUser?.avatar_url && isValidUrl(currentUser.avatar_url)) {
+        preview.innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" alt="avatar preview">`;
+    } else {
+        preview.textContent = (currentUser?.full_name || currentUser?.username || "U").trim().charAt(0).toUpperCase();
+    }
+}
+
+function setProfileAvatarFile(file) {
+    const input = $("profile-avatar-file");
+    if (!input || !file) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    updateAvatarFileLabel({ target: input });
+}
+
 function updateAvatarFileLabel(event) {
     const file = event?.target?.files?.[0] || $("profile-avatar-file")?.files?.[0] || null;
     const label = $("profile-avatar-file-name");
-    if (label) label.textContent = file ? file.name : tr("Файл не вибрано", "No file selected");
+    if (label) label.textContent = file ? file.name : tr("Фото вибрано", "Photo selected");
+    updateAvatarPreview(file);
+}
+
+function initProfileAvatarDropzone() {
+    const card = document.querySelector('#profile-edit-wrap .file-picker-card');
+    if (!card || card.dataset.dropReady === "1") return;
+    card.dataset.dropReady = "1";
+
+    ["dragenter", "dragover"].forEach(type => {
+        card.addEventListener(type, (event) => {
+            event.preventDefault();
+            card.classList.add("drag-over");
+        });
+    });
+
+    ["dragleave", "drop"].forEach(type => {
+        card.addEventListener(type, (event) => {
+            event.preventDefault();
+            card.classList.remove("drag-over");
+        });
+    });
+
+    card.addEventListener("drop", (event) => {
+        const file = event.dataTransfer?.files?.[0];
+        if (file && file.type.startsWith("image/")) setProfileAvatarFile(file);
+    });
 }
 
 function openProductFilePicker() {
