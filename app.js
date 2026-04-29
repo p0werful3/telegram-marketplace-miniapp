@@ -1,9 +1,9 @@
-console.log("APP VERSION 435 LOADED");
+console.log("APP VERSION 436 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "435";
+const FRONTEND_VERSION = "436";
 
 let tg = null;
 let telegramUser = null;
@@ -253,7 +253,28 @@ const VALUE_TRANSLATIONS = {
     "Оголошення": "Listings",
     "Ідеї": "Ideas",
     "Скарги": "Reports",
-    "Логи": "Logs"
+    "Логи": "Logs",
+    "Виконано": "Done",
+    "На розгляді": "In review",
+    "Нова": "New",
+    "Підтверджено": "Approved",
+    "Відхилено": "Rejected",
+    "Скасовано": "Cancelled",
+    "Очікує підтвердження": "Pending approval",
+    "Очікує відповіді": "Waiting for response",
+    "Активний": "Active",
+    "Заблокований": "Blocked",
+    "Без імені": "No name",
+    "Без фото": "No photo",
+    "Товар": "Product",
+    "Продавець": "Seller",
+    "Покупець": "Buyer",
+    "Дата": "Date",
+    "Ім'я": "Name",
+    "Разом": "Total",
+    "Бан": "Banned",
+    "Розбан": "Unban",
+    "Адміністратор": "Administrator"
 };
 
 function tv(value) {
@@ -261,6 +282,25 @@ function tv(value) {
     if (currentLanguage !== "en") return text;
     return VALUE_TRANSLATIONS[text] || text;
 }
+function translateMessage(message) {
+    const text = String(message ?? "");
+    if (currentLanguage !== "en") return text;
+    const exact = {
+        "Помилка завантаження": "Loading error",
+        "Помилка покупки": "Purchase error",
+        "Помилка роботи з обраним": "Favorites error",
+        "Не вдалося обробити запит": "Failed to process request",
+        "Не вдалося видалити оголошення": "Failed to archive listing",
+        "Не вдалося додати товар": "Failed to add item",
+        "Не вдалося видалити товар з кошика": "Failed to remove item from cart",
+        "Не вдалося купити всі товари": "Failed to buy all items",
+        "API недоступне": "API is unavailable",
+        "Помилка": "Error",
+        "Сталася помилка": "Something went wrong"
+    };
+    return exact[text] || VALUE_TRANSLATIONS[text] || text;
+}
+
 
 function translateStatusValue(value) {
     const normalized = String(value || "").trim().toLowerCase();
@@ -514,6 +554,16 @@ function applyLanguageTexts() {
     const languageLabel = document.querySelector('.language-switch-label span:last-child');
     if (languageLabel) languageLabel.textContent = t('authLangTitle');
 
+    const notificationsBtnLabel = document.querySelector('#notifications-toggle-btn span:nth-child(2)');
+    if (notificationsBtnLabel) notificationsBtnLabel.textContent = tr('Повідомлення', 'Notifications');
+    const ideaLabels = document.querySelectorAll('#ideas-wrap label');
+    if (ideaLabels[0]) ideaLabels[0].textContent = tr('Назва ідеї', 'Idea title');
+    if (ideaLabels[1]) ideaLabels[1].textContent = tr('Опишіть вашу пропозицію', 'Describe your suggestion');
+    if ($('idea-title')) $('idea-title').placeholder = tr('Наприклад: Додати чат між продавцем і покупцем', 'Example: Add chat between seller and buyer');
+    if ($('idea-message')) $('idea-message').placeholder = tr('Що саме хочете покращити або додати?', 'What exactly do you want to improve or add?');
+    const ideaSubmitBtn = document.querySelector('#ideas-wrap .primary-btn');
+    if (ideaSubmitBtn) ideaSubmitBtn.textContent = tr('Надіслати ідею', 'Send idea');
+
     const reviewTitle = document.querySelector('#review-modal .modal-title'); if (reviewTitle) reviewTitle.textContent = tr('Залишити відгук', 'Leave a review');
     const reviewLabels = document.querySelectorAll('#review-modal label');
     if (reviewLabels[0]) reviewLabels[0].textContent = tr('Оцінка', 'Rating');
@@ -618,13 +668,13 @@ function formatRelativeTime(value) {
         const date = new Date(value);
         const diffMs = Date.now() - date.getTime();
         const diffMin = Math.max(0, Math.floor(diffMs / 60000));
-        if (diffMin < 1) return "щойно";
-        if (diffMin < 60) return `${diffMin} хв тому`;
+        if (diffMin < 1) return tr("щойно", "just now");
+        if (diffMin < 60) return currentLanguage === "en" ? `${diffMin} min ago` : `${diffMin} хв тому`;
         const diffHours = Math.floor(diffMin / 60);
-        if (diffHours < 24) return `${diffHours} год тому`;
+        if (diffHours < 24) return currentLanguage === "en" ? `${diffHours} h ago` : `${diffHours} год тому`;
         const diffDays = Math.floor(diffHours / 24);
-        if (diffDays === 1) return "вчора";
-        if (diffDays < 30) return `${diffDays} дн. тому`;
+        if (diffDays === 1) return tr("вчора", "yesterday");
+        if (diffDays < 30) return currentLanguage === "en" ? `${diffDays} days ago` : `${diffDays} дн. тому`;
         return formatDate(value);
     } catch {
         return formatDate(value);
@@ -758,16 +808,16 @@ function refreshTelegramLoginUi(forceHide = false) {
 }
 
 function ideaStatusLabel(status) {
-    if (status === "done") return "Виконано";
-    if (status === "review") return "На розгляді";
-    return "Нова";
+    if (status === "done") return tr("Виконано", "Done");
+    if (status === "review") return tr("На розгляді", "In review");
+    return tr("Нова", "New");
 }
 
 function renderCartTotals(totalsByCurrency = {}) {
     const parts = Object.entries(totalsByCurrency)
         .filter(([, value]) => Number(value) > 0)
         .map(([currency, value]) => formatPrice(value, currency));
-    return parts.length ? `Разом: ${parts.join(" / ")}` : "Разом: 0$";
+    return parts.length ? `${tr("Разом", "Total")}: ${parts.join(" / ")}` : `${tr("Разом", "Total")}: 0$`;
 }
 
 function initTelegramWebApp() {
@@ -808,7 +858,7 @@ function initTelegramWebApp() {
 
 
 function showAlert(message) {
-    const text = String(message || "Сталася помилка");
+    const text = translateMessage(message || tr("Сталася помилка", "Something went wrong"));
     try {
         if (tg?.showAlert) {
             tg.showAlert(text);
@@ -942,7 +992,7 @@ function fillProfile() {
     const avatarEl = $("profile-avatar");
 
     if (usernameEl) usernameEl.textContent = currentUser.username ? `@${currentUser.username}` : "—";
-    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || currentUser.username || "Без імені";
+    if (fullnameEl) fullnameEl.textContent = currentUser.full_name || currentUser.username || tr("Без імені", "No name");
     if (avatarEl) {
         if (currentUser.avatar_url && isValidUrl(currentUser.avatar_url)) {
             avatarEl.innerHTML = `<img src="${escapeHtml(currentUser.avatar_url)}" alt="avatar">`;
@@ -968,7 +1018,7 @@ function fillProfile() {
         $("profile-rating-value").textContent = Number(currentUser.rating_count || 0) > 0 ? `${getUserAverageRating(currentUser)}` : "—";
     }
     if ($("profile-rating-count")) {
-        $("profile-rating-count").textContent = `${Number(currentUser.rating_count || 0)} відгуків`;
+        $("profile-rating-count").textContent = `${Number(currentUser.rating_count || 0)} ${tr("відгуків", "reviews")}`;
     }
     if ($("profile-register-date")) {
         $("profile-register-date").textContent = formatDate(currentUser.created_at) || "—";
@@ -1030,7 +1080,7 @@ async function loadMyReviews() {
 
         list.innerHTML = `<div class="cards">${items.map(item => renderReviewCard(item, true)).join("")}</div>`;
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Не вдалося завантажити відгуки")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Не вдалося завантажити відгуки", "Failed to load reviews"))}</div>`;
     }
 }
 
@@ -1187,10 +1237,10 @@ async function loadStats() {
 }
 
 function orderStatusLabel(status) {
-    if (status === "approved") return "Підтверджено";
-    if (status === "rejected") return "Відхилено";
-    if (status === "cancelled") return "Скасовано";
-    return "Очікує підтвердження";
+    if (status === "approved") return tr("Підтверджено", "Approved");
+    if (status === "rejected") return tr("Відхилено", "Rejected");
+    if (status === "cancelled") return tr("Скасовано", "Cancelled");
+    return tr("Очікує підтвердження", "Pending approval");
 }
 
 async function saveProfile() {
@@ -1202,7 +1252,7 @@ async function saveProfile() {
     const avatarFile = $("profile-avatar-file")?.files?.[0] || null;
 
     if (!username) {
-        showAlert("Введи тег / username");
+        showAlert(tr("Введи тег / username", "Enter tag / username"));
         return;
     }
 
@@ -1218,9 +1268,9 @@ async function saveProfile() {
         saveSession(currentUser);
         fillProfile();
         toggleProfileEdit(false);
-        showAlert("Профіль оновлено");
+        showAlert(tr("Профіль оновлено", "Profile updated"));
     } catch (error) {
-        showAlert(error.message || "Не вдалося оновити профіль");
+        showAlert(error.message || tr("Не вдалося оновити профіль", "Failed to update profile"));
     } finally {
         setLoading(false);
     }
@@ -1282,7 +1332,7 @@ async function loadPurchaseHistory() {
     try {
         const items = await safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`);
         if (!Array.isArray(items) || !items.length) {
-            list.innerHTML = `<div class="empty-card">Історія покупок поки порожня</div>`;
+            list.innerHTML = `<div class="empty-card">${escapeHtml(tr("Історія покупок поки порожня", "Purchase history is empty"))}</div>`;
             return;
         }
 
@@ -1291,23 +1341,23 @@ async function loadPurchaseHistory() {
                 ${isValidUrl(item.product_image_url) ? `<img class="history-image" src="${escapeHtml(item.product_image_url)}" alt="${escapeHtml(item.product_title)}">` : ``}
                 <div class="card-body">
                     <div class="status-pill ${escapeHtml(item.status || "pending")}">${orderStatusLabel(item.status)}</div>
-                    <h3 class="card-title">${escapeHtml(item.product_title || "Товар")}</h3>
+                    <h3 class="card-title">${escapeHtml(item.product_title || tr("Товар", "Product"))}</h3>
                     <p class="card-price">${formatPrice(item.offered_price, item.currency)}</p>
                     <div class="history-meta">
-                        ${item.seller_username ? `<div>Продавець: @${escapeHtml(item.seller_username)}</div>` : ``}
-                        ${item.seller_full_name ? `<div>Ім'я продавця: ${escapeHtml(item.seller_full_name)}</div>` : ``}
-                        <div>Дата: ${formatDate(item.created_at) || "—"}</div>
+                        ${item.seller_username ? `<div>${tr("Продавець", "Seller")}: @${escapeHtml(item.seller_username)}</div>` : ``}
+                        ${item.seller_full_name ? `<div>${tr("Ім'я продавця", "Seller name")}: ${escapeHtml(item.seller_full_name)}</div>` : ``}
+                        <div>${tr("Дата", "Date")}: ${formatDate(item.created_at) || "—"}</div>
                     </div>
                     <div class="card-actions inline-actions compact-actions">
-                        ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">Скасувати запит</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn" data-action="open-review" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">Залишити відгук</button>` : ""}
-                        ${item.review_rating ? `<button class="secondary-btn" disabled>Оцінка: ${Number(item.review_rating)}/5</button>` : ""}
+                        ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">${tr("Скасувати запит", "Cancel request")}</button>` : ""}
+                        ${item.can_review ? `<button type="button" class="approve-btn" data-action="open-review" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">${tr("Залишити відгук", "Leave review")}</button>` : ""}
+                        ${item.review_rating ? `<button class="secondary-btn" disabled>${tr("Оцінка", "Rating")}: ${Number(item.review_rating)}/5</button>` : ""}
                     </div>
                 </div>
             </div>
         `).join("");
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка завантаження", "Loading error"))}</div>`;
     }
 }
 
@@ -1324,15 +1374,15 @@ const MODAL_BACKDROP_GUARD_MS = 400;
 
 async function cancelPurchaseRequest(orderId) {
     if (!currentUser || isLoading) return;
-    if (!confirm("Скасувати цей запит на покупку?")) return;
+    if (!confirm(tr("Скасувати цей запит на покупку?", "Cancel this purchase request?"))) return;
     try {
         setLoading(true);
         await safeFetch(`${API_BASE}/orders/${orderId}/cancel?buyer_id=${currentUser.id}`, { method: "DELETE" });
-        showAlert("Запит скасовано");
+        showAlert(tr("Запит скасовано", "Request cancelled"));
         await loadPurchaseHistory();
         await loadStats();
     } catch (error) {
-        showAlert(error.message || "Не вдалося скасувати запит");
+        showAlert(error.message || tr("Не вдалося скасувати запит", "Failed to cancel request"));
     } finally {
         setLoading(false);
     }
@@ -1384,12 +1434,12 @@ async function submitReview() {
             })
         });
         closeReviewModal();
-        showAlert("Відгук збережено");
+        showAlert(tr("Відгук збережено", "Review saved"));
         await refreshCurrentUserFromApi();
         fillProfile();
         await loadPurchaseHistory();
     } catch (error) {
-        showAlert(error.message || "Не вдалося залишити відгук");
+        showAlert(error.message || tr("Не вдалося залишити відгук", "Failed to leave review"));
     } finally {
         setLoading(false);
     }
@@ -1561,20 +1611,20 @@ function updateProductFileLabel(files = []) {
 
     if (status) {
         status.textContent = list.length
-            ? `Обрано фото: ${list.length}/10. Перше фото буде обкладинкою.`
-            : "Фото не вибрано. Можна додати до 10 фото.";
+            ? tr(`Обрано фото: ${list.length}/10. Перше фото буде обкладинкою.`, `Selected photos: ${list.length}/10. The first photo will be the cover.`)
+            : tr("Фото не вибрано. Можна додати до 10 фото.", "No photos selected. You can add up to 10 photos.");
     }
 
     if (title) {
         title.textContent = list.length
-            ? `Додано фото: ${list.length}/10`
-            : "Додати фото товару";
+            ? tr(`Додано фото: ${list.length}/10`, `Added photos: ${list.length}/10`)
+            : tr("Додати фото товару", "Add product photos");
     }
 
     if (subtitle) {
         subtitle.textContent = list.length
-            ? "Можна додавати фото по одному або кілька одразу. Перше фото стане головним у каталозі."
-            : "До 10 фото. Можна додавати по одному. Перше фото буде головним у каталозі.";
+            ? tr("Можна додавати фото по одному або кілька одразу. Перше фото стане головним у каталозі.", "You can add photos one by one or several at once. The first photo will be the main one in the catalog.")
+            : tr("До 10 фото. Можна додавати по одному. Перше фото буде головним у каталозі.", "Up to 10 photos. You can add them one by one. The first photo will be the cover image in the catalog.");
     }
 
     if (!list.length) {
@@ -1600,7 +1650,7 @@ function renderSelectedProductFiles() {
         return `
             <div class="preview-item ${index === 0 ? 'preview-item-cover' : ''}">
                 <img class="preview-thumb" src="${objectUrl}" alt="preview-${index}">
-                ${index === 0 ? '<div class="preview-cover-badge">Обкладинка</div>' : ''}
+                ${index === 0 ? `<div class="preview-cover-badge">${tr('Обкладинка', 'Cover')}</div>` : ''}
                 <button type="button" class="preview-remove-btn" onclick="removeProductPhoto(${index})">×</button>
             </div>
         `;
@@ -1664,7 +1714,7 @@ function renderPreviewUrls(urls = []) {
     grid.innerHTML = urls.map((url, index) => `
         <div class="preview-item ${index === 0 ? 'preview-item-cover' : ''}">
             <img class="preview-thumb" src="${escapeHtml(url)}" alt="preview-${index}">
-            ${index === 0 ? '<div class="preview-cover-badge">Обкладинка</div>' : ''}
+            ${index === 0 ? `<div class="preview-cover-badge">${tr('Обкладинка', 'Cover')}</div>` : ''}
         </div>
     `).join("");
 }
@@ -1698,7 +1748,7 @@ async function startEditProduct(productId) {
         if ($("product-files")) $("product-files").value = "";
         renderPreviewUrls(editingExistingImages);
         updateProductFileLabel([]);
-        if ($("image-status")) $("image-status").textContent = editingExistingImages.length ? `Зараз фото: ${editingExistingImages.length}` : "Фото не вибрано";
+        if ($("image-status")) $("image-status").textContent = editingExistingImages.length ? tr(`Зараз фото: ${editingExistingImages.length}`, `Current photos: ${editingExistingImages.length}`) : tr("Фото не вибрано", "No photo selected");
         switchTab("create");
         window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
@@ -1750,15 +1800,15 @@ function handleImagePreview(event) {
 
 async function uploadImageToCloudinary(file) {
     if (!file) {
-        throw new Error("Файл не вибрано");
+        throw new Error(tr("Файл не вибрано", "No file selected"));
     }
 
     if (!CLOUDINARY_CLOUD_NAME) {
-        throw new Error("Не налаштовано CLOUDINARY_CLOUD_NAME");
+        throw new Error(tr("Не налаштовано CLOUDINARY_CLOUD_NAME", "CLOUDINARY_CLOUD_NAME is not configured"));
     }
 
     if (!CLOUDINARY_UPLOAD_PRESET) {
-        throw new Error("Не налаштовано CLOUDINARY_UPLOAD_PRESET");
+        throw new Error(tr("Не налаштовано CLOUDINARY_UPLOAD_PRESET", "CLOUDINARY_UPLOAD_PRESET is not configured"));
     }
 
     const formData = new FormData();
@@ -1778,7 +1828,7 @@ async function uploadImageToCloudinary(file) {
         );
     } catch (error) {
         console.error("Cloudinary network error:", error);
-        throw new Error("Не вдалося підключитися до Cloudinary");
+        throw new Error(tr("Не вдалося підключитися до Cloudinary", "Failed to connect to Cloudinary"));
     }
 
     let data = null;
@@ -1787,7 +1837,7 @@ async function uploadImageToCloudinary(file) {
         data = await response.json();
     } catch (error) {
         console.error("Cloudinary JSON parse error:", error);
-        throw new Error("Cloudinary повернув некоректну відповідь");
+        throw new Error(tr("Cloudinary повернув некоректну відповідь", "Cloudinary returned an invalid response"));
     }
 
     if (!response.ok) {
@@ -1797,7 +1847,7 @@ async function uploadImageToCloudinary(file) {
 
     if (!data?.secure_url) {
         console.error("Cloudinary missing secure_url:", data);
-        throw new Error("Cloudinary не повернув URL зображення");
+        throw new Error(tr("Cloudinary не повернув URL зображення", "Cloudinary did not return an image URL"));
     }
 
     return data.secure_url;
@@ -1823,7 +1873,7 @@ async function safeFetch(url, options = {}) {
         });
     } catch (error) {
         console.error("Network error:", error);
-        throw new Error("Не вдалося підключитися до API");
+        throw new Error(tr("Не вдалося підключитися до API", "Failed to connect to API"));
     }
 
     const rawText = await response.text();
@@ -2029,8 +2079,8 @@ async function loginWithTelegram() {
     if (!canTryAuth) {
         if (hasTelegramShell) refreshTelegramLoginUi(true);
         showAlert(hasTelegramShell
-            ? "Telegram-вхід недоступний у поточному запуску Mini App. Залишив звичайний вхід, а кнопку Telegram тимчасово сховав."
-            : "Відкрийте застосунок саме через кнопку бота в Telegram Mini App");
+            ? tr("Telegram-вхід недоступний у поточному запуску Mini App. Залишив звичайний вхід, а кнопку Telegram тимчасово сховав.", "Telegram sign-in is unavailable in this Mini App launch. Regular sign-in is still available, and the Telegram button has been hidden temporarily.")
+            : tr("Відкрийте застосунок саме через кнопку бота в Telegram Mini App", "Open the app using the bot button inside Telegram Mini App"));
         return;
     }
 
@@ -2233,7 +2283,7 @@ async function restoreArchivedProduct(productId) {
         await loadProducts();
         await loadStats();
     } catch (error) {
-        showAlert(error.message || 'Не вдалося повернути оголошення');
+        showAlert(error.message || tr('Не вдалося повернути оголошення', 'Failed to return listing'));
     }
 }
 
@@ -2567,21 +2617,21 @@ async function loadMyProducts() {
                                 <p class="card-price compact-price">${formatPrice(item.offered_price, item.currency)}</p>
                             </div>
                             <div class="compact-meta-row request-pill-row">
-                                <span class="status-pill pending request-status-pill">Очікує відповіді</span>
+                                <span class="status-pill pending request-status-pill">${tr("Очікує відповіді", "Waiting for response")}</span>
                             </div>
                             <div class="request-meta compact-request-meta">
-                                <div>Покупець: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
-                                ${item.buyer_full_name ? `<div>Ім'я: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
-                                <div>Дата: ${formatDate(item.created_at) || '—'}</div>
+                                <div>${tr("Покупець", "Buyer")}: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
+                                ${item.buyer_full_name ? `<div>${tr("Ім'я", "Name")}: ${escapeHtml(item.buyer_full_name)}</div>` : ""}
+                                <div>${tr("Дата", "Date")}: ${formatDate(item.created_at) || '—'}</div>
                             </div>
                             <div class="card-actions request-actions-grid">
-                                ${item.buyer_id ? `<button type="button" class="seller-link-btn request-profile-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${Number(item.buyer_id)})">Профіль покупця</button>` : ""}
-                                <button type="button" class="approve-btn request-approve-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, true)">Підтвердити</button>
-                                <button type="button" class="reject-btn request-reject-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, false)">Відхилити</button>
+                                ${item.buyer_id ? `<button type="button" class="seller-link-btn request-profile-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${Number(item.buyer_id)})">${tr("Профіль покупця", "Buyer profile")}</button>` : ""}
+                                <button type="button" class="approve-btn request-approve-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, true)">${tr("Підтвердити", "Approve")}</button>
+                                <button type="button" class="reject-btn request-reject-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, false)">${tr("Відхилити", "Reject")}</button>
                             </div>
                         </div>
                     </div>
-                `).join("") : `<div class="empty-card">Нових запитів поки немає</div>`;
+                `).join("") : `<div class="empty-card">${escapeHtml(tr("Нових запитів поки немає", "No new requests yet"))}</div>`;
             }
             list.innerHTML = filteredPurchases.length ? filteredPurchases.map(item => `
                 <div class="card history-card compact-history-card">
@@ -2591,12 +2641,12 @@ async function loadMyProducts() {
                         <h3 class="card-title">${escapeHtml(item.product_title || 'Товар')}</h3>
                         <p class="card-price">${formatPrice(item.offered_price, item.currency)}</p>
                         <div class="history-meta">
-                            ${item.seller_username ? `<div>Продавець: @${escapeHtml(item.seller_username)}</div>` : ``}
-                            <div>Дата: ${formatDate(item.created_at) || '—'}</div>
+                            ${item.seller_username ? `<div>${tr("Продавець", "Seller")}: @${escapeHtml(item.seller_username)}</div>` : ``}
+                            <div>${tr("Дата", "Date")}: ${formatDate(item.created_at) || '—'}</div>
                         </div>
                     </div>
                 </div>
-            `).join("") : `<div class="empty-card">Ваші покупки поки порожні</div>`;
+            `).join("") : `<div class="empty-card">${escapeHtml(tr("Ваші покупки поки порожні", "Your purchases are empty"))}</div>`;
             return;
         }
         let url = `${API_BASE}/users/${currentUser.id}/products`;
@@ -2614,7 +2664,7 @@ async function loadMyProducts() {
         }
         list.innerHTML = filteredProducts.map(product => renderMyProductCard(product, myProductsView)).join("");
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка завантаження", "Loading error"))}</div>`;
     }
 }
 
@@ -2630,7 +2680,7 @@ async function handlePurchaseRequest(orderId, approve) {
             method: "POST",
             body: JSON.stringify({ seller_id: currentUser.id, approve })
         });
-        showAlert(approve ? "Покупку підтверджено" : "Запит відхилено");
+        showAlert(approve ? tr("Покупку підтверджено", "Purchase approved") : tr("Запит відхилено", "Request rejected"));
         closeProductModal();
         await loadPurchaseRequests();
         await loadMyProducts();
@@ -2638,7 +2688,7 @@ async function handlePurchaseRequest(orderId, approve) {
         await loadCart();
         await loadStats();
     } catch (error) {
-        showAlert(error.message || "Не вдалося обробити запит");
+        showAlert(error.message || tr("Не вдалося обробити запит", "Failed to process request"));
     } finally {
         setLoading(false);
     }
@@ -2647,7 +2697,7 @@ async function handlePurchaseRequest(orderId, approve) {
 async function deleteProduct(productId) {
     if (!currentUser || isLoading) return;
 
-    if (!confirm("Перенести оголошення в архів?")) return;
+    if (!confirm(tr("Перенести оголошення в архів?", "Move listing to archive?"))) return;
 
     try {
         setLoading(true);
@@ -2656,13 +2706,13 @@ async function deleteProduct(productId) {
             method: "DELETE"
         });
 
-        showAlert("Оголошення перенесено в архів");
+        showAlert(tr("Оголошення перенесено в архів", "Listing moved to archive"));
         loadMyProducts();
         loadProducts();
         loadCart();
         loadStats();
     } catch (error) {
-        showAlert(error.message || "Не вдалося видалити оголошення");
+        showAlert(error.message || tr("Не вдалося видалити оголошення", "Failed to archive listing"));
     } finally {
         setLoading(false);
     }
@@ -2682,11 +2732,11 @@ async function addToCart(productId) {
             })
         });
 
-        showAlert("Товар додано до кошика");
+        showAlert(tr("Товар додано до кошика", "Item added to cart"));
         loadCart();
         loadStats();
     } catch (error) {
-        showAlert(error.message || "Не вдалося додати товар");
+        showAlert(error.message || tr("Не вдалося додати товар", "Failed to add item"));
     } finally {
         setLoading(false);
     }
@@ -2705,7 +2755,7 @@ async function removeFromCart(cartItemId) {
         loadCart();
         loadStats();
     } catch (error) {
-        showAlert(error.message || "Не вдалося видалити товар з кошика");
+        showAlert(error.message || tr("Не вдалося видалити товар з кошика", "Failed to remove item from cart"));
     } finally {
         setLoading(false);
     }
@@ -2717,13 +2767,13 @@ async function loadCart() {
     const buyAllBtn = $("buy-all-btn");
     if (!cartList || !cartTotal || !currentUser) return;
 
-    cartList.innerHTML = `<div class="empty-card">Завантаження...</div>`;
+    cartList.innerHTML = `<div class="empty-card">${escapeHtml(t("loading"))}</div>`;
 
     try {
         const data = await safeFetch(`${API_BASE}/cart/${currentUser.id}`);
 
         if (!data?.items?.length) {
-            cartList.innerHTML = `<div class="empty-card">Кошик порожній</div>`;
+            cartList.innerHTML = `<div class="empty-card">${escapeHtml(tr("Кошик порожній", "Cart is empty"))}</div>`;
             cartTotal.textContent = renderCartTotals({});
             if (buyAllBtn) buyAllBtn.disabled = true;
             return;
@@ -2734,23 +2784,23 @@ async function loadCart() {
 
         cartList.innerHTML = data.items.map(item => `
             <div class="compact-card cart-compact-card">
-                <div class="compact-image-wrap">${isValidUrl(item.image_url) ? `<img class="card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : `<div class="card-image card-image-placeholder">Без фото</div>`}</div>
+                <div class="compact-image-wrap">${isValidUrl(item.image_url) ? `<img class="card-image" src="${escapeHtml(item.image_url)}" alt="${escapeHtml(item.title)}">` : `<div class="card-image card-image-placeholder">${tr("Без фото", "No photo")}</div>`}</div>
                 <div class="compact-info">
                     <div class="compact-top-row">
                         <h3 class="compact-title">${escapeHtml(item.title)}</h3>
                         <div class="compact-price">${formatPrice(item.price, item.currency)}</div>
                     </div>
-                    ${item.seller_username ? `<div class="compact-desc cart-seller-line">Продавець: @${escapeHtml(item.seller_username)}</div>` : ""}
+                    ${item.seller_username ? `<div class="compact-desc cart-seller-line">${tr("Продавець", "Seller")}: @${escapeHtml(item.seller_username)}</div>` : ""}
                     <div class="card-actions compact-actions cart-card-actions">
-                        <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">Купити</button>
-                        ${item.seller_username ? `<button class="message-btn" onclick="contactSeller('${escapeHtml(item.seller_username)}')">Написати</button>` : ""}
-                        <button class="remove-btn" onclick="removeFromCart(${Number(item.cart_item_id)})">Видалити</button>
+                        <button class="buy-btn" onclick="buyProduct(${Number(item.product_id)})">${tr("Купити", "Buy")}</button>
+                        ${item.seller_username ? `<button class="message-btn" onclick="contactSeller('${escapeHtml(item.seller_username)}')">${tr("Написати", "Message")}</button>` : ""}
+                        <button class="remove-btn" onclick="removeFromCart(${Number(item.cart_item_id)})">${tr("Видалити", "Delete")}</button>
                     </div>
                 </div>
             </div>
         `).join("");
     } catch (error) {
-        cartList.innerHTML = `<div class="empty-card">${escapeHtml(error.message || "Помилка завантаження")}</div>`;
+        cartList.innerHTML = `<div class="empty-card">${escapeHtml(translateMessage(error.message || tr("Помилка завантаження", "Loading error")))}</div>`;
         if (buyAllBtn) buyAllBtn.disabled = true;
     }
 }
@@ -2758,19 +2808,19 @@ async function loadCart() {
 
 async function buyAllFromCart() {
     if (!currentUser || isLoading) return;
-    if (!confirm("Надіслати запит на покупку для всіх товарів у кошику?")) return;
+    if (!confirm(tr("Надіслати запит на покупку для всіх товарів у кошику?", "Send purchase requests for all items in the cart?"))) return;
 
     try {
         setLoading(true);
         const data = await safeFetch(`${API_BASE}/orders/buy-all?user_id=${currentUser.id}`, { method: "POST" });
-        showAlert(`Готово. Запитів створено: ${data?.created ?? 0}`);
+        showAlert(currentLanguage === "en" ? `Done. Requests created: ${data?.created ?? 0}` : `Готово. Запитів створено: ${data?.created ?? 0}`);
         closeProductModal();
         await loadCart();
         await loadProducts();
         await loadMyProducts();
         await loadStats();
     } catch (error) {
-        showAlert(error.message || "Не вдалося купити всі товари");
+        showAlert(error.message || tr("Не вдалося купити всі товари", "Failed to buy all items"));
     } finally {
         setLoading(false);
     }
@@ -2792,14 +2842,14 @@ async function buyProduct(productId) {
 
         closeProductModal();
 
-        showAlert(`Покупку оформлено\n${data?.seller_username ? `@${data.seller_username}` : ""}\n${data?.seller_link || ""}`);
+        showAlert(`${tr("Покупку оформлено", "Purchase request sent")}\n${data?.seller_username ? `@${data.seller_username}` : ""}\n${data?.seller_link || ""}`);
 
         loadCart();
         loadProducts();
         loadMyProducts();
         loadStats();
     } catch (error) {
-        showAlert(error.message || "Помилка покупки");
+        showAlert(error.message || tr("Помилка покупки", "Purchase error"));
     } finally {
         setLoading(false);
     }
@@ -2838,7 +2888,7 @@ async function toggleFavorite(productId, isFavoriteNow) {
             await openProductModal(productId);
         }
     } catch (error) {
-        showAlert(error.message || "Помилка роботи з обраним");
+        showAlert(error.message || tr("Помилка роботи з обраним", "Favorites error"));
     } finally {
         setLoading(false);
     }
@@ -2957,7 +3007,7 @@ async function adminBanUser(userId) {
         await safeFetch(`${API_BASE}/admin/users/${userId}/ban?current_admin_id=${currentUser.id}`, { method: "POST" });
         await loadAdminSummary();
         await loadAdminUsers();
-    } catch (error) { showAlert(error.message || "Помилка"); }
+    } catch (error) { showAlert(error.message || tr("Помилка", "Error")); }
     finally { setLoading(false); }
 }
 
@@ -2968,7 +3018,7 @@ async function adminUnbanUser(userId) {
         await safeFetch(`${API_BASE}/admin/users/${userId}/unban?current_admin_id=${currentUser.id}`, { method: "POST" });
         await loadAdminSummary();
         await loadAdminUsers();
-    } catch (error) { showAlert(error.message || "Помилка"); }
+    } catch (error) { showAlert(error.message || tr("Помилка", "Error")); }
     finally { setLoading(false); }
 }
 
@@ -2979,7 +3029,7 @@ async function adminMakeAdmin(userId) {
         await safeFetch(`${API_BASE}/admin/users/${userId}/make-admin?current_admin_id=${currentUser.id}`, { method: "POST" });
         await loadAdminSummary();
         await loadAdminUsers();
-    } catch (error) { showAlert(error.message || "Помилка"); }
+    } catch (error) { showAlert(error.message || tr("Помилка", "Error")); }
     finally { setLoading(false); }
 }
 
@@ -2990,7 +3040,7 @@ async function adminRemoveAdmin(userId) {
         await safeFetch(`${API_BASE}/admin/users/${userId}/remove-admin?current_admin_id=${currentUser.id}`, { method: "POST" });
         await loadAdminSummary();
         await loadAdminUsers();
-    } catch (error) { showAlert(error.message || "Помилка"); }
+    } catch (error) { showAlert(error.message || tr("Помилка", "Error")); }
     finally { setLoading(false); }
 }
 
@@ -3060,7 +3110,7 @@ async function loadAdminProducts() {
                     </div>` : ``}
                 </div>
             </div>`;
-        }).join("") : `<div class="empty-card">Нічого не знайдено</div>`;
+        }).join("") : `<div class="empty-card">${escapeHtml(tr("Нічого не знайдено", "Nothing found"))}</div>`;
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
@@ -3074,7 +3124,7 @@ async function adminArchiveProduct(productId) {
         await loadAdminSummary();
         await loadAdminProducts();
         await loadProducts();
-    } catch (error) { showAlert(error.message || "Помилка"); }
+    } catch (error) { showAlert(error.message || tr("Помилка", "Error")); }
     finally { setLoading(false); }
 }
 
@@ -3102,7 +3152,7 @@ async function adminDeleteProduct(productId) {
         await loadAdminSummary();
         await loadAdminProducts();
         await loadProducts();
-    } catch (error) { showAlert(error.message || "Помилка"); }
+    } catch (error) { showAlert(error.message || tr("Помилка", "Error")); }
     finally { setLoading(false); }
 }
 
@@ -3121,7 +3171,7 @@ async function submitIdea() {
     const title = $("idea-title")?.value.trim() || "";
     const message = $("idea-message")?.value.trim() || "";
     if (!title || !message) {
-        showAlert("Заповни назву та опис ідеї");
+        showAlert(tr("Заповни назву та опис ідеї", "Fill in the idea title and description"));
         return;
     }
     try {
@@ -3132,10 +3182,10 @@ async function submitIdea() {
         });
         $("idea-title").value = "";
         $("idea-message").value = "";
-        showAlert("Ідею надіслано");
+        showAlert(tr("Ідею надіслано", "Idea sent"));
         if (currentUser.is_admin) await loadAdminSummary();
     } catch (error) {
-        showAlert(error.message || "Не вдалося надіслати ідею");
+        showAlert(error.message || tr("Не вдалося надіслати ідею", "Failed to send idea"));
     } finally {
         setLoading(false);
     }
@@ -3225,7 +3275,7 @@ async function loadAdminIdeas() {
     try {
         const items = await safeFetch(`${API_BASE}/admin/suggestions?current_admin_id=${currentUser.id}`);
         if (!Array.isArray(items) || !items.length) {
-            list.innerHTML = `<div class="empty-card">Ідей поки немає</div>`;
+            list.innerHTML = `<div class="empty-card">${escapeHtml(tr("Ідей поки немає", "No ideas yet"))}</div>`;
             return;
         }
         list.innerHTML = items.map(item => `
@@ -3234,14 +3284,14 @@ async function loadAdminIdeas() {
                     <div class="status-pill ${escapeHtml(item.status)}">${ideaStatusLabel(item.status)}</div>
                     <h3 class="card-title">${escapeHtml(item.title)}</h3>
                     <div class="history-meta">
-                        <div>Від: @${escapeHtml(item.username || "user")}</div>
-                        <div>Дата: ${formatDate(item.created_at)}</div>
+                        <div>${tr("Від", "From")}: @${escapeHtml(item.username || "user")}</div>
+                        <div>${tr("Дата", "Date")}: ${formatDate(item.created_at)}</div>
                     </div>
                     <p class="card-description">${escapeHtml(item.message || "")}</p>
                     <div class="card-actions compact-actions">
-                        ${item.status !== "review" && item.status !== "done" ? `<button class="secondary-btn" onclick="updateSuggestionStatus(${Number(item.id)}, 'review')">На розгляді</button>` : ""}
-                        ${item.status !== "done" ? `<button class="approve-btn" onclick="updateSuggestionStatus(${Number(item.id)}, 'done')">Виконано</button>` : `<button class="approve-btn" disabled>Виконано</button>`}
-                        ${item.status !== "new" && item.status !== "done" ? `<button class="ghost-warning-btn" onclick="updateSuggestionStatus(${Number(item.id)}, 'new')">Повернути в нові</button>` : ""}
+                        ${item.status !== "review" && item.status !== "done" ? `<button class="secondary-btn" onclick="updateSuggestionStatus(${Number(item.id)}, 'review')">${tr("На розгляді", "In review")}</button>` : ""}
+                        ${item.status !== "done" ? `<button class="approve-btn" onclick="updateSuggestionStatus(${Number(item.id)}, 'done')">${tr("Виконано", "Done")}</button>` : `<button class="approve-btn" disabled>${tr("Виконано", "Done")}</button>`}
+                        ${item.status !== "new" && item.status !== "done" ? `<button class="ghost-warning-btn" onclick="updateSuggestionStatus(${Number(item.id)}, 'new')">${tr("Повернути в нові", "Return to new")}</button>` : ""}
                     </div>
                 </div>
             </div>
@@ -3262,7 +3312,7 @@ async function updateSuggestionStatus(id, status) {
         await loadAdminSummary();
         await loadAdminIdeas();
     } catch (error) {
-        showAlert(error.message || "Не вдалося оновити статус ідеї");
+        showAlert(error.message || tr("Не вдалося оновити статус ідеї", "Failed to update idea status"));
     } finally {
         setLoading(false);
     }
@@ -3275,24 +3325,24 @@ async function loadAdminReports() {
     try {
         const items = await safeFetch(`${API_BASE}/admin/reports?current_admin_id=${currentUser.id}`);
         if (!Array.isArray(items) || !items.length) {
-            list.innerHTML = `<div class="empty-card">Скарг поки немає</div>`;
+            list.innerHTML = `<div class="empty-card">${escapeHtml(tr("Скарг поки немає", "No reports yet"))}</div>`;
             return;
         }
         list.innerHTML = items.map(item => `
             <div class="card admin-idea-card">
                 <div class="card-body">
                     <div class="status-pill ${escapeHtml(item.status)}">${ideaStatusLabel(item.status)}</div>
-                    <h3 class="card-title">${escapeHtml(item.listing_title || 'Оголошення')}</h3>
+                    <h3 class="card-title">${escapeHtml(item.listing_title || tr('Оголошення', 'Listing'))}</h3>
                     <div class="history-meta">
-                        <div>Від: @${escapeHtml(item.reporter_username || "user")}</div>
-                        <div>Дата: ${formatDate(item.created_at)}</div>
-                        <div>Причина: ${escapeHtml(item.reason || "")}</div>
+                        <div>${tr("Від", "From")}: @${escapeHtml(item.reporter_username || "user")}</div>
+                        <div>${tr("Дата", "Date")}: ${formatDate(item.created_at)}</div>
+                        <div>${tr("Причина", "Reason")}: ${escapeHtml(tv(item.reason || ""))}</div>
                     </div>
                     ${item.comment ? `<p class="card-description">${escapeHtml(item.comment)}</p>` : ""}
                     <div class="card-actions compact-actions">
-                        ${item.status !== "review" && item.status !== "done" ? `<button class="secondary-btn" onclick="updateReportStatus(${Number(item.id)}, 'review')">На розгляді</button>` : ""}
-                        ${item.status !== "done" ? `<button class="approve-btn" onclick="updateReportStatus(${Number(item.id)}, 'done')">Виконано</button>` : `<button class="approve-btn" disabled>Виконано</button>`}
-                        ${item.status !== "new" && item.status !== "done" ? `<button class="ghost-warning-btn" onclick="updateReportStatus(${Number(item.id)}, 'new')">Повернути в нові</button>` : ""}
+                        ${item.status !== "review" && item.status !== "done" ? `<button class="secondary-btn" onclick="updateReportStatus(${Number(item.id)}, 'review')">${tr("На розгляді", "In review")}</button>` : ""}
+                        ${item.status !== "done" ? `<button class="approve-btn" onclick="updateReportStatus(${Number(item.id)}, 'done')">${tr("Виконано", "Done")}</button>` : `<button class="approve-btn" disabled>${tr("Виконано", "Done")}</button>`}
+                        ${item.status !== "new" && item.status !== "done" ? `<button class="ghost-warning-btn" onclick="updateReportStatus(${Number(item.id)}, 'new')">${tr("Повернути в нові", "Return to new")}</button>` : ""}
                     </div>
                 </div>
             </div>
@@ -3313,7 +3363,7 @@ async function updateReportStatus(id, status) {
         await loadAdminSummary();
         await loadAdminReports();
     } catch (error) {
-        showAlert(error.message || "Не вдалося оновити статус скарги");
+        showAlert(error.message || tr("Не вдалося оновити статус скарги", "Failed to update report status"));
     } finally {
         setLoading(false);
     }
@@ -3330,7 +3380,7 @@ async function loadAdminLogs() {
             <div class="card"><div class="card-body">
                 <div class="status-pill approved">@${escapeHtml(item.admin_username || "admin")}</div>
                 <div class="request-meta"><div>${escapeHtml(item.action || "")}</div><div>${formatDate(item.created_at)}</div></div>
-            </div></div>`).join("") : `<div class="empty-card">Логи порожні</div>`;
+            </div></div>`).join("") : `<div class="empty-card">${escapeHtml(tr("Логи порожні", "Logs are empty"))}</div>`;
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
@@ -3339,14 +3389,14 @@ async function loadAdminLogs() {
 async function searchSeller() {
     const value = $("seller-search-input")?.value?.trim() || "";
     if (!value) {
-        showAlert("Введіть username продавця");
+        showAlert(tr("Введіть username продавця", "Enter seller username"));
         return;
     }
     try {
         const data = await safeFetch(`${API_BASE}/users/search?username=${encodeURIComponent(value)}`);
         await openUserProfile(Number(data.id));
     } catch (error) {
-        showAlert(error.message || "Продавця не знайдено");
+        showAlert(error.message || tr("Продавця не знайдено", "Seller not found"));
     }
 }
 
@@ -3381,8 +3431,8 @@ async function loadNotifications(markAsRead = false) {
         const items = Array.isArray(data.items) ? data.items : [];
         list.innerHTML = items.length ? items.map(item => {
             const actionBtn = item.related_product_id
-                ? `<button class="secondary-btn section-btn" onclick="openProductModal(${Number(item.related_product_id)})">Відкрити товар</button>`
-                : `<button class="secondary-btn section-btn" onclick="switchTab('catalog')">До каталогу</button>`;
+                ? `<button class="secondary-btn section-btn" onclick="openProductModal(${Number(item.related_product_id)})">${tr("Відкрити товар", "Open listing")}</button>`
+                : `<button class="secondary-btn section-btn" onclick="switchTab('catalog')">${tr("До каталогу", "To catalog")}</button>`;
             return `
                 <div class="card notification-card ${item.is_read ? 'is-read' : 'is-unread'}">
                     <div class="card-body">
@@ -3390,8 +3440,8 @@ async function loadNotifications(markAsRead = false) {
                             <div class="notification-icon">${item.type === 'order' ? '📦' : '🔔'}</div>
                             <div class="notification-meta">
                                 <div class="notification-title-row">
-                                    <h3 class="card-title">${escapeHtml(item.title || 'Повідомлення')}</h3>
-                                    <span class="status-pill ${item.is_read ? 'approved' : 'pending'}">${item.is_read ? 'Прочитано' : 'Нове'}</span>
+                                    <h3 class="card-title">${escapeHtml(item.title || tr('Повідомлення', 'Notification'))}</h3>
+                                    <span class="status-pill ${item.is_read ? 'approved' : 'pending'}">${item.is_read ? tr('Прочитано', 'Read') : tr('Нове', 'New')}</span>
                                 </div>
                                 <div class="notification-date">${formatDate(item.created_at) || '—'}</div>
                             </div>
@@ -3401,13 +3451,13 @@ async function loadNotifications(markAsRead = false) {
                     </div>
                 </div>
             `;
-        }).join("") : `<div class="empty-card">Повідомлень поки немає</div>`;
+        }).join("") : `<div class="empty-card">${escapeHtml(tr("Повідомлень поки немає", "No notifications yet"))}</div>`;
         if (markAsRead && (data.unread_count || 0) > 0) {
             await safeFetch(`${API_BASE}/users/${currentUser.id}/notifications/read-all`, { method: 'POST' });
             updateNotificationsBadge(0);
         }
     } catch (error) {
-        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || 'Не вдалося завантажити повідомлення')}</div>`;
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr('Не вдалося завантажити повідомлення', 'Failed to load notifications'))}</div>`;
     }
 }
 
@@ -3702,7 +3752,7 @@ function handleProductModalDelegatedClick(event) {
             return;
         }
         if (action === 'own-product-info') {
-            showAlert('Це ваше оголошення');
+            showAlert(tr('Це ваше оголошення', 'This is your listing'));
             return;
         }
         if (action === 'contact-seller') {
