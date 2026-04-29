@@ -2218,7 +2218,7 @@ function renderMyProductCard(product, view) {
                     ${view === "archived" ? `<span class="muted-meta">${tr('Статус', 'Status')}: ${tr('Архів', 'Archive')}</span>` : ""}
                 </div>
                 <div class="card-actions compact-actions">${actionButton}</div>
-                ${buyerProfileBtn ? `<div class="card-actions compact-actions compact-actions-grid">${buyerProfileBtn}</div>` : ""}
+                ${buyerProfileBtn ? `<div class="card-actions compact-actions compact-actions-grid buyer-profile-actions">${buyerProfileBtn}</div>` : ""}
             </div>
         </div>
     `;
