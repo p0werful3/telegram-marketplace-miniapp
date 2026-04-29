@@ -364,12 +364,16 @@
                                 <label>Ім'я</label>
                                 <input id="profile-edit-fullname" type="text" placeholder="Ваше ім'я">
                             </div>
-                            <div class="profile-edit-field profile-edit-field-full">
+                            <div class="profile-edit-field profile-edit-field-full profile-avatar-upload-field">
                                 <label>Аватарка</label>
-                                <label for="profile-avatar-file" class="file-picker-card">
+                                <label for="profile-avatar-file" class="file-picker-card avatar-picker-card">
                                     <input id="profile-avatar-file" type="file" accept="image/*" onchange="updateAvatarFileLabel(event)">
-                                    <span class="file-picker-btn">Вибрати фото</span>
-                                    <span id="profile-avatar-file-name" class="file-picker-name">Файл не вибрано</span>
+                                    <span id="profile-avatar-preview" class="avatar-picker-preview">U</span>
+                                    <span class="avatar-picker-info">
+                                        <span class="file-picker-btn">Змінити фото</span>
+                                        <span id="profile-avatar-file-name" class="file-picker-name">Файл не вибрано</span>
+                                        <span class="file-picker-hint">PNG або JPG. Можна перетягнути фото сюди.</span>
+                                    </span>
                                 </label>
                             </div>
                             <div class="profile-edit-field profile-edit-field-full">
