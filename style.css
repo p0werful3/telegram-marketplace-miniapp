@@ -6739,3 +6739,74 @@ input::placeholder,textarea::placeholder{color:#7f97bd !important;}
     border-radius:11px !important;
   }
 }
+
+
+/* Profile avatar upload fix */
+#profile-edit-wrap .profile-avatar-upload-field > label:not(.file-picker-card){
+  display:block !important;
+}
+#profile-edit-wrap .avatar-picker-card{
+  min-height:72px !important;
+  padding:10px 12px !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:12px !important;
+  border-radius:16px !important;
+  border:1px solid rgba(130,170,240,.22) !important;
+  background:linear-gradient(180deg, rgba(18,34,64,.96), rgba(9,19,36,.96)) !important;
+  transition:border-color .18s ease, transform .18s ease, background .18s ease !important;
+}
+#profile-edit-wrap .avatar-picker-card.drag-over{
+  border-color:rgba(105,150,255,.75) !important;
+  background:linear-gradient(180deg, rgba(31,58,107,.98), rgba(13,28,53,.98)) !important;
+  transform:translateY(-1px) !important;
+}
+#profile-edit-wrap .avatar-picker-preview{
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
+  border-radius:16px !important;
+  overflow:hidden !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:linear-gradient(135deg,#315b9d,#142b50) !important;
+  color:#fff !important;
+  font-weight:800 !important;
+  font-size:20px !important;
+  box-shadow:0 8px 20px rgba(0,0,0,.22) !important;
+}
+#profile-edit-wrap .avatar-picker-preview img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  display:block !important;
+}
+#profile-edit-wrap .avatar-picker-info{
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:4px !important;
+}
+#profile-edit-wrap .avatar-picker-card .file-picker-btn{
+  width:max-content !important;
+  min-height:30px !important;
+  padding:6px 11px !important;
+  border-radius:10px !important;
+  font-size:12px !important;
+  background:linear-gradient(180deg, rgba(70,121,220,.98), rgba(40,82,160,.98)) !important;
+  border:1px solid rgba(170,200,255,.18) !important;
+}
+#profile-edit-wrap .avatar-picker-card .file-picker-name{
+  font-size:12px !important;
+  color:#d8e6ff !important;
+  max-width:100% !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+#profile-edit-wrap .avatar-picker-card .file-picker-hint{
+  font-size:11px !important;
+  line-height:1.25 !important;
+  color:#8fa8d0 !important;
+}
