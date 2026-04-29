@@ -6810,3 +6810,18 @@ input::placeholder,textarea::placeholder{color:#7f97bd !important;}
   line-height:1.25 !important;
   color:#8fa8d0 !important;
 }
+
+/* Reset filters button */
+.reset-filters-btn{
+    grid-column:1 / -1;
+    width:100%;
+    min-height:44px;
+    border-radius:14px;
+    border:1px solid rgba(96,139,255,.35);
+    background:linear-gradient(180deg, rgba(38,73,132,.96), rgba(22,48,92,.96)) !important;
+    color:#f4f7ff;
+    font-weight:800;
+}
+.reset-filters-btn:active{
+    transform:scale(.99);
+}
