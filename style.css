@@ -6825,3 +6825,14 @@ input::placeholder,textarea::placeholder{color:#7f97bd !important;}
 .reset-filters-btn:active{
     transform:scale(.99);
 }
+
+
+/* ===== v444 sold card buyer profile full width ===== */
+#my-products-list .buyer-profile-actions{
+  grid-template-columns:1fr !important;
+  width:100% !important;
+}
+#my-products-list .buyer-profile-actions .seller-profile-btn{
+  width:100% !important;
+  min-width:0 !important;
+}
