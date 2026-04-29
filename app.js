@@ -58,6 +58,7 @@ const I18N = {
         favoritesTab: "Обране",
         searchPlaceholder: "Пошук товарів...",
         filters: "Фільтри",
+        resetFilters: "Скинути фільтри",
         searchBtn: "Шукати",
         myProductsTitle: "Мої оголошення",
         activeTab: "Активні",
@@ -117,6 +118,7 @@ const I18N = {
         favoritesTab: "Favorites",
         searchPlaceholder: "Search products...",
         filters: "Filters",
+        resetFilters: "Reset filters",
         searchBtn: "Search",
         myProductsTitle: "My listings",
         activeTab: "Active",
@@ -404,6 +406,7 @@ function applyLanguageTexts() {
     translateSelectOptions('sort-filter');
     if ($('price-min-filter')) $('price-min-filter').placeholder = tr('Ціна від', 'Price from');
     if ($('price-max-filter')) $('price-max-filter').placeholder = tr('Ціна до', 'Price to');
+    const resetFiltersBtn = $('reset-filters-btn'); if (resetFiltersBtn) resetFiltersBtn.textContent = t('resetFilters');
 
     setText('#tab-my-products .section-header h2', t('myProductsTitle'));
     const mpRefreshBtn = $('my-products-refresh-btn');
@@ -893,7 +896,7 @@ function toggleFilters(forceState = null) {
     if (!catalogSearchOpen) {
         filtersOpen = false;
         filtersWrap.classList.add("hidden");
-        toggleBtn.textContent = "Фільтри";
+        toggleBtn.textContent = t("filters");
         toggleBtn.classList.remove("active");
         return;
     }
@@ -901,8 +904,19 @@ function toggleFilters(forceState = null) {
     filtersOpen = forceState === null ? !filtersOpen : Boolean(forceState);
 
     filtersWrap.classList.toggle("hidden", !filtersOpen);
-    toggleBtn.textContent = filtersOpen ? "Сховати фільтри" : "Фільтри";
+    toggleBtn.textContent = filtersOpen ? tr("Сховати фільтри", "Hide filters") : t("filters");
     toggleBtn.classList.toggle("active", filtersOpen);
+}
+
+function resetCatalogFilters() {
+    if ($("search-input")) $("search-input").value = "";
+    if ($("category-filter")) $("category-filter").value = "Усі";
+    if ($("city-filter")) $("city-filter").value = "Усі";
+    if ($("condition-filter")) $("condition-filter").value = "Усі";
+    if ($("sort-filter")) $("sort-filter").value = "newest";
+    if ($("price-min-filter")) $("price-min-filter").value = "";
+    if ($("price-max-filter")) $("price-max-filter").value = "";
+    loadProducts();
 }
 
 function toggleCatalogSearchPanel(forceState = null) {
