@@ -1,9 +1,9 @@
-console.log("APP VERSION 437 LOADED");
+console.log("APP VERSION 438 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "437";
+const FRONTEND_VERSION = "438";
 
 let tg = null;
 let telegramUser = null;
@@ -366,7 +366,7 @@ function safeOpenReport(productId, title = "", event = null) {
 }
 
 function syncBodyScrollLock() {
-    const hasOpenModal = ["product-modal", "image-viewer-modal", "review-modal", "report-modal", "user-profile-modal"].some((id) => {
+    const hasOpenModal = ["product-modal", "image-viewer-modal", "review-modal", "report-modal", "user-profile-modal", "verification-modal"].some((id) => {
         const el = $(id);
         return el && !el.classList.contains("hidden");
     });
@@ -406,6 +406,15 @@ function applyLanguageTexts() {
     setProfileMenuButton('my-reviews-toggle-btn', '⭐', 'reviews', $('my-reviews-wrap') && !$('my-reviews-wrap').classList.contains('hidden'));
     setProfileMenuButton('admin-toggle-btn', '🛡', 'admin', $('admin-panel-body') && !$('admin-panel-body').classList.contains('hidden'));
     setProfileMenuButton('ideas-toggle-btn', '💡', 'ideas', $('ideas-wrap') && !$('ideas-wrap').classList.contains('hidden'));
+    const verificationBtnLabel = document.querySelector('#verification-toggle-btn > span:nth-child(2)');
+    if (verificationBtnLabel) verificationBtnLabel.textContent = tr('Верифікація', 'Verification');
+    const verificationMenuStatus = $('verification-menu-status');
+    if (verificationMenuStatus) {
+        const status = verificationStatusValue(currentUser);
+        verificationMenuStatus.textContent = verificationStatusLabel(status);
+        verificationMenuStatus.className = `verification-menu-status ${verificationBadgeClass(status)}`;
+    }
+    if ($('verification-wrap') && !$('verification-wrap').classList.contains('hidden')) renderVerificationPanel();
     const logoutBtn = document.querySelector('.profile-logout-btn');
     if (logoutBtn) logoutBtn.innerHTML = `<span class="profile-menu-icon">🚪</span><span>${escapeHtml(t('logout'))}</span>`;
     const navMap = { 'nav-catalog-btn': 'navCatalog', 'nav-my-products-btn': 'navMine', 'nav-cart-btn': 'navCart', 'nav-profile-btn': 'navProfile' };
@@ -554,7 +563,8 @@ function applyLanguageTexts() {
     if (adminTabBtns[1]) adminTabBtns[1].textContent = tr('Оголошення', 'Listings');
     if (adminTabBtns[2]) adminTabBtns[2].textContent = tr('Ідеї', 'Ideas');
     if (adminTabBtns[3]) adminTabBtns[3].textContent = tr('Скарги', 'Reports');
-    if (adminTabBtns[4]) adminTabBtns[4].textContent = tr('Логи', 'Logs');
+    if (adminTabBtns[4]) adminTabBtns[4].textContent = tr('Верифікації', 'Verifications');
+    if (adminTabBtns[5]) adminTabBtns[5].textContent = tr('Логи', 'Logs');
     if ($('admin-users-search')) $('admin-users-search').placeholder = tr('Пошук користувача', 'Search user');
     if ($('admin-products-search')) $('admin-products-search').placeholder = tr('Пошук оголошення', 'Search listing');
     const adminSearchBtns = document.querySelectorAll('#admin-panel-body .admin-search-row .secondary-btn');
@@ -579,6 +589,28 @@ function applyLanguageTexts() {
     if (reviewLabels[1]) reviewLabels[1].textContent = tr('Коментар', 'Comment');
     if ($('review-comment')) $('review-comment').placeholder = tr('Коротко опишіть ваш досвід покупки', 'Briefly describe your purchase experience');
     const reviewSubmit = document.querySelector('#review-modal .primary-btn'); if (reviewSubmit) reviewSubmit.textContent = tr('Зберегти відгук', 'Save review');
+
+    const verificationModalTitle = document.querySelector('#verification-modal .modal-title');
+    if (verificationModalTitle) verificationModalTitle.textContent = tr('Верифікація продавця', 'Seller verification');
+    const verificationHint = document.querySelector('#verification-modal .verification-form-hint');
+    if (verificationHint) verificationHint.textContent = tr('Документи тимчасово зберігаються в закритому розділі Cloudinary лише до рішення адміністратора. Після підтвердження або відмови фото автоматично видаляються.', 'Documents are temporarily stored in a restricted Cloudinary area only until the administrator decides. Photos are deleted automatically after approval or rejection.');
+    const verificationModalLabels = document.querySelectorAll('#verification-modal > .modal-content > label:not(.verification-file-card):not(.verification-consent-row)');
+    if (verificationModalLabels[0]) verificationModalLabels[0].textContent = tr('ПІБ', 'Full name');
+    if (verificationModalLabels[1]) verificationModalLabels[1].textContent = tr('Дата народження', 'Birth date');
+    if ($('verification-full-name')) $('verification-full-name').placeholder = tr("Введіть повне ім'я", 'Enter your full name');
+    const frontTitle = document.querySelector('#verification-modal .verification-file-card[for="verification-front-file"] .verification-file-title');
+    if (frontTitle) frontTitle.innerHTML = `${escapeHtml(tr('Основне фото документа', 'Main document photo'))} <strong>*</strong>`;
+    const frontHint = document.querySelector('#verification-modal .verification-file-card[for="verification-front-file"] .verification-file-hint');
+    if (frontHint) frontHint.textContent = tr('Лицьова сторона ID-картки або основна сторінка документа', 'Front side of the ID card or main document page');
+    const backTitle = document.querySelector('#verification-modal .verification-file-card[for="verification-back-file"] .verification-file-title');
+    if (backTitle) backTitle.innerHTML = `${escapeHtml(tr('Друге фото документа', 'Second document photo'))} <small>${escapeHtml(tr('необов’язково', 'optional'))}</small>`;
+    const backHint = document.querySelector('#verification-modal .verification-file-card[for="verification-back-file"] .verification-file-hint');
+    if (backHint) backHint.textContent = tr('Наприклад, зворотна сторона ID-картки', 'For example, the back side of the ID card');
+    const consentText = document.querySelector('#verification-modal .verification-consent-row span');
+    if (consentText) consentText.textContent = tr('Погоджуюся на обробку даних для перевірки профілю', 'I consent to data processing for profile verification');
+    const verificationSubmitBtn = document.querySelector('#verification-modal .primary-btn');
+    if (verificationSubmitBtn) verificationSubmitBtn.textContent = tr('Надіслати на перевірку', 'Submit for review');
+    updateVerificationFileLabels();
 
     const reportLabels = document.querySelectorAll('#report-modal label');
     if (reportLabels[0]) reportLabels[0].textContent = tr('Причина', 'Reason');
@@ -719,6 +751,29 @@ function getSellerBadgeText(soldProducts = 0, reviewCount = 0) {
     return tr("Новий продавець", "New seller");
 }
 
+
+function verificationStatusValue(user = currentUser) {
+    const status = String(user?.verification_status || "unverified").toLowerCase();
+    return ["unverified", "pending", "verified", "rejected"].includes(status) ? status : "unverified";
+}
+
+function verificationStatusLabel(status = verificationStatusValue()) {
+    if (status === "verified") return tr("Пройдено", "Verified");
+    if (status === "pending") return tr("На перевірці", "Under review");
+    if (status === "rejected") return tr("Відмовлено", "Rejected");
+    return tr("Не пройдено", "Not verified");
+}
+
+function verificationBadgeLabel(status = verificationStatusValue()) {
+    if (status === "verified") return tr("✓ Верифікований", "✓ Verified");
+    if (status === "pending") return tr("На перевірці", "Under review");
+    if (status === "rejected") return tr("Відмовлено", "Rejected");
+    return tr("Не верифікований", "Not verified");
+}
+
+function verificationBadgeClass(status = verificationStatusValue()) {
+    return `verification-${status}`;
+}
 
 function parseTelegramUserFromInitData(initData) {
     if (!initData) return null;
@@ -1041,6 +1096,117 @@ function fillProfile() {
     if ($("profile-status-chip")) {
         $("profile-status-chip").textContent = getSellerBadgeText(currentUser.sold_products || 0, currentUser.rating_count || 0);
     }
+    const verificationStatus = verificationStatusValue(currentUser);
+    const verificationBadge = $("profile-verification-badge");
+    if (verificationBadge) {
+        verificationBadge.textContent = verificationBadgeLabel(verificationStatus);
+        verificationBadge.className = `verification-badge ${verificationBadgeClass(verificationStatus)}`;
+    }
+    if ($("verification-menu-status")) {
+        $("verification-menu-status").textContent = verificationStatusLabel(verificationStatus);
+        $("verification-menu-status").className = `verification-menu-status ${verificationBadgeClass(verificationStatus)}`;
+    }
+    if ($("verification-wrap") && !$("verification-wrap").classList.contains("hidden")) renderVerificationPanel();
+}
+
+function renderVerificationPanel() {
+    const wrap = $("verification-wrap");
+    if (!wrap) return;
+    const status = verificationStatusValue(currentUser);
+    if (status === "verified") {
+        wrap.innerHTML = `<div class="verification-state-card ${verificationBadgeClass(status)}"><div class="verification-state-title">✓ ${tr("Верифікацію успішно пройдено", "Verification completed")}</div><p>${tr("Ваш профіль підтверджено. Ви можете публікувати оголошення.", "Your profile is confirmed. You can publish listings.")}</p></div>`;
+        return;
+    }
+    if (status === "pending") {
+        wrap.innerHTML = `<div class="verification-state-card ${verificationBadgeClass(status)}"><div class="verification-state-title">${tr("Заявка на перевірці", "Application under review")}</div><p>${tr("Документи вже надіслано. Очікуйте рішення адміністратора.", "Documents have been submitted. Wait for the administrator's decision.")}</p></div>`;
+        return;
+    }
+    if (status === "rejected") {
+        wrap.innerHTML = `<div class="verification-state-card ${verificationBadgeClass(status)}"><div class="verification-state-title">${tr("Верифікацію відхилено", "Verification rejected")}</div><p><strong>${tr("Причина", "Reason")}:</strong> ${escapeHtml(currentUser?.verification_rejection_reason || tr("Не вказано", "Not specified"))}</p><button type="button" class="primary-btn full-btn" onclick="openVerificationForm()">${tr("Пройти повторно", "Submit again")}</button></div>`;
+        return;
+    }
+    wrap.innerHTML = `<div class="verification-state-card ${verificationBadgeClass(status)}"><div class="verification-state-title">${tr("Верифікація продавця", "Seller verification")}</div><p>${tr("Для публікації нових оголошень підтвердьте особу. Потрібне одне обов’язкове фото документа, друге фото можна додати за бажанням.", "Confirm your identity to publish new listings. One document photo is required; a second photo is optional.")}</p><button type="button" class="primary-btn full-btn" onclick="openVerificationForm()">${tr("Пройти верифікацію", "Start verification")}</button></div>`;
+}
+
+function toggleVerificationPanel(forceState = null) {
+    const wrap = $("verification-wrap");
+    if (!wrap) return;
+    const shouldOpen = forceState === null ? wrap.classList.contains("hidden") : Boolean(forceState);
+    wrap.classList.toggle("hidden", !shouldOpen);
+    if (shouldOpen) renderVerificationPanel();
+}
+
+function openVerificationForm() {
+    const status = verificationStatusValue(currentUser);
+    if (status === "pending") {
+        showAlert(tr("Заявка вже знаходиться на перевірці", "The application is already under review"));
+        return;
+    }
+    if (status === "verified") {
+        showAlert(tr("Верифікацію вже пройдено", "Verification has already been completed"));
+        return;
+    }
+    if ($("verification-full-name")) $("verification-full-name").value = currentUser?.full_name || "";
+    if ($("verification-birth-date")) $("verification-birth-date").value = "";
+    if ($("verification-front-file")) $("verification-front-file").value = "";
+    if ($("verification-back-file")) $("verification-back-file").value = "";
+    if ($("verification-consent")) $("verification-consent").checked = false;
+    updateVerificationFileLabels();
+    animateModalOpen("verification-modal");
+    syncBodyScrollLock();
+}
+
+function closeVerificationModal() {
+    animateModalClose("verification-modal");
+    syncBodyScrollLock();
+}
+
+function closeVerificationModalOnBackdrop(event) {
+    if (event.target?.id === "verification-modal") closeVerificationModal();
+}
+
+function updateVerificationFileLabels() {
+    const front = $("verification-front-file")?.files?.[0];
+    const back = $("verification-back-file")?.files?.[0];
+    if ($("verification-front-file-name")) $("verification-front-file-name").textContent = front?.name || tr("Файл не вибрано", "No file selected");
+    if ($("verification-back-file-name")) $("verification-back-file-name").textContent = back?.name || tr("Файл не вибрано", "No file selected");
+}
+
+async function submitVerification() {
+    if (!currentUser?.id || isLoading) return;
+    const fullName = $("verification-full-name")?.value?.trim() || "";
+    const birthDate = $("verification-birth-date")?.value || "";
+    const front = $("verification-front-file")?.files?.[0] || null;
+    const back = $("verification-back-file")?.files?.[0] || null;
+    const consent = Boolean($("verification-consent")?.checked);
+    if (!fullName || !birthDate || !front) {
+        showAlert(tr("Заповніть ПІБ, дату народження та додайте основне фото документа", "Fill in your full name, birth date, and add the main document photo"));
+        return;
+    }
+    if (!consent) {
+        showAlert(tr("Потрібна згода на обробку даних", "Consent to data processing is required"));
+        return;
+    }
+    const form = new FormData();
+    form.append("verification_full_name", fullName);
+    form.append("verification_birth_date", birthDate);
+    form.append("consent_accepted", "true");
+    form.append("document_front", front);
+    if (back) form.append("document_back", back);
+    try {
+        setLoading(true);
+        const data = await safeFetch(`${API_BASE}/users/${currentUser.id}/verification/submit`, { method: "POST", body: form });
+        currentUser = { ...currentUser, ...data };
+        saveSession(currentUser);
+        fillProfile();
+        renderVerificationPanel();
+        closeVerificationModal();
+        showAlert(tr("Заявку надіслано на перевірку", "Application sent for review"));
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося надіслати заявку", "Failed to submit application"));
+    } finally {
+        setLoading(false);
+    }
 }
 
 function toggleProfileEdit(forceState = null) {
@@ -1163,6 +1329,11 @@ function switchAuthTab(tabName, btn) {
 }
 
 function switchTab(tabName, btn = null) {
+    if (tabName === "create" && currentUser && verificationStatusValue(currentUser) !== "verified" && !editingProductId) {
+        showAlert(tr("Для публікації оголошень необхідно пройти верифікацію продавця", "Seller verification is required to publish listings"));
+        tabName = "profile";
+        setTimeout(() => toggleVerificationPanel(true), 0);
+    }
     document.querySelectorAll(".tab-section").forEach(section => section.classList.remove("active"));
     $(`tab-${tabName}`)?.classList.add("active");
     $("app-screen")?.classList.toggle("profile-mode", tabName === "profile");
@@ -1188,6 +1359,7 @@ function switchTab(tabName, btn = null) {
         toggleStatsPanel(false);
         if ($("purchase-history-wrap")) $("purchase-history-wrap").classList.add("hidden");
         if ($("my-reviews-wrap")) $("my-reviews-wrap").classList.add("hidden");
+        if ($("verification-wrap")) $("verification-wrap").classList.add("hidden");
         if ($("admin-panel-body")) $("admin-panel-body").classList.add("hidden");
         applyLanguageTexts();
         detectAdminAccess();
@@ -2630,6 +2802,12 @@ function closeProductModalOnBackdrop(event) {
 
 async function createProduct() {
     if (!currentUser || isLoading) return;
+    if (!editingProductId && verificationStatusValue(currentUser) !== "verified") {
+        showAlert(tr("Для публікації оголошень необхідно пройти верифікацію продавця", "Seller verification is required to publish listings"));
+        switchTab("profile");
+        toggleVerificationPanel(true);
+        return;
+    }
 
     const title = $("product-title")?.value.trim();
     const description = $("product-description")?.value.trim();
@@ -3044,6 +3222,7 @@ function renderAdminSummary(summary) {
             <div class="stat-card"><span class="stat-value">${summary.suggestions_new ?? 0}</span><span class="stat-label">${tr('Ідеї', 'Ideas')}</span></div>
             <div class="stat-card"><span class="stat-value">${summary.reports_new ?? 0}</span><span class="stat-label">${tr('Скарги', 'Reports')}</span></div>
             <div class="stat-card"><span class="stat-value">${summary.orders_disputed ?? 0}</span><span class="stat-label">${tr('Спори', 'Disputes')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.verifications_pending ?? 0}</span><span class="stat-label">${tr('Верифікації', 'Verifications')}</span></div>
         </div>`;
 }
 
@@ -3061,7 +3240,7 @@ async function toggleAdminPanel(forceState = null) {
 }
 
 function switchAdminTab(tabName) {
-    ["users","products","ideas","reports","logs"].forEach(name => {
+    ["users","products","ideas","reports","verifications","logs"].forEach(name => {
         $(`admin-${name}-tab`)?.classList.toggle("hidden", name !== tabName);
         $(`admin-${name}-tab-btn`)?.classList.toggle("active", name === tabName);
     });
@@ -3069,6 +3248,7 @@ function switchAdminTab(tabName) {
     if (tabName === "products") loadAdminProducts();
     if (tabName === "ideas") loadAdminIdeas();
     if (tabName === "reports") loadAdminReports();
+    if (tabName === "verifications") loadAdminVerifications();
     if (tabName === "logs") loadAdminLogs();
 }
 
@@ -3098,6 +3278,7 @@ async function loadAdminUsers() {
                     <div>${tr('Активні', 'Active')}: ${Number(item.active_products || 0)}</div>
                     <div>${tr('Продані', 'Sold')}: ${Number(item.sold_products || 0)}</div>
                     <div>${tr('Статус', 'Status')}: ${item.is_superadmin ? t('superadmin') : item.is_banned ? tr('Заблокований', 'Blocked') : tr('Активний', 'Active')}</div>
+                    <div>${tr('Верифікація', 'Verification')}: ${verificationStatusLabel(item.verification_status)}</div>
                 </div>
                 <div class="card-actions inline-actions admin-grid-3">
                     <button class="secondary-btn" onclick="openUserProfile(${Number(item.id)})">${tr('Профіль', 'Profile')}</button>
@@ -3580,6 +3761,91 @@ async function resolveOrderReport(id, action) {
     }
 }
 
+async function loadAdminVerifications() {
+    if (!currentUser?.id) return;
+    const list = $("admin-verifications-list");
+    if (!list) return;
+    list.innerHTML = `<div class="empty-card">${escapeHtml(t('loading'))}</div>`;
+    try {
+        const items = await safeFetch(`${API_BASE}/admin/verifications?current_admin_id=${currentUser.id}`);
+        if (!Array.isArray(items) || !items.length) {
+            list.innerHTML = `<div class="empty-card">${escapeHtml(tr("Заявок на верифікацію поки немає", "No verification applications yet"))}</div>`;
+            return;
+        }
+        list.innerHTML = items.map(item => {
+            const status = item.verification_status || "unverified";
+            const canReview = status === "pending";
+            return `
+            <div class="card admin-verification-card"><div class="card-body">
+                <div class="verification-card-top">
+                    <div>
+                        <h3 class="card-title">@${escapeHtml(item.username || "")}</h3>
+                        <p class="card-seller">${escapeHtml(item.verification_full_name || item.full_name || tr("Без імені", "No name"))}</p>
+                    </div>
+                    <span class="verification-badge ${verificationBadgeClass(status)}">${escapeHtml(verificationStatusLabel(status))}</span>
+                </div>
+                <div class="request-meta">
+                    <div>${tr("Дата народження", "Birth date")}: ${escapeHtml(item.verification_birth_date || "—")}</div>
+                    <div>${tr("Подано", "Submitted")}: ${formatDate(item.verification_submitted_at) || "—"}</div>
+                    ${item.verification_reviewed_at ? `<div>${tr("Розглянуто", "Reviewed")}: ${formatDate(item.verification_reviewed_at)}</div>` : ""}
+                    ${item.verification_rejection_reason ? `<div>${tr("Причина відмови", "Rejection reason")}: ${escapeHtml(item.verification_rejection_reason)}</div>` : ""}
+                </div>
+                <div class="card-actions inline-actions verification-admin-actions">
+                    <button class="secondary-btn" onclick="openUserProfile(${Number(item.user_id)})">${tr("Профіль", "Profile")}</button>
+                    ${item.has_front_document ? `<button class="seller-link-btn" onclick="openVerificationDocument(${Number(item.user_id)}, 'front')">${tr("Основне фото", "Main photo")}</button>` : ""}
+                    ${item.has_back_document ? `<button class="seller-link-btn" onclick="openVerificationDocument(${Number(item.user_id)}, 'back')">${tr("Друге фото", "Second photo")}</button>` : ""}
+                    ${canReview ? `<button class="approve-btn" onclick="adminResolveVerification(${Number(item.user_id)}, 'approve')">${tr("Підтвердити", "Approve")}</button><button class="reject-btn" onclick="adminResolveVerification(${Number(item.user_id)}, 'reject')">${tr("Відхилити", "Reject")}</button>` : ""}
+                </div>
+            </div></div>`;
+        }).join("");
+    } catch (error) {
+        list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
+    }
+}
+
+async function openVerificationDocument(userId, side) {
+    try {
+        const data = await safeFetch(`${API_BASE}/admin/verifications/${userId}/document/${encodeURIComponent(side)}?current_admin_id=${currentUser.id}`);
+        if (!data?.url) throw new Error(tr("Посилання на документ не отримано", "Document URL was not received"));
+        window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося відкрити документ", "Failed to open document"));
+    }
+}
+
+async function adminResolveVerification(userId, action) {
+    if (!currentUser?.id || isLoading) return;
+    let reason = null;
+    if (action === "reject") {
+        reason = prompt(tr("Вкажіть причину відмови", "Enter rejection reason"), "");
+        if (reason === null) return;
+        reason = reason.trim();
+        if (reason.length < 3) {
+            showAlert(tr("Вкажіть причину відмови", "Enter rejection reason"));
+            return;
+        }
+    } else if (!confirm(tr("Підтвердити верифікацію користувача? Фото документів буде видалено після рішення.", "Approve user verification? Document photos will be deleted after the decision."))) {
+        return;
+    }
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/verifications/${userId}/decision?current_admin_id=${currentUser.id}`, {
+            method: "POST",
+            body: JSON.stringify({ action, reason })
+        });
+        await loadAdminSummary();
+        await loadAdminVerifications();
+        if (Number(userId) === Number(currentUser.id)) {
+            await refreshCurrentUserFromApi();
+            fillProfile();
+        }
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося застосувати рішення", "Failed to apply decision"));
+    } finally {
+        setLoading(false);
+    }
+}
+
 async function loadAdminLogs() {
     if (!currentUser?.id) return;
     const list = $("admin-logs-list");
@@ -3714,6 +3980,7 @@ async function openUserProfile(userId) {
                             <div class="user-profile-username">@${escapeHtml(profile.username || "")}</div>
                             <div class="seller-badges seller-badges-compact">
                                 <span class="seller-badge accent">${escapeHtml(profile.seller_status || getSellerBadgeText(profile.sold_products, profile.rating_count))}</span>
+                                <span class="seller-badge verification-badge ${verificationBadgeClass(profile.verification_status)}">${escapeHtml(verificationBadgeLabel(profile.verification_status))}</span>
                                 ${profile.rating_count > 0 ? `<span class="seller-badge">⭐ ${escapeHtml(String(profile.rating))} · ${escapeHtml(String(profile.rating_count))}</span>` : ``}
                                 ${profile.is_superadmin ? `<span class="seller-badge">${escapeHtml(t('superadmin'))}</span>` : (profile.is_admin ? `<span class="seller-badge">${tr('Адміністратор', 'Administrator')}</span>` : ``)}
                             </div>
@@ -3879,6 +4146,12 @@ if (typeof buyAllFromCart === "function") window.buyAllFromCart = buyAllFromCart
 if (typeof toggleFavorite === "function") window.toggleFavorite = toggleFavorite;
 if (typeof startEditProduct === "function") window.startEditProduct = startEditProduct;
 if (typeof toggleProfileEdit === "function") window.toggleProfileEdit = toggleProfileEdit;
+if (typeof toggleVerificationPanel === "function") window.toggleVerificationPanel = toggleVerificationPanel;
+if (typeof openVerificationForm === "function") window.openVerificationForm = openVerificationForm;
+if (typeof closeVerificationModal === "function") window.closeVerificationModal = closeVerificationModal;
+if (typeof closeVerificationModalOnBackdrop === "function") window.closeVerificationModalOnBackdrop = closeVerificationModalOnBackdrop;
+if (typeof updateVerificationFileLabels === "function") window.updateVerificationFileLabels = updateVerificationFileLabels;
+if (typeof submitVerification === "function") window.submitVerification = submitVerification;
 if (typeof togglePurchaseHistory === "function") window.togglePurchaseHistory = togglePurchaseHistory;
 if (typeof toggleMyReviews === "function") window.toggleMyReviews = toggleMyReviews;
 if (typeof toggleStatsPanel === "function") window.toggleStatsPanel = toggleStatsPanel;
@@ -3902,6 +4175,9 @@ if (typeof adminRestoreProduct === "function") window.adminRestoreProduct = admi
 if (typeof updateSuggestionStatus === "function") window.updateSuggestionStatus = updateSuggestionStatus;
 if (typeof updateReportStatus === "function") window.updateReportStatus = updateReportStatus;
 if (typeof resolveOrderReport === "function") window.resolveOrderReport = resolveOrderReport;
+if (typeof loadAdminVerifications === "function") window.loadAdminVerifications = loadAdminVerifications;
+if (typeof openVerificationDocument === "function") window.openVerificationDocument = openVerificationDocument;
+if (typeof adminResolveVerification === "function") window.adminResolveVerification = adminResolveVerification;
 if (typeof adminDeleteProduct === "function") window.adminDeleteProduct = adminDeleteProduct;
 if (typeof openUserProfile === "function") window.openUserProfile = openUserProfile;
 if (typeof loadSellerReviews === "function") window.loadSellerReviews = loadSellerReviews;
