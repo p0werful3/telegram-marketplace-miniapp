@@ -1,9 +1,9 @@
-console.log("APP VERSION 436 LOADED");
+console.log("APP VERSION 437 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "436";
+const FRONTEND_VERSION = "437";
 
 let tg = null;
 let telegramUser = null;
@@ -175,6 +175,14 @@ const VALUE_TRANSLATIONS = {
     "Без категорії": "No category",
     "Без міста": "No city",
     "Інше": "Other",
+    "Шахрайство": "Fraud",
+    "Неправдивий опис": "Misleading description",
+    "Заборонений товар": "Prohibited item",
+    "Спам": "Spam",
+    "Підозрілий профіль": "Suspicious profile",
+    "Образи або небажана поведінка": "Abuse or unwanted behavior",
+    "Не отримав товар": "Item not received",
+    "Покупець не підтверджує отримання": "Buyer has not confirmed receipt",
     "Новий": "New",
     "Б/У": "Used",
     "Смартфони": "Smartphones",
@@ -307,6 +315,7 @@ function translateStatusValue(value) {
     if (["sold", "продано"].includes(normalized)) return tr("Продано", "Sold");
     if (["archived", "архів", "в архіві"].includes(normalized)) return tr("Архів", "Archived");
     if (["active", "активний", "активні"].includes(normalized)) return tr("Активний", "Active");
+    if (["reserved", "зарезервовано"].includes(normalized)) return tr("Зарезервовано", "Reserved");
     if (["blocked", "заблокирован", "заблокований"].includes(normalized)) return tr("Заблокований", "Blocked");
     return currentLanguage === "en" ? tv(value) : String(value || "");
 }
@@ -1237,10 +1246,51 @@ async function loadStats() {
 }
 
 function orderStatusLabel(status) {
-    if (status === "approved") return tr("Підтверджено", "Approved");
+    if (status === "awaiting_buyer_confirmation") return tr("Очікує підтвердження покупця", "Waiting for buyer confirmation");
+    if (status === "completed" || status === "approved") return tr("Завершено", "Completed");
+    if (status === "disputed") return tr("Спір передано адміністратору", "Dispute sent to admin");
     if (status === "rejected") return tr("Відхилено", "Rejected");
     if (status === "cancelled") return tr("Скасовано", "Cancelled");
-    return tr("Очікує підтвердження", "Pending approval");
+    return tr("Очікує відповіді продавця", "Waiting for seller response");
+}
+
+function renderBuyerOrderActions(item) {
+    if (!item) return "";
+    const orderId = Number(item.order_id || 0);
+    const sellerId = Number(item.seller_id || 0);
+    const actions = [];
+    if (item.status === "pending") {
+        actions.push(`<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${orderId})">${tr("Скасувати запит", "Cancel request")}</button>`);
+    }
+    if (item.status === "awaiting_buyer_confirmation") {
+        actions.push(`<button type="button" class="approve-btn" onclick="event.stopPropagation(); confirmBuyerReceipt(${orderId})">${tr("Товар отримано", "Item received")}</button>`);
+        actions.push(`<button type="button" class="reject-btn" onclick="event.stopPropagation(); reportMissingProduct(${orderId})">${tr("Не отримав товар", "Item not received")}</button>`);
+    }
+    if (item.can_review) {
+        actions.push(`<button type="button" class="approve-btn" data-action="open-review" data-order-id="${orderId}" data-seller-id="${sellerId}">${tr("Залишити відгук", "Leave review")}</button>`);
+    }
+    if (item.review_rating) {
+        actions.push(`<button class="secondary-btn" disabled>${tr("Оцінка", "Rating")}: ${Number(item.review_rating)}/5</button>`);
+    }
+    return actions.join("");
+}
+
+function renderSellerOrderActions(item) {
+    if (!item) return "";
+    const orderId = Number(item.order_id || 0);
+    const buyerId = Number(item.buyer_id || 0);
+    const actions = [];
+    if (buyerId) {
+        actions.push(`<button type="button" class="seller-link-btn request-profile-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${buyerId})">${tr("Профіль покупця", "Buyer profile")}</button>`);
+    }
+    if (item.status === "pending") {
+        actions.push(`<button type="button" class="approve-btn request-approve-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${orderId}, true)">${tr("Підтвердити", "Approve")}</button>`);
+        actions.push(`<button type="button" class="reject-btn request-reject-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${orderId}, false)">${tr("Відхилити", "Reject")}</button>`);
+    }
+    if (item.status === "awaiting_buyer_confirmation") {
+        actions.push(`<button type="button" class="ghost-warning-btn" onclick="event.preventDefault(); event.stopPropagation(); reportBuyerDelay(${orderId})">${tr("Звернутися до адміністратора", "Contact admin")}</button>`);
+    }
+    return actions.join("");
 }
 
 async function saveProfile() {
@@ -1349,9 +1399,7 @@ async function loadPurchaseHistory() {
                         <div>${tr("Дата", "Date")}: ${formatDate(item.created_at) || "—"}</div>
                     </div>
                     <div class="card-actions inline-actions compact-actions">
-                        ${item.status === "pending" ? `<button type="button" class="ghost-warning-btn" onclick="event.stopPropagation(); cancelPurchaseRequest(${Number(item.order_id)})">${tr("Скасувати запит", "Cancel request")}</button>` : ""}
-                        ${item.can_review ? `<button type="button" class="approve-btn" data-action="open-review" data-order-id="${Number(item.order_id)}" data-seller-id="${Number(item.seller_id || 0)}">${tr("Залишити відгук", "Leave review")}</button>` : ""}
-                        ${item.review_rating ? `<button class="secondary-btn" disabled>${tr("Оцінка", "Rating")}: ${Number(item.review_rating)}/5</button>` : ""}
+                        ${renderBuyerOrderActions(item)}
                     </div>
                 </div>
             </div>
@@ -1383,6 +1431,65 @@ async function cancelPurchaseRequest(orderId) {
         await loadStats();
     } catch (error) {
         showAlert(error.message || tr("Не вдалося скасувати запит", "Failed to cancel request"));
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function confirmBuyerReceipt(orderId) {
+    if (!currentUser || isLoading) return;
+    if (!confirm(tr("Підтвердити, що ви отримали товар? Після цього угоду буде завершено.", "Confirm that you received the item? The deal will be completed."))) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/orders/${orderId}/buyer-confirm?buyer_id=${currentUser.id}`, { method: "POST" });
+        showAlert(tr("Угоду завершено", "Deal completed"));
+        await loadPurchaseHistory();
+        await loadMyProducts();
+        await loadProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося підтвердити отримання", "Failed to confirm receipt"));
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function reportMissingProduct(orderId) {
+    if (!currentUser || isLoading) return;
+    if (!confirm(tr("Повідомити адміністратору, що товар не отримано? Угоду буде переведено у спір.", "Tell the admin that the item was not received? The deal will be disputed."))) return;
+    const comment = prompt(tr("Додатковий коментар для адміністратора (необов'язково)", "Additional comment for admin (optional)"), "") || "";
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/orders/${orderId}/buyer-dispute`, {
+            method: "POST",
+            body: JSON.stringify({ actor_id: currentUser.id, comment: comment.trim() || null })
+        });
+        showAlert(tr("Спір передано адміністратору", "Dispute sent to admin"));
+        await loadPurchaseHistory();
+        await loadMyProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося відкрити спір", "Failed to open dispute"));
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function reportBuyerDelay(orderId) {
+    if (!currentUser || isLoading) return;
+    if (!confirm(tr("Передати звернення адміністратору? Угоду буде переведено у спір.", "Send this case to admin? The deal will be disputed."))) return;
+    const comment = prompt(tr("Додатковий коментар для адміністратора (необов'язково)", "Additional comment for admin (optional)"), "") || "";
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/orders/${orderId}/seller-dispute`, {
+            method: "POST",
+            body: JSON.stringify({ actor_id: currentUser.id, comment: comment.trim() || null })
+        });
+        showAlert(tr("Звернення передано адміністратору", "Case sent to admin"));
+        await loadMyProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося передати звернення", "Failed to send case"));
     } finally {
         setLoading(false);
     }
@@ -2493,6 +2600,7 @@ async function openProductModal(productId) {
                     </div>
                     <p class="modal-product-description">${escapeHtml(product.description || "")}</p>
                     ${product.seller_username ? `<button type="button" class="seller-link-btn seller-profile-btn seller-profile-btn-modal" data-action="open-seller-profile" data-seller-id="${Number(product.seller_id)}">${tr('Профіль продавця', 'Seller profile')}</button>` : ""}
+                    ${!isOwnProduct ? `<div class="service-warning-banner">⚠️ ${tr('Сервіс не виступає гарантом угоди та не несе відповідальності за дії продавця. Перед передачею коштів перевірте профіль, рейтинг і відгуки.', 'The service is not a transaction guarantor and is not responsible for the seller’s actions. Check the profile, rating, and reviews before sending money.')}</div>` : ""}
                     <div class="card-actions compact-actions compact-actions-grid details-actions">
                         ${primaryAction}
                         ${!isOwnProduct ? contactButton : ""}
@@ -2598,12 +2706,12 @@ async function loadMyProducts() {
     try {
         if (myProductsView === "requests") {
             const [requests, purchases] = await Promise.all([
-                safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=pending`),
+                safeFetch(`${API_BASE}/users/${currentUser.id}/purchase-requests?status=open`),
                 safeFetch(`${API_BASE}/users/${currentUser.id}/purchases`)
             ]);
             const filteredRequests = filterAndSortMyProducts(Array.isArray(requests) ? requests : [], "requests");
             const filteredPurchases = filterAndSortMyProducts(Array.isArray(purchases) ? purchases : [], "requests");
-            updatePendingRequestsBadge(Array.isArray(requests) ? requests.length : 0);
+            updatePendingRequestsBadge(Array.isArray(requests) ? requests.filter(item => item.status === "pending").length : 0);
             if (wrap) wrap.classList.remove("hidden");
             if (requestsList) {
                 requestsList.innerHTML = filteredRequests.length ? filteredRequests.map(item => `
@@ -2617,7 +2725,7 @@ async function loadMyProducts() {
                                 <p class="card-price compact-price">${formatPrice(item.offered_price, item.currency)}</p>
                             </div>
                             <div class="compact-meta-row request-pill-row">
-                                <span class="status-pill pending request-status-pill">${tr("Очікує відповіді", "Waiting for response")}</span>
+                                <span class="status-pill ${escapeHtml(item.status || "pending")} request-status-pill">${orderStatusLabel(item.status)}</span>
                             </div>
                             <div class="request-meta compact-request-meta">
                                 <div>${tr("Покупець", "Buyer")}: ${item.buyer_username ? `@${escapeHtml(item.buyer_username)}` : `ID ${item.buyer_id}`}</div>
@@ -2625,9 +2733,7 @@ async function loadMyProducts() {
                                 <div>${tr("Дата", "Date")}: ${formatDate(item.created_at) || '—'}</div>
                             </div>
                             <div class="card-actions request-actions-grid">
-                                ${item.buyer_id ? `<button type="button" class="seller-link-btn request-profile-btn" onclick="event.preventDefault(); event.stopPropagation(); openUserProfile(${Number(item.buyer_id)})">${tr("Профіль покупця", "Buyer profile")}</button>` : ""}
-                                <button type="button" class="approve-btn request-approve-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, true)">${tr("Підтвердити", "Approve")}</button>
-                                <button type="button" class="reject-btn request-reject-btn" onclick="event.preventDefault(); event.stopPropagation(); handlePurchaseRequest(${Number(item.order_id)}, false)">${tr("Відхилити", "Reject")}</button>
+                                ${renderSellerOrderActions(item)}
                             </div>
                         </div>
                     </div>
@@ -2643,6 +2749,9 @@ async function loadMyProducts() {
                         <div class="history-meta">
                             ${item.seller_username ? `<div>${tr("Продавець", "Seller")}: @${escapeHtml(item.seller_username)}</div>` : ``}
                             <div>${tr("Дата", "Date")}: ${formatDate(item.created_at) || '—'}</div>
+                        </div>
+                        <div class="card-actions inline-actions compact-actions">
+                            ${renderBuyerOrderActions(item)}
                         </div>
                     </div>
                 </div>
@@ -2808,7 +2917,7 @@ async function loadCart() {
 
 async function buyAllFromCart() {
     if (!currentUser || isLoading) return;
-    if (!confirm(tr("Надіслати запит на покупку для всіх товарів у кошику?", "Send purchase requests for all items in the cart?"))) return;
+    if (!confirm(tr("Сервіс не виступає гарантом угоди та не несе відповідальності за дії продавців. Перевірте профілі, рейтинги та відгуки перед передачею коштів. Надіслати запити на покупку для всіх товарів у кошику?", "The service is not a transaction guarantor and is not responsible for sellers' actions. Check profiles, ratings, and reviews before sending money. Send purchase requests for all items in the cart?"))) return;
 
     try {
         setLoading(true);
@@ -2828,6 +2937,7 @@ async function buyAllFromCart() {
 
 async function buyProduct(productId) {
     if (!currentUser || isLoading) return;
+    if (!confirm(tr("Сервіс не виступає гарантом угоди та не несе відповідальності за дії продавця. Перевірте профіль, рейтинг і відгуки перед передачею коштів. Надіслати запит на покупку?", "The service is not a transaction guarantor and is not responsible for the seller's actions. Check the profile, rating, and reviews before sending money. Send a purchase request?"))) return;
 
     try {
         setLoading(true);
@@ -2933,6 +3043,7 @@ function renderAdminSummary(summary) {
             <div class="stat-card"><span class="stat-value">${summary.orders_pending ?? 0}</span><span class="stat-label">${tr('Запити', 'Requests')}</span></div>
             <div class="stat-card"><span class="stat-value">${summary.suggestions_new ?? 0}</span><span class="stat-label">${tr('Ідеї', 'Ideas')}</span></div>
             <div class="stat-card"><span class="stat-value">${summary.reports_new ?? 0}</span><span class="stat-label">${tr('Скарги', 'Reports')}</span></div>
+            <div class="stat-card"><span class="stat-value">${summary.orders_disputed ?? 0}</span><span class="stat-label">${tr('Спори', 'Disputes')}</span></div>
         </div>`;
 }
 
@@ -3191,17 +3302,54 @@ async function submitIdea() {
     }
 }
 
+function setReportReasonOptions(reportType = "listing") {
+    const select = $("report-reason");
+    if (!select) return;
+    const options = reportType === "profile"
+        ? ["Шахрайство", "Підозрілий профіль", "Образи або небажана поведінка", "Спам", "Інше"]
+        : ["Шахрайство", "Неправдивий опис", "Заборонений товар", "Спам", "Інше"];
+    select.innerHTML = options.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(currentLanguage === "en" ? tv(value) : value)}</option>`).join("");
+    select.value = options[0];
+}
+
 function openReportModal(productId, title = "", event = null) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
     const modal = $("report-modal");
     if (!modal) return;
+    $("report-type").value = "listing";
     $("report-product-id").value = String(productId || "");
+    $("report-target-user-id").value = "";
+    $("report-order-id").value = "";
     $("report-title").textContent = title ? `${tr('Скарга на', 'Report for')}: ${title}` : tr("Скарга на оголошення", "Report listing");
-    $("report-reason").value = "Шахрайство";
+    setReportReasonOptions("listing");
     $("report-comment").value = "";
-    $("report-custom-reason-wrap")?.classList.add("hidden");
+    animateModalOpen("report-modal");
+    reportModalOpenedAt = Date.now();
+    reportModalIgnoreBackdropClick = true;
+    if (reportModalIgnoreTimer) clearTimeout(reportModalIgnoreTimer);
+    reportModalIgnoreTimer = setTimeout(() => {
+        reportModalIgnoreBackdropClick = false;
+        reportModalIgnoreTimer = null;
+    }, MODAL_BACKDROP_GUARD_MS);
+    syncBodyScrollLock();
+}
+
+function openProfileReportModal(userId, username = "", event = null) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+    if (!currentUser || Number(userId) === Number(currentUser.id)) return;
+    const modal = $("report-modal");
+    if (!modal) return;
+    $("report-type").value = "profile";
+    $("report-product-id").value = "";
+    $("report-target-user-id").value = String(userId || "");
+    $("report-order-id").value = "";
+    $("report-title").textContent = username ? `${tr('Скарга на профіль', 'Report profile')}: @${username}` : tr("Скарга на профіль", "Report profile");
+    setReportReasonOptions("profile");
+    $("report-comment").value = "";
     animateModalOpen("report-modal");
     reportModalOpenedAt = Date.now();
     reportModalIgnoreBackdropClick = true;
@@ -3214,8 +3362,7 @@ function openReportModal(productId, title = "", event = null) {
 }
 
 function handleReportReasonChange() {
-    const reason = $("report-reason")?.value || "Шахрайство";
-    $("report-custom-reason-wrap")?.classList.toggle("hidden", reason !== "Інше");
+    return;
 }
 
 function closeReportModal(event = null) {
@@ -3236,11 +3383,18 @@ function closeReportModalOnBackdrop(event) {
 
 async function submitReport() {
     if (!currentUser || isLoading) return;
-    const listingId = Number($("report-product-id")?.value || 0);
-    let reason = $("report-reason")?.value || "Шахрайство";
+    const reportType = $("report-type")?.value || "listing";
+    const listingId = Number($("report-product-id")?.value || 0) || null;
+    const reportedUserId = Number($("report-target-user-id")?.value || 0) || null;
+    const orderId = Number($("report-order-id")?.value || 0) || null;
+    const reason = $("report-reason")?.value || "Шахрайство";
     const comment = $("report-comment")?.value.trim() || "";
-    if (!listingId) {
+    if (reportType === "listing" && !listingId) {
         showAlert(tr("Оголошення не знайдено", "Listing not found"));
+        return;
+    }
+    if (reportType === "profile" && !reportedUserId) {
+        showAlert(tr("Профіль не знайдено", "Profile not found"));
         return;
     }
     if (reason === "Інше" && !comment) {
@@ -3253,7 +3407,10 @@ async function submitReport() {
             method: "POST",
             body: JSON.stringify({
                 reporter_id: currentUser.id,
+                report_type: reportType,
                 listing_id: listingId,
+                reported_user_id: reportedUserId,
+                order_id: orderId,
                 reason,
                 comment: comment || null
             })
@@ -3318,6 +3475,12 @@ async function updateSuggestionStatus(id, status) {
     }
 }
 
+function reportTypeLabel(type) {
+    if (type === "profile") return tr("Скарга на профіль", "Profile report");
+    if (type === "order") return tr("Спір щодо угоди", "Deal dispute");
+    return tr("Скарга на оголошення", "Listing report");
+}
+
 async function loadAdminReports() {
     const list = $("admin-reports-list");
     if (!list || !currentUser) return;
@@ -3328,25 +3491,47 @@ async function loadAdminReports() {
             list.innerHTML = `<div class="empty-card">${escapeHtml(tr("Скарг поки немає", "No reports yet"))}</div>`;
             return;
         }
-        list.innerHTML = items.map(item => `
-            <div class="card admin-idea-card">
+        list.innerHTML = items.map(item => {
+            const title = item.report_type === "profile"
+                ? `${tr("Профіль", "Profile")}: @${escapeHtml(item.reported_username || "user")}`
+                : item.report_type === "order"
+                    ? `${tr("Угода", "Deal")} #${Number(item.order_id || 0)} · ${escapeHtml(item.listing_title || tr("Товар", "Product"))}`
+                    : escapeHtml(item.listing_title || tr('Оголошення', 'Listing'));
+            const orderActions = item.report_type === "order" && item.order_id && item.status !== "done" ? `
+                <div class="card-actions compact-actions admin-dispute-actions">
+                    <button class="approve-btn" onclick="resolveOrderReport(${Number(item.id)}, 'complete')">${tr("Завершити угоду", "Complete deal")}</button>
+                    <button class="reject-btn" onclick="resolveOrderReport(${Number(item.id)}, 'cancel')">${tr("Скасувати угоду", "Cancel deal")}</button>
+                    <button class="secondary-btn" onclick="resolveOrderReport(${Number(item.id)}, 'return')">${tr("Повернути покупцю", "Return to buyer")}</button>
+                </div>` : "";
+            return `
+            <div class="card admin-idea-card admin-report-card">
                 <div class="card-body">
                     <div class="status-pill ${escapeHtml(item.status)}">${ideaStatusLabel(item.status)}</div>
-                    <h3 class="card-title">${escapeHtml(item.listing_title || tr('Оголошення', 'Listing'))}</h3>
+                    <div class="report-type-label">${reportTypeLabel(item.report_type)}</div>
+                    <h3 class="card-title">${title}</h3>
                     <div class="history-meta">
-                        <div>${tr("Від", "From")}: @${escapeHtml(item.reporter_username || "user")}</div>
+                        <div>${tr("Хто поскаржився", "Reported by")}: @${escapeHtml(item.reporter_username || "user")}</div>
+                        ${item.reported_user_id ? `<div>${tr("На кого скарга", "Reported user")}: @${escapeHtml(item.reported_username || "user")}</div>` : ""}
+                        ${item.order_id ? `<div>${tr("Угода", "Deal")}: #${Number(item.order_id)} · ${orderStatusLabel(item.order_status)}</div>` : ""}
+                        ${item.listing_id ? `<div>${tr("Оголошення", "Listing")}: #${Number(item.listing_id)} ${escapeHtml(item.listing_title || "")}</div>` : ""}
                         <div>${tr("Дата", "Date")}: ${formatDate(item.created_at)}</div>
                         <div>${tr("Причина", "Reason")}: ${escapeHtml(tv(item.reason || ""))}</div>
                     </div>
                     ${item.comment ? `<p class="card-description">${escapeHtml(item.comment)}</p>` : ""}
                     <div class="card-actions compact-actions">
+                        ${item.reporter_id ? `<button class="seller-link-btn" onclick="openUserProfile(${Number(item.reporter_id)})">${tr("Профіль скаржника", "Reporter profile")}</button>` : ""}
+                        ${item.reported_user_id ? `<button class="seller-link-btn" onclick="openUserProfile(${Number(item.reported_user_id)})">${tr("Профіль користувача", "Reported profile")}</button>` : ""}
+                        ${item.listing_id ? `<button class="secondary-btn" onclick="openProductModal(${Number(item.listing_id)})">${tr("Відкрити товар", "Open item")}</button>` : ""}
+                    </div>
+                    ${orderActions}
+                    <div class="card-actions compact-actions">
                         ${item.status !== "review" && item.status !== "done" ? `<button class="secondary-btn" onclick="updateReportStatus(${Number(item.id)}, 'review')">${tr("На розгляді", "In review")}</button>` : ""}
-                        ${item.status !== "done" ? `<button class="approve-btn" onclick="updateReportStatus(${Number(item.id)}, 'done')">${tr("Виконано", "Done")}</button>` : `<button class="approve-btn" disabled>${tr("Виконано", "Done")}</button>`}
+                        ${item.report_type !== "order" ? (item.status !== "done" ? `<button class="approve-btn" onclick="updateReportStatus(${Number(item.id)}, 'done')">${tr("Виконано", "Done")}</button>` : `<button class="approve-btn" disabled>${tr("Виконано", "Done")}</button>`) : ""}
                         ${item.status !== "new" && item.status !== "done" ? `<button class="ghost-warning-btn" onclick="updateReportStatus(${Number(item.id)}, 'new')">${tr("Повернути в нові", "Return to new")}</button>` : ""}
                     </div>
                 </div>
-            </div>
-        `).join("");
+            </div>`;
+        }).join("");
     } catch (error) {
         list.innerHTML = `<div class="empty-card">${escapeHtml(error.message || tr("Помилка", "Error"))}</div>`;
     }
@@ -3364,6 +3549,32 @@ async function updateReportStatus(id, status) {
         await loadAdminReports();
     } catch (error) {
         showAlert(error.message || tr("Не вдалося оновити статус скарги", "Failed to update report status"));
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function resolveOrderReport(id, action) {
+    if (!currentUser || isLoading) return;
+    const labels = {
+        complete: tr("завершити угоду", "complete the deal"),
+        cancel: tr("скасувати угоду", "cancel the deal"),
+        return: tr("повернути угоду на підтвердження покупця", "return the deal to buyer confirmation")
+    };
+    if (!confirm(`${tr("Підтвердити дію", "Confirm action")}: ${labels[action] || action}?`)) return;
+    try {
+        setLoading(true);
+        await safeFetch(`${API_BASE}/admin/reports/${id}/resolve?current_admin_id=${currentUser.id}`, {
+            method: "POST",
+            body: JSON.stringify({ action })
+        });
+        await loadAdminSummary();
+        await loadAdminReports();
+        await loadProducts();
+        await loadMyProducts();
+        await loadStats();
+    } catch (error) {
+        showAlert(error.message || tr("Не вдалося застосувати рішення", "Failed to apply decision"));
     } finally {
         setLoading(false);
     }
@@ -3524,6 +3735,7 @@ async function openUserProfile(userId) {
                         }
                         <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'reviews')">${tr('Відгуки', 'Reviews')}</button>
                         <button class="secondary-btn full-btn seller-toggle-btn" onclick="toggleSellerSection(${Number(profile.id)}, 'listings')">${tr('Усі оголошення продавця', "All seller's listings")}</button>
+                        ${currentUser && Number(profile.id) !== Number(currentUser.id) ? `<button class="ghost-warning-btn full-btn seller-toggle-btn" onclick="openProfileReportModal(${Number(profile.id)}, '${escapeJs(profile.username || '')}', event)">${tr('Поскаржитися на профіль', 'Report profile')}</button>` : ""}
                     </div>
 
                     <div id="seller-reviews-wrap" class="seller-section-wrap seller-reviews-wrap hidden"></div>
@@ -3647,6 +3859,7 @@ if (typeof handleReportReasonChange === "function") window.handleReportReasonCha
 if (typeof closeReportModal === "function") window.closeReportModal = closeReportModal;
 if (typeof closeReportModalOnBackdrop === "function") window.closeReportModalOnBackdrop = closeReportModalOnBackdrop;
 if (typeof submitReport === "function") window.submitReport = submitReport;
+if (typeof openProfileReportModal === "function") window.openProfileReportModal = openProfileReportModal;
 if (typeof logout === "function") window.logout = logout;
 if (typeof saveProfile === "function") window.saveProfile = saveProfile;
 if (typeof createProduct === "function") window.createProduct = createProduct;
@@ -3679,12 +3892,16 @@ if (typeof adminMakeAdmin === "function") window.adminMakeAdmin = adminMakeAdmin
 if (typeof adminRemoveAdmin === "function") window.adminRemoveAdmin = adminRemoveAdmin;
 if (typeof adminArchiveProduct === "function") window.adminArchiveProduct = adminArchiveProduct;
 if (typeof cancelPurchaseRequest === "function") window.cancelPurchaseRequest = cancelPurchaseRequest;
+if (typeof confirmBuyerReceipt === "function") window.confirmBuyerReceipt = confirmBuyerReceipt;
+if (typeof reportMissingProduct === "function") window.reportMissingProduct = reportMissingProduct;
+if (typeof reportBuyerDelay === "function") window.reportBuyerDelay = reportBuyerDelay;
 if (typeof openReviewModal === "function") window.openReviewModal = openReviewModal;
 if (typeof closeReviewModal === "function") window.closeReviewModal = closeReviewModal;
 if (typeof submitReview === "function") window.submitReview = submitReview;
 if (typeof adminRestoreProduct === "function") window.adminRestoreProduct = adminRestoreProduct;
 if (typeof updateSuggestionStatus === "function") window.updateSuggestionStatus = updateSuggestionStatus;
 if (typeof updateReportStatus === "function") window.updateReportStatus = updateReportStatus;
+if (typeof resolveOrderReport === "function") window.resolveOrderReport = resolveOrderReport;
 if (typeof adminDeleteProduct === "function") window.adminDeleteProduct = adminDeleteProduct;
 if (typeof openUserProfile === "function") window.openUserProfile = openUserProfile;
 if (typeof loadSellerReviews === "function") window.loadSellerReviews = loadSellerReviews;
