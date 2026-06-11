@@ -6910,8 +6910,15 @@ input::placeholder,textarea::placeholder{color:#7f97bd !important;}
 .verification-consent-row{display:flex!important;align-items:flex-start!important;gap:8px!important;padding:6px 0!important;font-size:12px!important;color:var(--muted)!important;line-height:1.4!important;}
 .verification-consent-row input{width:16px!important;height:16px!important;min-width:16px!important;margin-top:1px!important;}
 .admin-verification-card .verification-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-.verification-admin-actions{display:flex!important;flex-wrap:wrap!important;gap:7px!important;}
-.verification-admin-actions button{flex:1 1 120px!important;min-height:36px!important;}
+.verification-admin-actions{display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin-top:7px!important;}
+#admin-panel-body .verification-admin-actions button{
+  flex:0 1 auto!important;
+  min-height:30px!important;
+  padding:5px 8px!important;
+  border-radius:9px!important;
+  font-size:11px!important;
+  line-height:1.1!important;
+}
 @media (max-width:430px){
   .verification-badge{font-size:9px;padding:3px 7px;}
   .verification-menu-status{font-size:9px;padding:3px 6px;}
