@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=439">
+    <link rel="stylesheet" href="style.css?v=440">
 </head>
 <body>
     <div id="auth-screen" class="auth-screen">
@@ -320,6 +320,7 @@
                                         <div id="profile-username" class="profile-ref-username">@username</div>
                                         <div class="profile-ref-chip-row">
                                             <div id="profile-status-chip" class="profile-ref-status-chip">Новий продавець</div>
+                                            <div id="profile-verification-badge" class="verification-badge verification-unverified">Не верифікований</div>
                                             <div id="profile-register-date-inline" class="profile-ref-date">—</div>
                                         </div>
                                     </div>
@@ -398,6 +399,10 @@
                         </div>
                     </div>
 
+                    <div class="profile-menu-section"><button id="verification-toggle-btn" class="secondary-btn full-btn profile-menu-btn verification-menu-btn" onclick="toggleVerificationPanel()"><span class="profile-menu-icon">🪪</span><span>Верифікація</span><span id="verification-menu-status" class="verification-menu-status">Не пройдено</span><span class="profile-menu-arrow">›</span></button>
+                        <div id="verification-wrap" class="hidden profile-panel-wrap verification-panel-wrap"></div>
+                    </div>
+
                     <div class="profile-menu-section"><button id="purchase-history-toggle-btn" class="secondary-btn full-btn profile-menu-btn" onclick="togglePurchaseHistory()"><span class="profile-menu-icon">🛍</span><span>Історія покупок</span><span class="profile-menu-arrow">›</span></button>
                         <div id="purchase-history-wrap" class="hidden profile-panel-wrap">
                             <div id="purchase-history-list" class="cards"></div>
@@ -450,6 +455,7 @@
                                 <button id="admin-products-tab-btn" class="subtab-btn" onclick="switchAdminTab('products')">Оголошення</button>
                                 <button id="admin-ideas-tab-btn" class="subtab-btn" onclick="switchAdminTab('ideas')">Ідеї</button>
                                 <button id="admin-reports-tab-btn" class="subtab-btn" onclick="switchAdminTab('reports')">Скарги</button>
+                                <button id="admin-verifications-tab-btn" class="subtab-btn" onclick="switchAdminTab('verifications')">Верифікації</button>
                                 <button id="admin-logs-tab-btn" class="subtab-btn" onclick="switchAdminTab('logs')">Логи</button>
                             </div>
                             <div id="admin-users-tab" class="admin-tab-section">
@@ -468,6 +474,7 @@
                             </div>
                             <div id="admin-ideas-tab" class="admin-tab-section hidden"><div id="admin-ideas-list" class="cards"></div></div>
                             <div id="admin-reports-tab" class="admin-tab-section hidden"><div id="admin-reports-list" class="cards"></div></div>
+                            <div id="admin-verifications-tab" class="admin-tab-section hidden"><div id="admin-verifications-list" class="cards"></div></div>
                             <div id="admin-logs-tab" class="admin-tab-section hidden"><div id="admin-logs-list" class="cards"></div></div>
                         </div>
                     </div>
@@ -520,6 +527,35 @@
         <div class="modal-content"><button class="modal-close" onclick="closeUserProfileModal()">×</button><div id="user-profile-modal-body"></div></div>
     </div>
 
+    <div id="verification-modal" class="modal hidden" onclick="closeVerificationModalOnBackdrop(event)">
+        <div class="modal-content verification-modal-content">
+            <button type="button" class="modal-close" onclick="closeVerificationModal()">×</button>
+            <h3 class="modal-title">Верифікація продавця</h3>
+            <p class="verification-form-hint">Документи тимчасово зберігаються в закритому розділі Cloudinary лише до рішення адміністратора. Після підтвердження або відмови фото автоматично видаляються.</p>
+            <label>ПІБ</label>
+            <input id="verification-full-name" type="text" placeholder="Введіть повне ім'я">
+            <label>Дата народження</label>
+            <input id="verification-birth-date" type="date">
+            <label class="verification-file-card" for="verification-front-file">
+                <input id="verification-front-file" type="file" accept="image/jpeg,image/png,image/webp" onchange="updateVerificationFileLabels()">
+                <span class="verification-file-title">Основне фото документа <strong>*</strong></span>
+                <span id="verification-front-file-name" class="verification-file-name">Файл не вибрано</span>
+                <span class="verification-file-hint">Лицьова сторона ID-картки або основна сторінка документа</span>
+            </label>
+            <label class="verification-file-card" for="verification-back-file">
+                <input id="verification-back-file" type="file" accept="image/jpeg,image/png,image/webp" onchange="updateVerificationFileLabels()">
+                <span class="verification-file-title">Друге фото документа <small>необов’язково</small></span>
+                <span id="verification-back-file-name" class="verification-file-name">Файл не вибрано</span>
+                <span class="verification-file-hint">Наприклад, зворотна сторона ID-картки</span>
+            </label>
+            <label class="verification-consent-row">
+                <input id="verification-consent" type="checkbox">
+                <span>Погоджуюся на обробку даних для перевірки профілю</span>
+            </label>
+            <button type="button" class="primary-btn full-btn" onclick="submitVerification()">Надіслати на перевірку</button>
+        </div>
+    </div>
+
     <div id="review-modal" class="modal hidden">
         <div class="modal-content small-modal">
             <button type="button" class="modal-close" data-action="close-review">×</button>
@@ -556,6 +592,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=437"></script>
+    <script src="app.js?v=438"></script>
 </body>
 </html>
