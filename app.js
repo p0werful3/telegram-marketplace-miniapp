@@ -1,9 +1,16 @@
-console.log("APP VERSION 438 LOADED");
+console.log("APP VERSION 439 LOADED");
 const API_BASE = "https://telegram-marketplace-api.onrender.com";
 
 const CLOUDINARY_CLOUD_NAME = "dw2vkc5ew";
 const CLOUDINARY_UPLOAD_PRESET = "telegram_marketplace_unsigned";
-const FRONTEND_VERSION = "438";
+const FRONTEND_VERSION = "439";
+const PRODUCT_PHOTO_MAX_SIZE = 8 * 1024 * 1024;
+const PRODUCT_ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const PRODUCT_TITLE_MAX_LENGTH = 80;
+const PRODUCT_DESCRIPTION_MAX_LENGTH = 1500;
+const VERIFICATION_FULL_NAME_MAX_LENGTH = 120;
+const VERIFICATION_PHOTO_MAX_SIZE = 6 * 1024 * 1024;
+const VERIFICATION_ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 let tg = null;
 let telegramUser = null;
@@ -1183,6 +1190,19 @@ async function submitVerification() {
         showAlert(tr("Заповніть ПІБ, дату народження та додайте основне фото документа", "Fill in your full name, birth date, and add the main document photo"));
         return;
     }
+    if (fullName.length > VERIFICATION_FULL_NAME_MAX_LENGTH) {
+        showAlert(tr("ПІБ має містити максимум 120 символів", "Full name must contain no more than 120 characters"));
+        return;
+    }
+    const verificationFiles = [front, back].filter(Boolean);
+    if (verificationFiles.some(file => !VERIFICATION_ALLOWED_IMAGE_TYPES.has(file.type))) {
+        showAlert(tr("Документ має бути у форматі JPG, PNG або WEBP", "Document photo must be JPG, PNG, or WEBP"));
+        return;
+    }
+    if (verificationFiles.some(file => file.size > VERIFICATION_PHOTO_MAX_SIZE)) {
+        showAlert(tr("Максимальний розмір одного фото документа — 6 МБ", "Maximum document photo size is 6 MB"));
+        return;
+    }
     if (!consent) {
         showAlert(tr("Потрібна згода на обробку даних", "Consent to data processing is required"));
         return;
@@ -2049,9 +2069,16 @@ function handleImagePreview(event) {
         return;
     }
 
-    const invalid = newFiles.find(file => !file.type.startsWith("image/"));
-    if (invalid) {
-        showAlert(tr("Оберіть лише зображення", "Choose images only"));
+    const invalidType = newFiles.find(file => !PRODUCT_ALLOWED_IMAGE_TYPES.has(file.type));
+    if (invalidType) {
+        showAlert(tr("Фото товару має бути у форматі JPG, PNG або WEBP", "Product photos must be JPG, PNG, or WEBP"));
+        if (input) input.value = "";
+        return;
+    }
+
+    const oversized = newFiles.find(file => file.size > PRODUCT_PHOTO_MAX_SIZE);
+    if (oversized) {
+        showAlert(tr("Максимальний розмір одного фото товару — 8 МБ", "Maximum product photo size is 8 MB"));
         if (input) input.value = "";
         return;
     }
@@ -2080,6 +2107,12 @@ function handleImagePreview(event) {
 async function uploadImageToCloudinary(file) {
     if (!file) {
         throw new Error(tr("Файл не вибрано", "No file selected"));
+    }
+    if (!PRODUCT_ALLOWED_IMAGE_TYPES.has(file.type)) {
+        throw new Error(tr("Фото товару має бути у форматі JPG, PNG або WEBP", "Product photos must be JPG, PNG, or WEBP"));
+    }
+    if (file.size > PRODUCT_PHOTO_MAX_SIZE) {
+        throw new Error(tr("Максимальний розмір одного фото товару — 8 МБ", "Maximum product photo size is 8 MB"));
     }
 
     if (!CLOUDINARY_CLOUD_NAME) {
@@ -2820,6 +2853,18 @@ async function createProduct() {
 
     if (!title || !description || !Number.isFinite(price) || price <= 0 || !category || !condition || !city) {
         showAlert(tr("Заповни назву, опис, ціну, категорію, стан і місто", "Fill in the title, description, price, category, condition, and city"));
+        return;
+    }
+    if (title.length < 2 || title.length > PRODUCT_TITLE_MAX_LENGTH) {
+        showAlert(tr("Назва товару має містити від 2 до 80 символів", "Product title must contain 2 to 80 characters"));
+        return;
+    }
+    if (description.length < 5 || description.length > PRODUCT_DESCRIPTION_MAX_LENGTH) {
+        showAlert(tr("Опис товару має містити від 5 до 1500 символів", "Product description must contain 5 to 1500 characters"));
+        return;
+    }
+    if (price > 100000000) {
+        showAlert(tr("Ціна занадто велика", "Price is too high"));
         return;
     }
 
